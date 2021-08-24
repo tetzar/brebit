@@ -1,0 +1,443 @@
+import 'dart:io';
+
+import '../../../library/exceptions.dart';
+import 'package:brebit/main.dart';
+import '../../../network/auth.dart';
+import '../../../provider/auth.dart';
+import '../../../route/route.dart';
+import '../general/loading.dart';
+import '../widgets/app-bar.dart';
+import '../widgets/dialog.dart';
+import '../widgets/text-field.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import 'name-form.dart';
+
+class Login extends StatelessWidget {
+  final String email;
+
+  Login({this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: getMyAppBar(context: context, titleText: 'サインイン'),
+      body: LoginForm(email),
+      backgroundColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
+class LoginFormProviderState {
+  bool userNameOrEmail;
+  bool password;
+}
+
+class LoginFormProvider extends StateNotifier<LoginFormProviderState> {
+  LoginFormProvider(LoginFormProviderState state) : super(state);
+
+  get userNameOrEmail {
+    return this.state.userNameOrEmail ?? false;
+  }
+
+  get password {
+    return this.state.password ?? false;
+  }
+
+  set userNameOrEmail(bool s) {
+    if (this.userNameOrEmail != s) {
+      this.state = state..userNameOrEmail = s;
+    }
+  }
+
+  set password(bool s) {
+    if (this.password != s) {
+      this.state = state..password = s;
+    }
+  }
+
+  bool savable() {
+    return (this.state.password ?? false) &&
+        (this.state.userNameOrEmail ?? false);
+  }
+}
+
+final _loginFormProvider = StateNotifierProvider.autoDispose(
+    (ref) => LoginFormProvider(LoginFormProviderState()));
+
+class LoginForm extends StatefulWidget {
+  final String email;
+
+  LoginForm(this.email);
+
+  @override
+  LoginFormState createState() => LoginFormState();
+}
+
+class LoginFormState extends State<LoginForm> {
+  List<GlobalKey<FormState>> _keys;
+  FocusNode _passwordFocusNode;
+  FocusNode _nameFocusNode;
+
+  String userNameOrEmail;
+  String password;
+  String _userNameOrEmailMessage;
+  String _passwordMessage;
+
+  String get userNameOrEmailMessage {
+    return _userNameOrEmailMessage ?? '';
+  }
+
+  String get passwordMessage {
+    return _passwordMessage ?? '';
+  }
+
+  set userNameOrEmailMessage(String message) {
+    this._userNameOrEmailMessage = message;
+  }
+
+  set passwordMessage(String message) {
+    this._passwordMessage = message;
+  }
+
+  @override
+  void initState() {
+    _keys = [
+      GlobalKey<FormState>(),
+      GlobalKey<FormState>(),
+    ];
+    _nameFocusNode = new FocusNode();
+    _nameFocusNode.addListener(() {
+      if (!_nameFocusNode.hasFocus) {
+        _keys[0].currentState.validate();
+      }
+    });
+    _passwordFocusNode = new FocusNode();
+    userNameOrEmailMessage = '';
+    passwordMessage = '';
+    if (widget.email != null) {
+      context.read(_loginFormProvider).userNameOrEmail =
+          isEmail(widget.email) || isUserName(widget.email);
+    }
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nameFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MyHookBottomFixedButton(
+      provider: _loginFormProvider,
+      enable: () {
+        return context.read(_loginFormProvider).savable();
+      },
+      onTapped: () async {
+        _nameFocusNode.unfocus();
+        _passwordFocusNode.unfocus();
+        await submit(context);
+      },
+      label: 'サインイン',
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Form(
+              key: _keys[0],
+              child: MyTextField(
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (text) {
+                  _nameFocusNode.unfocus();
+                  _passwordFocusNode.requestFocus();
+                },
+                focusNode: _nameFocusNode,
+                initialValue: widget.email,
+                label: 'IDまたはメールアドレス',
+                keyboardType: TextInputType.emailAddress,
+                inputFormatter: [
+                  FilteringTextInputFormatter.allow(RegExp(r"^[\x00-\x7F]+$"))
+                ],
+                onChanged: (text) {
+                  if (userNameOrEmailMessage.length > 0) {
+                    String _p = userNameOrEmailMessage;
+                    userNameOrEmailMessage = '';
+                    return _p;
+                  }
+                  if (text.length == 0) {
+                    context.read(_loginFormProvider).userNameOrEmail = false;
+                    return '入力してください';
+                  }
+                  if (isEmail(text) || isUserName(text)) {
+                    context.read(_loginFormProvider).userNameOrEmail = true;
+                    return null;
+                  }
+                  context.read(_loginFormProvider).userNameOrEmail = false;
+                  return '正しく入力してください';
+                },
+                validate: (text) {
+                  if (userNameOrEmailMessage.length > 0) {
+                    String _p = userNameOrEmailMessage;
+                    userNameOrEmailMessage = '';
+                    return _p;
+                  }
+                  if (text.length == 0) {
+                    return '入力してください';
+                  }
+                  if (isEmail(text) || isUserName(text)) {
+                    return null;
+                  }
+                  return '正しく入力してください';
+                },
+                onSaved: (text) {
+                  if (text.startsWith('@')) {
+                    text = text.substring(1);
+                  }
+                  this.userNameOrEmail = text;
+                },
+              ),
+            ),
+            SizedBox(
+              height: 8,
+            ),
+            Form(
+              key: _keys[1],
+              child: MyPasswordField(
+                focusNode: _passwordFocusNode,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (text) {
+                  _passwordFocusNode.unfocus();
+                },
+                validate: (text) {
+                  if (passwordMessage.length > 0) {
+                    String _p = passwordMessage;
+                    passwordMessage = '';
+                    return _p;
+                  }
+                  if (text.length < 6) {
+                    return '6文字以上入力してください';
+                  }
+                  return null;
+                },
+                onSaved: (text) {
+                  this.password = text;
+                },
+                onChanged: (text) {
+                  context.read(_loginFormProvider).password = text.length > 5;
+                },
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              alignment: Alignment.centerRight,
+              child: RichText(
+                text: TextSpan(
+                  style: Theme.of(context)
+                      .textTheme
+                      .subtitle1
+                      .copyWith(fontSize: 12),
+                  children: <TextSpan>[
+                    TextSpan(
+                      text: 'パスワードを忘れた方は',
+                    ),
+                    TextSpan(
+                        text: 'こちら',
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            ApplicationRoutes.pushReplacementNamed(
+                                '/password-reset');
+                          },
+                        style: (TextStyle(
+                          color: Theme.of(context).accentColor,
+                          decoration: TextDecoration.underline,
+                        ))),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 40,
+            ),
+            InkWell(
+              onTap: () async {
+                await signInWithGoogle(context);
+              },
+              child: SvgPicture.asset('assets/images/googleSignInButton.svg'),
+            ),
+            SizedBox(
+              height: 16,
+            ),
+            InkWell(
+              onTap: () async {
+                await signInWithApple();
+              },
+              child: Image.asset('assets/images/appleSignInButton.png'),
+            ),
+            SizedBox(
+              height: 24,
+            ),
+            Container(
+              alignment: Alignment.center,
+              margin: EdgeInsets.symmetric(vertical: 24),
+              child: RichText(
+                text: TextSpan(
+                  style: Theme.of(context)
+                      .textTheme
+                      .subtitle1
+                      .copyWith(fontSize: 12),
+                  children: <TextSpan>[
+                    TextSpan(
+                      text: 'アカウントをお持ちでない方は',
+                    ),
+                    TextSpan(
+                        text: '新規登録',
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            ApplicationRoutes.pushReplacementNamed('/register');
+                          },
+                        style: (TextStyle(
+                          color: Theme.of(context).accentColor,
+                          decoration: TextDecoration.underline,
+                        ))),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool isEmail(String text) {
+    RegExp emailRegExp = new RegExp(
+      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    return emailRegExp.hasMatch(text);
+  }
+
+  bool isUserName(String text) {
+    RegExp userNameRegExp = new RegExp(
+      r"^@?[a-zA-Z0-9_]+$",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    return userNameRegExp.hasMatch(text);
+  }
+
+  Future<void> submit(BuildContext context) async {
+    bool valid = true;
+    for (GlobalKey<FormState> _key in _keys) {
+      if (!_key.currentState.validate()) {
+        valid = false;
+      }
+    }
+    if (valid) {
+      for (GlobalKey<FormState> _key in _keys) {
+        _key.currentState.save();
+      }
+      String email;
+      await MyLoading.startLoading();
+      if (isUserName(userNameOrEmail)) {
+        try {
+          email = await AuthApi.getEmailAddress(userNameOrEmail);
+        } on UserNotFoundException {
+          passwordMessage = '';
+          userNameOrEmailMessage = '登録されていないIDです';
+          _keys[0].currentState.validate();
+          return;
+        } on FirebaseNotFoundException {
+          passwordMessage = '';
+          userNameOrEmailMessage = '別の方法でのログインをお試しください';
+          _keys[0].currentState.validate();
+        } catch (e) {
+          await MyLoading.startLoading();
+          MyErrorDialog.show(e);
+          return;
+        }
+        await MyLoading.startLoading();
+      } else {
+        email = userNameOrEmail;
+      }
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
+        if (!userCredential.user.emailVerified) {
+          await MyLoading.dismiss();
+          Navigator.pushReplacementNamed(context, '/email-verify');
+          return;
+        }
+        await context.read(authProvider).login(email, password);
+        await MyApp.initialize(context);
+        await MyLoading.dismiss();
+        Navigator.popUntil(context, ModalRoute.withName('/title'));
+        Navigator.of(context).pushReplacementNamed("/home");
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          passwordMessage = '';
+          userNameOrEmailMessage = '登録されていません';
+          _keys[0].currentState.validate();
+        } else if (e.code == 'wrong-password') {
+          passwordMessage = 'パスワードが正しくありません';
+          userNameOrEmailMessage = '';
+          _keys[1].currentState.validate();
+        }
+        await MyLoading.dismiss();
+      } on UserNotFoundException {
+        await MyLoading.dismiss();
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => NameInput()));
+      } catch (e) {
+        exit(1);
+      }
+    }
+  }
+
+  Future<void> signInWithGoogle(BuildContext context) async {
+    MyLoading.startLoading();
+    final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+
+    // Create a new credential
+    final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    // Once signed in, return the UserCredential
+    UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    try {
+      await context.read(authProvider).loginWithFirebase(userCredential.user);
+      await MyApp.initialize(context);
+      while (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      Navigator.pushReplacementNamed(context, '/home');
+    } on UserNotFoundException {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => NameInput()));
+    } catch (e) {
+      MyErrorDialog.show(e);
+    }
+    MyLoading.dismiss();
+  }
+
+  Future<void> signInWithApple() async {}
+}

@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "716144658636",
+    "project_id": "brebit-1939d",
+    "storage_bucket": "brebit-1939d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716144658636:android:c9eee7b195dca2d6bc1a69",
+        "android_client_info": {
+          "package_name": "dev.brebit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "716144658636-5smjl1ctcoa18orvibk0kl523s4htpi1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.brebit",
+            "certificate_hash": "5e73f5d2cbe3d4b022331cc6a45eaed5a7bd8752"
+          }
+        },
+        {
+          "client_id": "716144658636-7imdlkbd129echbdql2p4pp2p5kcodng.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.brebit",
+            "certificate_hash": "3d1b2ebb4e3a6c3927fd3eff4c3c1efcffb367f3"
+          }
+        },
+        {
+          "client_id": "716144658636-ffjne4iqiqejbesklg69padhvc7144eq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7PMvMT2yDYfljIHFapRKmytCnjtti20A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "716144658636-ffjne4iqiqejbesklg69padhvc7144eq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
