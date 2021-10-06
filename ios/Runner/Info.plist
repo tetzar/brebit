@@ -41,9 +41,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>This app requires to add file to your camera</string>
+	<string>カメラにアクセスします</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app requires to add file to your photo library your microphone</string>
+	<string>マイクにアクセスします</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires to access your photo library</string>
 	<key>UILaunchStoryboardName</key>
@@ -73,6 +73,6 @@
             <string>http</string>
         </array>
      <key>NSPhotoLibraryUsageDescription</key>
-         <string>カメラロールから画像を選択するために許可が必要です。</string>
+         <string>カメラロールにアクセスします</string>
 </dict>
 </plist>
