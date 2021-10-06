@@ -12,7 +12,7 @@ class   Network {
   // for emulator
   // static final String _url = 'http://10.0.2.2';
   // your connection port
-  static final String _url = 'http://192.168.0.147:4655';
+  static final String _url = 'http://192.168.3.40:80';
 
   static String get url => _url;
 

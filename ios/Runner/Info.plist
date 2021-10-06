@@ -29,9 +29,10 @@
 			<string>brebit.dev</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>customscheme</string>
+				<string>com.googleusercontent.apps.716144658636-65r4k8ve8lm9huhdk7f298gk4jq447ft</string>
 			</array>
 		</dict>
+		<dict/>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
