@@ -1,4 +1,4 @@
-# brebit
+# Brebit
 
 An awesome breaking habit application
 
