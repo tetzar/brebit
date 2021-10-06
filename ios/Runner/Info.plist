@@ -72,5 +72,7 @@
             <string>https</string>
             <string>http</string>
         </array>
+     <key>NSPhotoLibraryUsageDescription</key>
+         <string>カメラロールから画像を選択するために許可が必要です。</string>
 </dict>
 </plist>
