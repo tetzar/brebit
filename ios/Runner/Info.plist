@@ -29,9 +29,10 @@
 			<string>brebit.dev</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>customscheme</string>
+				<string>com.googleusercontent.apps.716144658636-65r4k8ve8lm9huhdk7f298gk4jq447ft</string>
 			</array>
 		</dict>
+		<dict/>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
@@ -40,9 +41,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>This app requires to add file to your camera</string>
+	<string>カメラにアクセスします</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app requires to add file to your photo library your microphone</string>
+	<string>マイクにアクセスします</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires to access your photo library</string>
 	<key>UILaunchStoryboardName</key>
@@ -66,5 +67,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+        <array>
+            <string>https</string>
+            <string>http</string>
+        </array>
+     <key>NSPhotoLibraryUsageDescription</key>
+         <string>カメラロールにアクセスします</string>
 </dict>
 </plist>
