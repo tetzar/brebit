@@ -178,6 +178,8 @@ class _SplashState extends State<Splash> {
           new PageRouteBuilder(
               settings: RouteSettings(name: _initialRoute ?? '/title'),
               pageBuilder: (BuildContext context, _, __) {
+                // must be deleted
+                _initialRoute = '/introduction';
                 switch (_initialRoute) {
                   case '/home':
                     return Home(null);
