@@ -11,8 +11,10 @@ import 'auth.dart';
 class   Network {
   // for emulator
   // static final String _url = 'http://10.0.2.2';
-  // your connection port
-  static final String _url = 'http://192.168.3.40:80';
+  // マイハウス
+  // static final String _url = 'http://192.168.3.40:80';
+  // イマジナリーハウス
+  static final String _url = 'http://192.168.248.224:80';
 
   static String get url => _url;
 
