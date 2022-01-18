@@ -26,8 +26,7 @@ class _IntroductionState extends State<Introduction> {
 
   Widget _buildSvg(String assetName) {
     return Align(
-      child:
-          SvgPicture.asset('assets/introduction/$assetName.svg', width: 325.0),
+      child: SvgPicture.asset('assets/introduction/$assetName.svg', width: 325.0),
       alignment: Alignment.bottomCenter,
     );
   }
@@ -48,22 +47,26 @@ class _IntroductionState extends State<Introduction> {
       pages: [
         PageViewModel(
           title: "ダウンロード\nありがとうございます\nみんなで習慣を\n改善しましょう",
-          body: "悪い習慣を\n「やめる」に特化した\n習慣改善アプリです",
+          body: "悪い習慣を「やめる」に特化した\n習慣改善アプリです。",
           image: _buildImage('img1'),
           decoration: pageDecoration,
         ),
         PageViewModel(
           title: "戦略を活用",
-          body:
-              "例えば「スマホを見そうになったら」「スクワットする」。\nこういった戦略を活用することは、効果的にやめることにつながります。\nあなたにあった戦略の提案と、あなただけの戦略を作成が可能です。",
+          body: "戦略を活用することは、効果的にやめることにつながります。\nあなたにあった戦略の提案と、戦略を作成することもできます。",
           image: _buildImage('intro-strategy2x'),
           decoration: pageDecoration,
         ),
         PageViewModel(
           title: "習慣を記録",
-          body:
-              "悪い習慣を行ってしまった、欲求を回避した、そんなときはBrebitの記録機能を利用しましょう。過去の記録を振り返り、今の行動に繋げましょう！\nまた、目標への進捗状況がひと目でわかるようになっているので、少しづつ「やめる」に近づいていることを実感しながら継続できます。",
+          body: "悪い習慣を行ってしまった、欲求を回避した、そんなときは記録機能を利用しましょう。\n過去の記録を振り返り、今の行動に繋げましょう！",
           image: _buildImage('intro-logs2x'),
+          decoration: pageDecoration,
+        ),
+        PageViewModel(
+          title: "フレンドと共有",
+          body: "チャレンジを継続できた、欲求を回避した、様々なことを投稿してフレンドと共有できます。\nまた、フレンドの進捗状況や戦略なども見ることができます。",
+          image: _buildImage('intro-share2x'),
           decoration: pageDecoration,
         ),
       ],
