@@ -63,6 +63,10 @@ class FormValue {
   }
 
   bool sameImage(AssetEntity image1, AssetEntity image2) {
+    // TODO: ここを元に戻す
+    print('image1.id:${image1.id}');
+    print('image2.id:${image1.id}');
+    return false;
     return image1.relativePath + image1.title ==
         image2.relativePath + image2.title;
   }
@@ -961,9 +965,13 @@ class _ImagePickState extends State<ImagePick>
               List<AssetEntity> imageFiles = snapshot.data;
               List<Widget> cards = <Widget>[];
               imageFiles.forEach((imageFile) {
-                int index = selected.indexWhere((selectedFile) =>
-                    selectedFile.relativePath + selectedFile.title ==
-                    imageFile.relativePath + imageFile.title);
+                int index = selected.indexWhere((selectedFile){
+                  // TODO: ここを元に戻す
+                    print('selectedFile: ${selectedFile.createDateTime}');
+                    return false;
+                    // selectedFile.relativePath + selectedFile.title ==
+                    // imageFile.relativePath + imageFile.title
+                });
                 cards.add(ImageTile(imageAsset: imageFile, index: index));
               });
               return GridView.count(
