@@ -47,7 +47,7 @@ class MyNotification{
     await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
 
     initializationSettingsAndroid =
-    AndroidInitializationSettings('app_icon');
+    AndroidInitializationSettings('b_icon');
     /// Note: permissions aren't requested here just to demonstrate that can be
     /// done later
     final IOSInitializationSettings initializationSettingsIOS =

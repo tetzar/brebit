@@ -2,6 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_manager/photo_manager.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../library/cache.dart';
 import '../../../model/draft.dart';
 import '../../../model/habit_log.dart';
@@ -12,18 +21,10 @@ import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../general/multi-image-picker.dart';
-import 'widget/log-card.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:uuid/uuid.dart';
+import 'widget/log-card.dart';
 
 class FormValue {
   String _inputData = '';
@@ -63,7 +64,7 @@ class FormValue {
   }
 
   bool sameImage(AssetEntity image1, AssetEntity image2) {
-    // TODO: ここを元に戻す
+    // TODO: ここを元に戻すよ
     print('image1.id:${image1.id}');
     print('image2.id:${image1.id}');
     return false;
