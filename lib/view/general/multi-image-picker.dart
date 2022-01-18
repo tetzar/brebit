@@ -112,7 +112,6 @@ class _MyMultiImagePickerState extends State<MyMultiImagePicker> {
     } else {
       String title = getTitle(context);
       List<AssetPathEntity> paths = context.read(imageAssetProvider).getPaths();
-      if (Platform.isAndroid) {
         return Scaffold(
           appBar: AppBar(
             leading: MyBackButton(),
@@ -140,7 +139,6 @@ class _MyMultiImagePickerState extends State<MyMultiImagePicker> {
             },
           ),
         );
-      }
     }
   }
 
