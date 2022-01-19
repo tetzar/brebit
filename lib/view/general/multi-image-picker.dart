@@ -1,13 +1,14 @@
-import 'dart:io';
 import 'dart:typed_data';
 
-import '../../../route/route.dart';
-import '../widgets/back-button.dart';
+import 'package:brebit/view/timeline/create_post.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
+
+import '../../../route/route.dart';
+import '../widgets/back-button.dart';
 
 typedef ImagePickerSavedCallback = Future<List<AssetEntity>> Function(
     List<AssetEntity>);
@@ -50,10 +51,8 @@ class ImageAssetProvider extends StateNotifier<ImageAssetProviderState> {
   }
 
   List<AssetPathEntity> getPaths() {
-    if (state != null) {
-      if (state.entities != null) {
-        return state.entities;
-      }
+    if (state != null && state.entities != null) {
+      return state.entities;
     }
     return <AssetPathEntity>[];
   }
@@ -112,33 +111,33 @@ class _MyMultiImagePickerState extends State<MyMultiImagePicker> {
     } else {
       String title = getTitle(context);
       List<AssetPathEntity> paths = context.read(imageAssetProvider).getPaths();
-        return Scaffold(
-          appBar: AppBar(
-            leading: MyBackButton(),
-            title: Text(
-              title,
-            ),
-            actions: [
-              IconButton(
-                  icon: Icon(
-                    Icons.check,
-                    color: Theme.of(context).appBarTheme.iconTheme.color,
-                  ),
-                  onPressed: () {
-                    saveImage(context);
-                  })
-            ],
+      return Scaffold(
+        appBar: AppBar(
+          leading: MyBackButton(),
+          title: Text(
+            title,
           ),
-          body: ListView.builder(
-            itemCount: paths.length,
-            itemBuilder: (BuildContext context, int index) {
-              return GalleryTile(
-                pathEntity: paths[index],
-                max: widget.max,
-              );
-            },
-          ),
-        );
+          actions: [
+            IconButton(
+                icon: Icon(
+                  Icons.check,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                ),
+                onPressed: () {
+                  saveImage(context);
+                })
+          ],
+        ),
+        body: ListView.builder(
+          itemCount: paths.length,
+          itemBuilder: (BuildContext context, int index) {
+            return GalleryTile(
+              pathEntity: paths[index],
+              max: widget.max,
+            );
+          },
+        ),
+      );
     }
   }
 
@@ -169,7 +168,9 @@ class _GalleryTileState extends State<GalleryTile> {
     widget.pathEntity
         .getAssetListRange(start: 0, end: 1)
         .then((List<AssetEntity> list) async {
-      Uint8List _firstImageData = await list.first.thumbData;
+      Uint8List _firstImageData = await list.first.thumbDataWithSize(
+          ThumbSize.WIDTH, ThumbSize.HEIGHT,
+          quality: ThumbSize.QUALITY);
       setState(() {
         _data = _firstImageData;
       });
@@ -181,11 +182,12 @@ class _GalleryTileState extends State<GalleryTile> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        List<AssetEntity> assets = await ApplicationRoutes.push(MaterialPageRoute(
-            builder: (BuildContext context) => AssetPicker(
-                pathEntity: widget.pathEntity,
-                selected: context.read(imageAssetProvider).getSelected(),
-                max: widget.max)));
+        List<AssetEntity> assets = await ApplicationRoutes.push(
+            MaterialPageRoute(
+                builder: (BuildContext context) => AssetPicker(
+                    pathEntity: widget.pathEntity,
+                    selected: context.read(imageAssetProvider).getSelected(),
+                    max: widget.max)));
         if (assets != null) {
           ApplicationRoutes.pop(assets);
         }
@@ -309,7 +311,7 @@ class _AssetPickerState extends State<AssetPicker> {
     );
   }
 
-  void saveImage(BuildContext context){
+  void saveImage(BuildContext context) {
     ApplicationRoutes.pop(context.read(imageAssetProvider).getSelected());
   }
 }
@@ -454,7 +456,10 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
   @override
   void initState() {
     _index = widget.indexCallback(widget.asset);
-    widget.asset.thumbData.then((assetData) {
+    widget.asset
+        .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
+            quality: ThumbSize.QUALITY)
+        .then((assetData) {
       setState(() {
         _data = assetData;
       });
