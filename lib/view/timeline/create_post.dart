@@ -26,7 +26,7 @@ import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
 import 'widget/log-card.dart';
 
-class ThumbSize{
+class ThumbSize {
   static const int HEIGHT = 256;
   static const int WIDTH = 256;
   static const int QUALITY = 100;
@@ -230,7 +230,7 @@ class ImageSelectProvider extends StateNotifier<List<AssetEntity>> {
     }
   }
 
-  void setAll(List<AssetEntity> images) async {
+  Future<void> setAll(List<AssetEntity> images) async {
     if (images.length > maxImages) {
       List<AssetEntity> sub = images.sublist(0, 4);
       if (await _formValue.setImages(sub)) {
@@ -722,6 +722,7 @@ class _InputFormState extends State<InputForm> {
     try {
       List<AssetEntity> assets = await MyMultiImagePicker.pickImages(
           max: 4, selected: context.read(imageSelectProvider.state));
+      if (assets == null) return;
       context.read(imageSelectProvider).setAll(assets);
     } on Exception catch (e) {
       throw e;

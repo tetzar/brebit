@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:brebit/view/timeline/create_post.dart';
@@ -341,11 +342,12 @@ class _ImageTilesState extends State<ImageTiles> {
   ScrollController _scrollController;
   List<AssetEntity> assets;
   List<AssetEntity> _selected;
+  List<File> _selectedFiles;
 
   @override
   void initState() {
     loaded = 0;
-    this._selected = widget.selected;
+    setImages(widget.selected);
     _scrollController = new ScrollController();
     nowLoading = false;
     assets = widget.assets;
@@ -385,26 +387,83 @@ class _ImageTilesState extends State<ImageTiles> {
     );
   }
 
-  int getIndex(AssetEntity asset) {
-    int index = this._selected.indexWhere((selectedAsset) =>
-        selectedAsset.relativePath + selectedAsset.title ==
-        asset.relativePath + asset.title);
-    return index;
+
+  bool sameImage(File imgFile1, File imgFile2) {
+    return imgFile1.path == imgFile2.path;
   }
 
-  int onSelect(AssetEntity asset, BuildContext context) {
-    int index = getIndex(asset);
+
+  Future<bool> setImages(List<AssetEntity> newImages) async {
+    this._selected = <AssetEntity>[];
+    this._selectedFiles = <File>[];
+    bool added = false;
+    for (AssetEntity newImage in newImages) {
+      if (await this.setImage(newImage)) {
+        added = true;
+      }
+    }
+    return added;
+  }
+
+  Future<bool> setImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
+    if (index < 0) {
+      _selected.add(image);
+      _selectedFiles.add(imageFile);
+      return true;
+    }
+    return false;
+  }
+
+
+  int getSameImageIndex(File imageFile) {
+    for (File file in _selectedFiles) {
+      if (sameImage(file, imageFile)) {
+        return _selectedFiles.indexOf(file);
+      }
+    }
+    return -1;
+  }
+
+
+  Future<File> getFileFromAssetEntity(AssetEntity image)async {
+    File imageFile = await image.file;
+    if (!imageFile.isAbsolute) {
+      imageFile = imageFile.absolute;
+    }
+    return imageFile;
+  }
+
+
+  Future<int> getIndex(AssetEntity asset) async {
+    return getSameImageIndex(
+      await getFileFromAssetEntity(asset)
+    );
+  }
+
+  Future<bool> unsetImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
+    if (index >= 0) {
+      _selected.removeAt(index);
+      _selectedFiles.removeAt(index);
+      return true;
+    }
+    return false;
+  }
+
+  Future<int> onSelect(AssetEntity asset, BuildContext context) async {
+    int index = await getIndex(asset);
     if (index < 0) {
       if (_selected.length < widget.max) {
-        this._selected.add(asset);
+        await setImage(asset);
         context.read(imageAssetProvider).setSelected(this._selected);
         return _selected.length - 1;
       }
       return -1;
     } else {
-      this._selected.removeWhere((selectedAsset) =>
-          selectedAsset.relativePath + selectedAsset.title ==
-          asset.relativePath + asset.title);
+      await unsetImage(asset);
       context.read(imageAssetProvider).setSelected(this._selected);
       return -1;
     }
@@ -432,8 +491,8 @@ class _ImageTilesState extends State<ImageTiles> {
   }
 }
 
-typedef AssetSelectCallback = int Function(AssetEntity);
-typedef IndexCallback = int Function(AssetEntity);
+typedef AssetSelectCallback = Future<int> Function(AssetEntity);
+typedef IndexCallback = Future<int> Function(AssetEntity);
 
 class AssetPickerTile extends StatefulWidget {
   final AssetSelectCallback onSelect;
@@ -451,11 +510,10 @@ class AssetPickerTile extends StatefulWidget {
 
 class _AssetPickerTileState extends State<AssetPickerTile> {
   Uint8List _data;
-  int _index;
+  int _index = -1;
 
   @override
   void initState() {
-    _index = widget.indexCallback(widget.asset);
     widget.asset
         .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
             quality: ThumbSize.QUALITY)
@@ -470,61 +528,69 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        _index = widget.onSelect(widget.asset);
+      onTap: () async {
+        _index = await widget.onSelect(widget.asset);
         setState(() {});
       },
-      child: Container(
-        width: double.infinity,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            children: [
-              AnimatedContainer(
-                duration: Duration(milliseconds: 0),
-                height: double.infinity,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  image: _data != null
-                      ? DecorationImage(
-                          image: MemoryImage(
-                            _data,
-                          ),
-                          colorFilter: ColorFilter.mode(
-                              _index < 0
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.3),
-                              BlendMode.modulate),
-                          fit: BoxFit.cover)
-                      : null,
-                ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  height: 20,
-                  width: 20,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1),
-                      color: _index < 0
-                          ? Colors.transparent
-                          : Theme.of(context).accentColor),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _index < 0 ? '' : (_index + 1).toString(),
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400),
+      child: FutureBuilder<int>(
+        future: widget.indexCallback(widget.asset),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+            _index = snapshot.data;
+          }
+          return Container(
+            width: double.infinity,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Stack(
+                children: [
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 0),
+                    height: double.infinity,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      image: _data != null
+                          ? DecorationImage(
+                              image: MemoryImage(
+                                _data,
+                              ),
+                              colorFilter: ColorFilter.mode(
+                                  _index < 0
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.3),
+                                  BlendMode.modulate),
+                              fit: BoxFit.cover)
+                          : null,
+                    ),
                   ),
-                ),
-              )
-            ],
-          ),
-        ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      height: 20,
+                      width: 20,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                          color: _index < 0
+                              ? Colors.transparent
+                              : Theme.of(context).accentColor),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _index < 0 ? '' : (_index + 1).toString(),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        }
       ),
     );
   }
