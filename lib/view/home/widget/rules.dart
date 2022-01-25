@@ -62,13 +62,14 @@ class MyRules extends HookWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+      Container(
+          margin: EdgeInsets.only(top: 8),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(top: 8),
-                  child: Text(
+                child: Text(
                     '自分のストラテジー',
                     style: TextStyle(
                         fontWeight: FontWeight.w400,
@@ -76,7 +77,6 @@ class MyRules extends HookWidget {
                         color: Theme.of(context).disabledColor),
                   ),
                 ),
-              ),
               GestureDetector(
                   onTap: () {
                     ApplicationRoutes.pushNamed(
@@ -85,13 +85,13 @@ class MyRules extends HookWidget {
                   },
                   child: SvgPicture.asset(
                     'assets/icon/explanation.svg',
-                    width: 17,
-                      height: 17,
+                    width: 20,
+                      height: 20,
                     color: Theme.of(context).disabledColor,
                   )
               )
             ],
-          ),
+          )),
           RuleCards(strategies: _homeProviderState.habit.strategies),
           Container(
             margin: EdgeInsets.symmetric(vertical: 8),
