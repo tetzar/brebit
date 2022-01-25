@@ -109,6 +109,7 @@ class HabitLog extends Model {
 
   static List<HabitLog> sortByCreatedAt(List<HabitLog> logs,
       [bool desc = true]) {
+    if (logs == null) return <HabitLog>[];
     if (desc) {
       logs.sort((a, b) {
         return a.createdAt.isAfter(b.createdAt) ? -1 : 1;

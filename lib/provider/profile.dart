@@ -188,9 +188,7 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
       AuthUser _user = state.user;
       _user.partners = result['partners'];
       _user.posts = result['posts'];
-      if (result['posts'].length < 10) {
-        noMoreContent = true;
-      }
+      if (result['posts'].length < 10) noMoreContent = true;
       state = state.copyWith(
           user: _user, habit: result['habit'], logs: result['logs']);
       return result['partner'];
