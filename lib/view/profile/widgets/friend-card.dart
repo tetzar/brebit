@@ -12,6 +12,7 @@ class FriendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("the bio is${user.bio}");
     return InkWell(
       onTap: () {
         if (context.read(authProvider.state).user.id != user.id) {
@@ -104,9 +105,10 @@ class FriendCard extends StatelessWidget {
                     //  bio
                     //---------------------------------
                     Container(
+                      alignment: Alignment.centerLeft,
                       margin: EdgeInsets.only(top: 4),
                       child: Text(
-                        '山路を登りながら、こう考えた。智に働けば角が立つ。情に掉させば流される。意地を通せば窮屈だ。とかくに人の世は住みにくい。',
+                        user.bio,
                         style: TextStyle(
                           color: Theme.of(context).textTheme.bodyText1.color,
                           fontSize: 13,
