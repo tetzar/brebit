@@ -548,7 +548,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
               height: 24,
             ),
             Text(
-              '現在のメールアドレスは\n$currentEmailです。\n更新しますか？。',
+              '現在のメールアドレス: \n$currentEmail',
               textAlign: TextAlign.center,
               style:
                   Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),

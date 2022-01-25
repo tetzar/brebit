@@ -1,3 +1,5 @@
+import 'package:brebit/view/widgets/app-bar.dart';
+
 import '../../../model/habit.dart';
 import '../../../provider/auth.dart';
 import '../../../provider/home.dart';
@@ -357,8 +359,7 @@ class _HomeTabsState extends State<HomeTabs> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-            _appbarTitle.containsKey(index) ? _appbarTitle[index] : 'Brebit'),
+        title: getMyAppBarTitle(_appbarTitle.containsKey(index) ? _appbarTitle[index] : 'Brebit', context),
         leading: HookBuilder(builder: (context) {
           useProvider(notificationProvider.state);
           int unreadCount =
