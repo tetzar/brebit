@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:brebit/view/widgets/app-bar.dart';
+
 import '../../../provider/auth.dart';
 import '../../../provider/posts.dart';
 import '../../../provider/home.dart';
@@ -21,7 +23,7 @@ class Settings extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('設定'),
+        title: getMyAppBarTitle('設定', context),
         centerTitle: true,
         leading: MyBackButton(),
       ),
@@ -90,7 +92,7 @@ class Settings extends StatelessWidget {
   }
 
   Future<void> showHelp(BuildContext ctx) async {
-    String _url = 'https://www.instagram.com/brebitjp/';
+    String _url = 'https://www.instagram.com/brebitapp/';
     await canLaunch(_url) ? await launch(_url) : throw 'Could not launch $_url';
   }
 

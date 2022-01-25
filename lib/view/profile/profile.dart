@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:brebit/view/widgets/app-bar.dart';
+
 import '../../../model/post.dart';
 import '../../../model/partner.dart';
 import '../../../provider/auth.dart';
@@ -28,7 +30,7 @@ class Profile extends HookWidget {
     return Scaffold(
         appBar: AppBar(
           leading: MyBackButton(),
-          title: Text(_authProviderState.user.customId),
+          title: getMyAppBarTitle(_authProviderState.user.customId, context),
           centerTitle: true,
           actions: [
             IconButton(

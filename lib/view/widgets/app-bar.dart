@@ -16,21 +16,17 @@ AppBar getMyAppBar(
     Function onBack,
     AppBarBackground background = AppBarBackground.white,
     @required BuildContext context}) {
-  TextStyle style = Theme.of(context)
-      .textTheme
-      .bodyText1
-      .copyWith(fontSize: 18, fontWeight: FontWeight.w700);
   if (background == AppBarBackground.white) {
     if (backButton == AppBarBackButton.none) {
       return AppBar(
-        title: Text(titleText, style: style),
+        title: getMyAppBarTitle(titleText, context),
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: actions,
       );
     } else {
       return AppBar(
-        title: Text(titleText, style: style),
+        title: getMyAppBarTitle(titleText, context),
         centerTitle: true,
         leading: backButton == AppBarBackButton.arrow
             ? MyBackButton(onPressed: onBack,)
@@ -41,7 +37,7 @@ AppBar getMyAppBar(
   } else {
     if (backButton == AppBarBackButton.none) {
       return AppBar(
-        title: Text(titleText, style: style),
+        title: getMyAppBarTitle(titleText, context),
         backgroundColor: Theme.of(context).backgroundColor,
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -49,7 +45,7 @@ AppBar getMyAppBar(
       );
     } else {
       return AppBar(
-        title: Text(titleText, style: style),
+        title: getMyAppBarTitle(titleText, context),
         centerTitle: true,
         backgroundColor: Theme.of(context).backgroundColor,
         leading: backButton == AppBarBackButton.arrow
@@ -60,3 +56,11 @@ AppBar getMyAppBar(
     }
   }
 }
+
+Text getMyAppBarTitle (String titleString, BuildContext context) {
+  TextStyle style = Theme.of(context)
+      .textTheme
+      .bodyText1
+      .copyWith(fontSize: 18, fontWeight: FontWeight.w700);
+  return Text(titleString, style: style,);
+  }
