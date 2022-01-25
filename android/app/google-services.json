@@ -53,6 +53,14 @@
                 "bundle_id": "dev.brebit",
                 "app_store_id": "1235601864"
               }
+            },
+            {
+              "client_id": "716144658636-01sa7lps42mfuv51djpmt7eojjcoihnm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "dev.brebit",
+                "app_store_id": "1235601864"
+              }
             }
           ]
         }
