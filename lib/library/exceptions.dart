@@ -1,7 +1,7 @@
 class UserNotFoundException implements Exception {
   String cause;
 
-  UserNotFoundException(this.cause);
+   UserNotFoundException(this.cause);
 }
 
 class UnauthorizedException implements Exception {

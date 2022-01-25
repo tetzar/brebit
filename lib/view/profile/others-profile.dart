@@ -402,6 +402,9 @@ class _ProfileContentState extends State<ProfileContent>
       FutureBuilder(
           future: _futureGetProfile,
           builder: (BuildContext context, AsyncSnapshot<void> snapshots) {
+            if (snapshots.hasError) {
+              MyErrorDialog.show(snapshots.error);
+            }
             if (snapshots.connectionState == ConnectionState.done) {
               return PostListView(
                   user: widget.user,
