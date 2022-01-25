@@ -167,7 +167,10 @@ void showCustomBottomSheet(
       // isDismissible: isDismissible,
       // enableDrag: enableDrag,
       topRadius: Radius.circular(30),
-      barrierColor: Color(0x80000000));
+      barrierColor: Color(0x80000000),
+      // animationCurve: Curves.easeOutBack,
+      // duration: const Duration(milliseconds: 200)
+      );
   if (onClosed != null) {
     onClosed();
   }

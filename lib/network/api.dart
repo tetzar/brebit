@@ -14,7 +14,7 @@ class   Network {
   // マイハウス
   // static final String _url = 'http://192.168.3.40:80';
   // イマジナリーハウス
-  static final String _url = 'http://192.168.242.170:4655';
+  static final String _url = 'http://192.168.243.97:80';
 
   static String get url => _url;
 

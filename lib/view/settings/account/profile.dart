@@ -28,7 +28,6 @@ class ProfileSettingProviderState {
 class ProfileSettingProvider
     extends StateNotifier<ProfileSettingProviderState> {
   ProfileSettingProvider(ProfileSettingProviderState state) : super(state);
-
   void set({String nickName, String bio, File imageFile, Widget image}) {
     this.state.nickName = nickName ?? this.state.nickName;
     this.state.bio = bio ?? this.state.bio;

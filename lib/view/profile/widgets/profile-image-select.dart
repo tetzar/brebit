@@ -176,7 +176,9 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
             ApplicationRoutes.pop();
             File file = await _selectImageFromGallery();
             if (file != null) {
-              imageFile = await MyImageCropper.cropImage(context, file);
+              File croppedImage = await MyImageCropper.cropImage(context, file);
+              if (croppedImage == null) return;
+              imageFile = croppedImage;
               _hasChanged = true;
               setState(() {});
             }
