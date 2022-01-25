@@ -47,7 +47,8 @@ class MyNotification{
     await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
 
     initializationSettingsAndroid =
-    AndroidInitializationSettings('app_icon');
+    AndroidInitializationSettings('brebit_sample_icon');
+    // TODO It is sample
     /// Note: permissions aren't requested here just to demonstrate that can be
     /// done later
     final IOSInitializationSettings initializationSettingsIOS =

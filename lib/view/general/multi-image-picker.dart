@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import '../../../route/route.dart';
-import '../widgets/back-button.dart';
+import 'package:brebit/view/timeline/create_post.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
+
+import '../../../route/route.dart';
+import '../widgets/back-button.dart';
 
 typedef ImagePickerSavedCallback = Future<List<AssetEntity>> Function(
     List<AssetEntity>);
@@ -50,10 +52,8 @@ class ImageAssetProvider extends StateNotifier<ImageAssetProviderState> {
   }
 
   List<AssetPathEntity> getPaths() {
-    if (state != null) {
-      if (state.entities != null) {
-        return state.entities;
-      }
+    if (state != null && state.entities != null) {
+      return state.entities;
     }
     return <AssetPathEntity>[];
   }
@@ -112,33 +112,33 @@ class _MyMultiImagePickerState extends State<MyMultiImagePicker> {
     } else {
       String title = getTitle(context);
       List<AssetPathEntity> paths = context.read(imageAssetProvider).getPaths();
-        return Scaffold(
-          appBar: AppBar(
-            leading: MyBackButton(),
-            title: Text(
-              title,
-            ),
-            actions: [
-              IconButton(
-                  icon: Icon(
-                    Icons.check,
-                    color: Theme.of(context).appBarTheme.iconTheme.color,
-                  ),
-                  onPressed: () {
-                    saveImage(context);
-                  })
-            ],
+      return Scaffold(
+        appBar: AppBar(
+          leading: MyBackButton(),
+          title: Text(
+            title,
           ),
-          body: ListView.builder(
-            itemCount: paths.length,
-            itemBuilder: (BuildContext context, int index) {
-              return GalleryTile(
-                pathEntity: paths[index],
-                max: widget.max,
-              );
-            },
-          ),
-        );
+          actions: [
+            IconButton(
+                icon: Icon(
+                  Icons.check,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                ),
+                onPressed: () {
+                  saveImage(context);
+                })
+          ],
+        ),
+        body: ListView.builder(
+          itemCount: paths.length,
+          itemBuilder: (BuildContext context, int index) {
+            return GalleryTile(
+              pathEntity: paths[index],
+              max: widget.max,
+            );
+          },
+        ),
+      );
     }
   }
 
@@ -169,7 +169,9 @@ class _GalleryTileState extends State<GalleryTile> {
     widget.pathEntity
         .getAssetListRange(start: 0, end: 1)
         .then((List<AssetEntity> list) async {
-      Uint8List _firstImageData = await list.first.thumbData;
+      Uint8List _firstImageData = await list.first.thumbDataWithSize(
+          ThumbSize.WIDTH, ThumbSize.HEIGHT,
+          quality: ThumbSize.QUALITY);
       setState(() {
         _data = _firstImageData;
       });
@@ -181,11 +183,12 @@ class _GalleryTileState extends State<GalleryTile> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        List<AssetEntity> assets = await ApplicationRoutes.push(MaterialPageRoute(
-            builder: (BuildContext context) => AssetPicker(
-                pathEntity: widget.pathEntity,
-                selected: context.read(imageAssetProvider).getSelected(),
-                max: widget.max)));
+        List<AssetEntity> assets = await ApplicationRoutes.push(
+            MaterialPageRoute(
+                builder: (BuildContext context) => AssetPicker(
+                    pathEntity: widget.pathEntity,
+                    selected: context.read(imageAssetProvider).getSelected(),
+                    max: widget.max)));
         if (assets != null) {
           ApplicationRoutes.pop(assets);
         }
@@ -309,7 +312,7 @@ class _AssetPickerState extends State<AssetPicker> {
     );
   }
 
-  void saveImage(BuildContext context){
+  void saveImage(BuildContext context) {
     ApplicationRoutes.pop(context.read(imageAssetProvider).getSelected());
   }
 }
@@ -339,11 +342,12 @@ class _ImageTilesState extends State<ImageTiles> {
   ScrollController _scrollController;
   List<AssetEntity> assets;
   List<AssetEntity> _selected;
+  List<File> _selectedFiles;
 
   @override
   void initState() {
     loaded = 0;
-    this._selected = widget.selected;
+    setImages(widget.selected);
     _scrollController = new ScrollController();
     nowLoading = false;
     assets = widget.assets;
@@ -383,26 +387,83 @@ class _ImageTilesState extends State<ImageTiles> {
     );
   }
 
-  int getIndex(AssetEntity asset) {
-    int index = this._selected.indexWhere((selectedAsset) =>
-        selectedAsset.relativePath + selectedAsset.title ==
-        asset.relativePath + asset.title);
-    return index;
+
+  bool sameImage(File imgFile1, File imgFile2) {
+    return imgFile1.path == imgFile2.path;
   }
 
-  int onSelect(AssetEntity asset, BuildContext context) {
-    int index = getIndex(asset);
+
+  Future<bool> setImages(List<AssetEntity> newImages) async {
+    this._selected = <AssetEntity>[];
+    this._selectedFiles = <File>[];
+    bool added = false;
+    for (AssetEntity newImage in newImages) {
+      if (await this.setImage(newImage)) {
+        added = true;
+      }
+    }
+    return added;
+  }
+
+  Future<bool> setImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
+    if (index < 0) {
+      _selected.add(image);
+      _selectedFiles.add(imageFile);
+      return true;
+    }
+    return false;
+  }
+
+
+  int getSameImageIndex(File imageFile) {
+    for (File file in _selectedFiles) {
+      if (sameImage(file, imageFile)) {
+        return _selectedFiles.indexOf(file);
+      }
+    }
+    return -1;
+  }
+
+
+  Future<File> getFileFromAssetEntity(AssetEntity image)async {
+    File imageFile = await image.file;
+    if (!imageFile.isAbsolute) {
+      imageFile = imageFile.absolute;
+    }
+    return imageFile;
+  }
+
+
+  Future<int> getIndex(AssetEntity asset) async {
+    return getSameImageIndex(
+      await getFileFromAssetEntity(asset)
+    );
+  }
+
+  Future<bool> unsetImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
+    if (index >= 0) {
+      _selected.removeAt(index);
+      _selectedFiles.removeAt(index);
+      return true;
+    }
+    return false;
+  }
+
+  Future<int> onSelect(AssetEntity asset, BuildContext context) async {
+    int index = await getIndex(asset);
     if (index < 0) {
       if (_selected.length < widget.max) {
-        this._selected.add(asset);
+        await setImage(asset);
         context.read(imageAssetProvider).setSelected(this._selected);
         return _selected.length - 1;
       }
       return -1;
     } else {
-      this._selected.removeWhere((selectedAsset) =>
-          selectedAsset.relativePath + selectedAsset.title ==
-          asset.relativePath + asset.title);
+      await unsetImage(asset);
       context.read(imageAssetProvider).setSelected(this._selected);
       return -1;
     }
@@ -430,8 +491,8 @@ class _ImageTilesState extends State<ImageTiles> {
   }
 }
 
-typedef AssetSelectCallback = int Function(AssetEntity);
-typedef IndexCallback = int Function(AssetEntity);
+typedef AssetSelectCallback = Future<int> Function(AssetEntity);
+typedef IndexCallback = Future<int> Function(AssetEntity);
 
 class AssetPickerTile extends StatefulWidget {
   final AssetSelectCallback onSelect;
@@ -449,12 +510,14 @@ class AssetPickerTile extends StatefulWidget {
 
 class _AssetPickerTileState extends State<AssetPickerTile> {
   Uint8List _data;
-  int _index;
+  int _index = -1;
 
   @override
   void initState() {
-    _index = widget.indexCallback(widget.asset);
-    widget.asset.thumbData.then((assetData) {
+    widget.asset
+        .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
+            quality: ThumbSize.QUALITY)
+        .then((assetData) {
       setState(() {
         _data = assetData;
       });
@@ -465,61 +528,69 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        _index = widget.onSelect(widget.asset);
+      onTap: () async {
+        _index = await widget.onSelect(widget.asset);
         setState(() {});
       },
-      child: Container(
-        width: double.infinity,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            children: [
-              AnimatedContainer(
-                duration: Duration(milliseconds: 0),
-                height: double.infinity,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  image: _data != null
-                      ? DecorationImage(
-                          image: MemoryImage(
-                            _data,
-                          ),
-                          colorFilter: ColorFilter.mode(
-                              _index < 0
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.3),
-                              BlendMode.modulate),
-                          fit: BoxFit.cover)
-                      : null,
-                ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  height: 20,
-                  width: 20,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1),
-                      color: _index < 0
-                          ? Colors.transparent
-                          : Theme.of(context).accentColor),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _index < 0 ? '' : (_index + 1).toString(),
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400),
+      child: FutureBuilder<int>(
+        future: widget.indexCallback(widget.asset),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+            _index = snapshot.data;
+          }
+          return Container(
+            width: double.infinity,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Stack(
+                children: [
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 0),
+                    height: double.infinity,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      image: _data != null
+                          ? DecorationImage(
+                              image: MemoryImage(
+                                _data,
+                              ),
+                              colorFilter: ColorFilter.mode(
+                                  _index < 0
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.3),
+                                  BlendMode.modulate),
+                              fit: BoxFit.cover)
+                          : null,
+                    ),
                   ),
-                ),
-              )
-            ],
-          ),
-        ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      height: 20,
+                      width: 20,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                          color: _index < 0
+                              ? Colors.transparent
+                              : Theme.of(context).accentColor),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _index < 0 ? '' : (_index + 1).toString(),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        }
       ),
     );
   }

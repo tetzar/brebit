@@ -2,6 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_manager/photo_manager.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../library/cache.dart';
 import '../../../model/draft.dart';
 import '../../../model/habit_log.dart';
@@ -12,22 +21,21 @@ import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../general/multi-image-picker.dart';
-import 'widget/log-card.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:uuid/uuid.dart';
+import 'widget/log-card.dart';
+
+class ThumbSize {
+  static const int HEIGHT = 256;
+  static const int WIDTH = 256;
+  static const int QUALITY = 100;
+}
 
 class FormValue {
   String _inputData = '';
   List<AssetEntity> _images = <AssetEntity>[];
+  List<File> _imageFiles = <File>[];
   HabitLog _log;
 
   void setInput(String text) {
@@ -44,44 +52,66 @@ class FormValue {
     return '';
   }
 
-  void setImage(AssetEntity image) {
-    int index = _images.indexWhere((img) => sameImage(image, img));
+  Future<bool> setImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
     if (index < 0) {
       _images.add(image);
+      _imageFiles.add(imageFile);
+      return true;
     }
-  }
-
-  void setImages(List<AssetEntity> newImages) {
-    this._images = <AssetEntity>[];
-    newImages.forEach((newImage) {
-      this.setImage(newImage);
-    });
-  }
-
-  void unsetImage(AssetEntity image) {
-    _images.removeWhere((img) => sameImage(image, img));
-  }
-
-  bool sameImage(AssetEntity image1, AssetEntity image2) {
-    // TODO: ここを元に戻す
-    print('image1.id:${image1.id}');
-    print('image2.id:${image1.id}');
     return false;
-    return image1.relativePath + image1.title ==
-        image2.relativePath + image2.title;
+  }
+
+  Future<bool> setImages(List<AssetEntity> newImages) async {
+    this._images = <AssetEntity>[];
+    bool added = false;
+    for (AssetEntity newImage in newImages) {
+      if (await this.setImage(newImage)) {
+        added = true;
+      }
+    }
+    return added;
+  }
+
+  Future<File> getFileFromAssetEntity(AssetEntity image)async {
+    File imageFile = await image.file;
+    if (!imageFile.isAbsolute) {
+      imageFile = imageFile.absolute;
+    }
+    return imageFile;
+  }
+
+  Future<bool> unsetImage(AssetEntity image) async {
+    File imageFile = await getFileFromAssetEntity(image);
+    int index = getSameImageIndex(imageFile);
+    if (index >= 0) {
+      _images.removeAt(index);
+      _imageFiles.removeAt(index);
+      return true;
+    }
+    return false;
+  }
+
+  bool sameImage(File imgFile1, File imgFile2) {
+    return imgFile1.path == imgFile2.path;
+  }
+
+  int getSameImageIndex(File imageFile) {
+    for (File file in _imageFiles) {
+      if (sameImage(file, imageFile)) {
+        return _imageFiles.indexOf(file);
+      }
+    }
+    return -1;
   }
 
   List<AssetEntity> getImages() {
     return this._images;
   }
 
-  bool isSetImage(AssetEntity image) {
-    int index = _images.indexWhere((img) => sameImage(image, img));
-    return index >= 0;
-  }
-
-  void removeImage(AssetEntity image) {
-    _images.removeWhere((img) => sameImage(image, img));
+  Future<bool> isSetImage(AssetEntity image) async {
+    return getSameImageIndex(await getFileFromAssetEntity(image)) >= 0;
   }
 
   void setLog(HabitLog setLog) {
@@ -144,7 +174,12 @@ Future<List<AssetEntity>> _getImages() async {
     if (list.length == 0) {
       return <AssetEntity>[];
     }
-    final assetList = await list.first.getAssetListRange(start: 0, end: 100);
+    AssetPathEntity allPath = list.firstWhere((path) => path.isAll, orElse: null);
+    if (allPath == null) {
+      list.sort((a, b) => a.assetCount > b.assetCount ? -1 : 1);
+      allPath = list.first;
+    }
+    final assetList = await allPath.getAssetListRange(start: 0, end: 100);
     if (assetList == null) {
       return <AssetEntity>[];
     }
@@ -189,25 +224,34 @@ class ImageSelectProvider extends StateNotifier<List<AssetEntity>> {
 
   void set(AssetEntity image) async {
     if ((state.length) < maxImages) {
-      _formValue.setImage(image);
+      if (await _formValue.setImage(image)) {
+        state = _formValue.getImages();
+      }
+    }
+  }
+
+  Future<void> setAll(List<AssetEntity> images) async {
+    if (images.length > maxImages) {
+      List<AssetEntity> sub = images.sublist(0, 4);
+      if (await _formValue.setImages(sub)) {
+        state = sub;
+      }
+    } else {
+      if (await _formValue.setImages(images)) {
+        state = images;
+      }
+    }
+  }
+
+  Future<void> unset(AssetEntity image) async {
+    if (await _formValue.unsetImage(image)) {
       state = _formValue.getImages();
     }
   }
 
-  void setAll(List<AssetEntity> images) async {
-    if (images.length > maxImages) {
-      List<AssetEntity> sub = images.sublist(0, 4);
-      _formValue.setImages(sub);
-      state = sub;
-    } else {
-      _formValue.setImages(images);
-      state = images;
-    }
-  }
-
-  void unset(AssetEntity image) {
-    _formValue.unsetImage(image);
-    state = _formValue.getImages();
+  Future<int> getIndex(AssetEntity image) async {
+    File imageFile = await _formValue.getFileFromAssetEntity(image);
+    return _formValue.getSameImageIndex(imageFile);
   }
 }
 
@@ -396,7 +440,8 @@ class CreatePost extends StatelessWidget {
           file = await ImageModel.Image.resizeImage(file);
           files.add(file);
         }
-        await PostApi.savePost(_formValue.getInput(), files, _formValue.getLog());
+        await PostApi.savePost(
+            _formValue.getInput(), files, _formValue.getLog());
         await MyLoading.dismiss();
         ApplicationRoutes.pop('reload');
       } catch (e) {
@@ -677,6 +722,7 @@ class _InputFormState extends State<InputForm> {
     try {
       List<AssetEntity> assets = await MyMultiImagePicker.pickImages(
           max: 4, selected: context.read(imageSelectProvider.state));
+      if (assets == null) return;
       context.read(imageSelectProvider).setAll(assets);
     } on Exception catch (e) {
       throw e;
@@ -821,7 +867,11 @@ class _ImageCardState extends State<ImageCard> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.imageAsset.thumbData.then((Uint8List _data) {
+      widget.imageAsset.thumbDataWithSize(
+          ThumbSize.WIDTH,
+          ThumbSize.HEIGHT,
+          quality: ThumbSize.QUALITY
+      ).then((Uint8List _data) {
         setState(() {
           _image = _data;
         });
@@ -832,7 +882,11 @@ class _ImageCardState extends State<ImageCard> {
 
   @override
   void didUpdateWidget(covariant ImageCard oldWidget) {
-    widget.imageAsset.thumbData.then((Uint8List _data) {
+    widget.imageAsset.thumbDataWithSize(
+      ThumbSize.WIDTH,
+      ThumbSize.HEIGHT,
+      quality: ThumbSize.QUALITY
+    ).then((Uint8List _data) {
       setState(() {
         _image = _data;
       });
@@ -914,7 +968,7 @@ class _ImagePickState extends State<ImagePick>
 
   @override
   Widget build(BuildContext context) {
-    List<AssetEntity> selected = useProvider(imageSelectProvider.state);
+    useProvider(imageSelectProvider.state);
     return Container(
       width: double.infinity,
       height: 260,
@@ -929,9 +983,7 @@ class _ImagePickState extends State<ImagePick>
           } else {
             if (snapshot.data == null) {
               return Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 24
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 width: double.infinity,
                 height: double.infinity,
                 alignment: Alignment.center,
@@ -939,20 +991,23 @@ class _ImagePickState extends State<ImagePick>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('ポストに写真を追加するには、Brebitによる写真へのアクセスを許可してください。',
-                      style: Theme.of(context).textTheme.subtitle1.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400
-                      ),
+                    Text(
+                      'ポストに写真を追加するには、Brebitによる写真へのアクセスを許可してください。',
+                      style: Theme.of(context)
+                          .textTheme
+                          .subtitle1
+                          .copyWith(fontSize: 12, fontWeight: FontWeight.w400),
                     ),
-                    SizedBox(height: 32,),
+                    SizedBox(
+                      height: 32,
+                    ),
                     GestureDetector(
-                      child: Text('写真へのアクセスを許可',
+                      child: Text(
+                        '写真へのアクセスを許可',
                         style: TextStyle(
-                          color: Theme.of(context).accentColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12
-                        ),
+                            color: Theme.of(context).accentColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12),
                       ),
                       onTap: () {
                         requestLibraryPermission();
@@ -965,14 +1020,7 @@ class _ImagePickState extends State<ImagePick>
               List<AssetEntity> imageFiles = snapshot.data;
               List<Widget> cards = <Widget>[];
               imageFiles.forEach((imageFile) {
-                int index = selected.indexWhere((selectedFile){
-                  // TODO: ここを元に戻す
-                    print('selectedFile: ${selectedFile.createDateTime}');
-                    return false;
-                    // selectedFile.relativePath + selectedFile.title ==
-                    // imageFile.relativePath + imageFile.title
-                });
-                cards.add(ImageTile(imageAsset: imageFile, index: index));
+                cards.add(ImageTile(imageAsset: imageFile));
               });
               return GridView.count(
                 crossAxisCount: 2,
@@ -1002,9 +1050,7 @@ class _ImagePickState extends State<ImagePick>
 
 class ImageTile extends StatefulWidget {
   final AssetEntity imageAsset;
-  final int index;
-
-  ImageTile({@required this.imageAsset, @required this.index});
+  ImageTile({@required this.imageAsset});
 
   @override
   _ImageTileState createState() => _ImageTileState();
@@ -1012,11 +1058,16 @@ class ImageTile extends StatefulWidget {
 
 class _ImageTileState extends State<ImageTile> {
   Uint8List image;
+  int index = -1;
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.imageAsset.thumbData.then((Uint8List data) {
+      widget.imageAsset.thumbDataWithSize(
+          ThumbSize.WIDTH,
+          ThumbSize.HEIGHT,
+          quality: ThumbSize.QUALITY
+      ).then((Uint8List data) {
         if (mounted) {
           setState(() {
             image = data;
@@ -1029,82 +1080,89 @@ class _ImageTileState extends State<ImageTile> {
 
   @override
   Widget build(BuildContext context) {
-    Widget child;
+    return FutureBuilder<int>(
+      future: getIndex(context),
+      builder: (context, snapshot) {
+        bool isSelected = false;
+        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+          index = snapshot.data;
+        }
+        Widget child;
 
-    if (image == null) {
-      child = Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Theme.of(context).disabledColor,
-      );
-    } else {
-      bool isSelected = false;
-      if (widget.index >= 0) {
-        isSelected = true;
-      }
-      child = Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: Image.memory(
-          image,
-          color: Colors.white.withOpacity(isSelected ? 0.3 : 1),
-          colorBlendMode: BlendMode.modulate,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-
-    bool isSelected = false;
-    if (widget.index >= 0) {
-      isSelected = true;
-    }
-    return InkWell(
-        onTap: () {
-          if (isSelected) {
-            context.read(imageSelectProvider).unset(widget.imageAsset);
-          } else {
-            context.read(imageSelectProvider).set(widget.imageAsset);
+        if (image == null) {
+          child = Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Theme.of(context).disabledColor,
+          );
+        } else {
+          if (index >= 0) {
+            isSelected = true;
           }
-          context.read(_savableProvider).set(_formValue.savable());
-        },
-        child: Container(
-          width: 129,
-          height: 129,
-          child: Stack(
-            children: [
-              AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(child: child, opacity: animation);
-                },
-                child: child,
+          child = Container(
+            width: double.infinity,
+            height: double.infinity,
+            child: Image.memory(
+              image,
+              color: Colors.white.withOpacity(isSelected ? 0.3 : 1),
+              colorBlendMode: BlendMode.modulate,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+        return InkWell(
+            onTap: () {
+              if (isSelected) {
+                context.read(imageSelectProvider).unset(widget.imageAsset);
+              } else {
+                context.read(imageSelectProvider).set(widget.imageAsset);
+              }
+              context.read(_savableProvider).set(_formValue.savable());
+            },
+            child: Container(
+              width: 129,
+              height: 129,
+              child: Stack(
+                children: [
+                  AnimatedSwitcher(
+                    duration: Duration(milliseconds: 300),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return FadeTransition(child: child, opacity: animation);
+                    },
+                    child: child,
+                  ),
+                  isSelected
+                      ? Positioned(
+                          right: 4,
+                          top: 4,
+                          height: 20,
+                          width: 20,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).primaryColor),
+                            alignment: Alignment.center,
+                            child: Text(
+                              (index + 1).toString(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText1
+                                  .copyWith(fontSize: 10),
+                            ),
+                          ))
+                      : Container(
+                          width: 0,
+                          height: 0,
+                        )
+                ],
               ),
-              isSelected
-                  ? Positioned(
-                      right: 4,
-                      top: 4,
-                      height: 20,
-                      width: 20,
-                      child: Container(
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).primaryColor),
-                        alignment: Alignment.center,
-                        child: Text(
-                          (widget.index + 1).toString(),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyText1
-                              .copyWith(fontSize: 10),
-                        ),
-                      ))
-                  : Container(
-                      width: 0,
-                      height: 0,
-                    )
-            ],
-          ),
-        ));
+            ));
+      }
+    );
+  }
+
+  Future<int> getIndex(BuildContext context) async {
+    return await context.read(imageSelectProvider).getIndex(widget.imageAsset);
   }
 }
 
@@ -1419,7 +1477,11 @@ class _DraftTileState extends State<DraftTile> {
     List<AssetEntity> assets = widget.draft.imageAssets;
     List<Uint8List> data = <Uint8List>[];
     for (AssetEntity asset in assets) {
-      Uint8List d = await asset.thumbData;
+      Uint8List d = await asset.thumbDataWithSize(
+          ThumbSize.WIDTH,
+          ThumbSize.HEIGHT,
+          quality: ThumbSize.QUALITY
+      );
       data.add(d);
     }
     return data;
