@@ -1,5 +1,7 @@
 // package:brebit/view/register.dart
 
+import 'package:brebit/view/home/navigation.dart';
+
 import '../../../model/habit.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
@@ -29,6 +31,12 @@ class _HomeContentState extends State<HomeContent>
     _tabController.animation.addListener(() {
       context.read(tabProvider).set(_tabController.animation.value);
     });
+    context.read(homeTabProvider).setListener((int s) {
+      if (s == 0) {
+        _tabController.animateTo(0);
+      }
+    });
+    _tabController.index = context.read(tabProvider.state).round();
     super.initState();
   }
 
