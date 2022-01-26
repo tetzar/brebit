@@ -1,11 +1,20 @@
+import 'package:brebit/view/home/widget/home-slider.dart';
 import 'package:brebit/view/widgets/app-bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../model/habit.dart';
 import '../../../provider/auth.dart';
 import '../../../provider/home.dart';
-import '../../../provider/posts.dart';
 import '../../../provider/notification.dart';
+import '../../../provider/posts.dart';
 import '../../../route/route.dart';
+import '../notification/notification.dart';
+import '../profile/profile.dart';
 import '../search/search.dart';
 import '../settings/about.dart';
 import '../settings/account.dart';
@@ -16,16 +25,7 @@ import '../settings/challenge.dart';
 import '../settings/home.dart';
 import '../timeline/post.dart';
 import '../timeline/posts.dart';
-import '../profile/profile.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'home.dart';
-import '../notification/notification.dart';
 
 FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -88,12 +88,21 @@ class Home extends StatelessWidget {
   }
 }
 
-final _tabProvider = StateNotifierProvider.autoDispose((ref) => TabState(0));
+final homeTabProvider = StateNotifierProvider.autoDispose((ref) => TabState(0));
+
+typedef HomeTabStateChangedCallback = void Function(int);
 
 class TabState extends StateNotifier<int> {
   TabState(int state) : super(state);
 
+  HomeTabStateChangedCallback callback;
+
+  void setListener(HomeTabStateChangedCallback callback) {
+    this.callback = callback;
+  }
+
   void set(int s) {
+    if (callback != null && s == 0 && state == 0 && !Home.navKey.currentState.canPop()) callback(state);
     state = s;
   }
 }
@@ -170,7 +179,7 @@ class _HomeNavigationState extends State<HomeNavigation> with SingleTickerProvid
 
   void _onItemTapped(int index) {
     if (index != 1) {
-      context.read(_tabProvider).set(index);
+      context.read(homeTabProvider).set(index);
     }
   }
 
@@ -178,11 +187,11 @@ class _HomeNavigationState extends State<HomeNavigation> with SingleTickerProvid
     if (Home.navKey.currentState.canPop()) {
       Home.navKey.currentState.pop();
     } else {
-      int index = context.read(_tabProvider.state);
+      int index = context.read(homeTabProvider.state);
       if (index == 0) {
         SystemNavigator.pop();
       } else {
-        context.read(_tabProvider).set(0);
+        context.read(homeTabProvider).set(0);
       }
     }
     return false;
@@ -216,7 +225,7 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
 
   @override
   Widget build(BuildContext context) {
-    int index = useProvider(_tabProvider.state);
+    int index = useProvider(homeTabProvider.state);
     return BottomNavigationBar(
       showSelectedLabels: true,
       showUnselectedLabels: true,
@@ -262,7 +271,6 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
       while (Home.navKey.currentState.canPop()) {
         Home.navKey.currentState.pop();
       }
-      context.read(_tabProvider).set(index);
     }
   }
 }
@@ -317,7 +325,7 @@ class _HomeTabsState extends State<HomeTabs> {
   Widget build(BuildContext context) {
     useProvider(authProvider.state);
     useProvider(homeProvider.state);
-    final index = useProvider(_tabProvider.state);
+    final index = useProvider(homeTabProvider.state);
     Habit habit = context.read(homeProvider).getHabit();
     List<Widget> actions = <Widget>[];
     if (habit != null) {

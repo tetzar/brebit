@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final tabProvider = StateNotifierProvider.autoDispose((ref) => TabProvider(0));
+final tabProvider = StateNotifierProvider((ref) => TabProvider(0));
 
 class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
