@@ -132,12 +132,8 @@ class NotificationProvider extends StateNotifier<NotificationProviderState> {
   }
 
   Future<void> markAsReadAll() async {
-    if (this.state.notifications == null) {
-      return;
-    }
-    if (this.state.notifications.length == 0) {
-      return;
-    }
+    if (this.state.notifications == null ||
+        this.state.notifications.length == 0) return;
     List<UserNotification> _notifications = state.notifications
         .where((_notification) => _notification.readAt == null)
         .toList();

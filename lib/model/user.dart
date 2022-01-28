@@ -126,6 +126,9 @@ class AuthUser extends Model {
       AuthUser.userList.add(newUser);
       userIndex = AuthUser.userList.length - 1;
     } else {
+      AuthUser currentUser = AuthUser.userList[userIndex];
+      newUser.posts = currentUser.posts;
+      newUser.partners = currentUser.partners;
       AuthUser.userList[userIndex] = newUser;
     }
     return AuthUser.userList[userIndex];
