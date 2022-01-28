@@ -28,6 +28,7 @@ class ProfileSettingProviderState {
 class ProfileSettingProvider
     extends StateNotifier<ProfileSettingProviderState> {
   ProfileSettingProvider(ProfileSettingProviderState state) : super(state);
+
   void set({String nickName, String bio, File imageFile, Widget image}) {
     this.state.nickName = nickName ?? this.state.nickName;
     this.state.bio = bio ?? this.state.bio;
@@ -53,24 +54,15 @@ class ProfileSettingProvider
   }
 
   File get file {
-    if (this.state == null) {
-      return null;
-    }
-    return this.state.imageFile;
+    return this.state?.imageFile;
   }
 
   String get name {
-    if (this.state == null) {
-      return '';
-    }
-    return this.state.nickName ?? '';
+    return this.state?.nickName ?? '';
   }
 
   String get bio {
-    if (this.state == null) {
-      return '';
-    }
-    return this.state.bio ?? '';
+    return this.state?.bio ?? '';
   }
 
   set bio(String bio) {
@@ -96,16 +88,16 @@ class ProfileSettingProvider
         notify = true;
       }
     }
-    if (this.name.length == 0 && name.length > 0) {
-      notify = true;
-    }
-    if (name.length == 0 && this.name.length > 0) {
-      notify = true;
-    }
+    if ((name.length == 0 && this.name.length > 0) ||
+        (this.name.length == 0 && name.length > 0)) notify = true;
     this.name = name;
-    if (notify) {
-      state = state;
-    }
+    if (notify) state = state;
+  }
+
+  void setBio(String text, AuthUser user) {
+    bool notify = (user.bio == text) != (this.bio == user.bio);
+    this.bio = text;
+    if (notify) state = state;
   }
 
   set image(Widget imageWidget) {
@@ -245,7 +237,6 @@ class SaveButton extends HookWidget {
     String bio = ctx.read(_profileSettingProvider).bio;
     bool imageDeleted = ctx.read(authProvider.state).user.hasImage() &&
         ctx.read(_profileSettingProvider.state).image == null;
-    bio = bio.length == 0 ? null : bio;
     try {
       MyLoading.startLoading();
       await ctx
@@ -447,10 +438,9 @@ class _NameFormState extends State<NameForm> {
           return null;
         },
         onChanged: (String text) {
-          context.read(_profileSettingProvider).setName(
-              text,
-              context.read(authProvider.state).user
-          );
+          context
+              .read(_profileSettingProvider)
+              .setName(text, context.read(authProvider.state).user);
         },
         hintText: 'やまだたろう',
         label: 'ニックネーム',
@@ -478,7 +468,8 @@ class _BioFormState extends State<BioForm> {
         initialValue: context.read(_profileSettingProvider).bio,
         hintText: 'プロフィールや意気込みを教えて下さい',
         onChanged: (String text) {
-          context.read(_profileSettingProvider).bio = text;
+          context.read(_profileSettingProvider).setBio(text,
+              context.read(authProvider.state).user);
         },
       ),
     );
