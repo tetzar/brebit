@@ -212,7 +212,8 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   }
 
   Future<void> reloadTimeLine() async {
-    if (state.user.posts != null && state.user.posts.length > 0) {
+    if (state.user.posts != null &&
+        state.user.posts.length > 0) {
         List<Post> newPosts = await ProfileApi.getProfilePosts(
             state.user, state.user.posts.first.createdAt);
         newPosts.addAll(state.user.posts);
@@ -246,7 +247,6 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     if (_post != null) {
       bool success = await state.user.deletePost(post);
       if (success) {
-        List<Post> posts = state.user.posts;
         removePost(post);
         return true;
       }
