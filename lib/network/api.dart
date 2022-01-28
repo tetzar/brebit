@@ -10,11 +10,11 @@ import 'auth.dart';
 
 class   Network {
   // for emulator
-  // static final String _url = 'http://127.0.0.1:80';
+  static final String _url = 'http://10.0.2.2:80';
   // マイハウス
   // static final String _url = 'http://192.168.3.40:80';
   // イマジナリーハウス
-  static final String _url = 'http://192.168.243.97:80';
+  // static final String _url = 'http://192.168.243.128:4655';
 
   static String get url => _url;
 
@@ -154,7 +154,7 @@ class   Network {
       if (response.statusCode == 404) {
         throw InvalidUrlException(response.body, causedAt);
       }
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 409) {
         return;
       }
       print(response.body);

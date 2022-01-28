@@ -85,6 +85,7 @@ class Post extends Model {
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
       );
     }
+    post.setParentToComments();
     return setPost(post);
   }
 
@@ -115,42 +116,37 @@ class Post extends Model {
   }
 
   Future<bool> addComment(String commentBody) async {
-    try {
-      Post post = await PostApi.addCommentToPost(this.id, commentBody);
-      if (post != null) {
-        post.comments.forEach((comment) {
-          comment.parent = this;
-          List<Comment> existing = this.comments.where((com) {
-            return com.id == comment.id;
-          }).toList();
-          if (existing.length == 0) {
-            int index = this.comments.indexWhere((com) {
-              return comment.createdAt.isBefore(com.createdAt);
-            });
-            if (index < 0) {
-              this.comments.add(comment);
-            } else {
-              this.comments.insert(index, comment);
-            }
-          }
+    Post post = await PostApi.addCommentToPost(this.id, commentBody);
+    if (post == null) return false;
+    post.comments.forEach((comment) {
+      comment.parent = this;
+      List<Comment> existing = this.comments.where((com) {
+        return com.id == comment.id;
+      }).toList();
+      if (existing.length == 0) {
+        int index = this.comments.indexWhere((com) {
+          return comment.createdAt.isBefore(com.createdAt);
         });
-        return true;
-      } else {
-        return false;
+        if (index < 0) {
+          this.comments.add(comment);
+        } else {
+          this.comments.insert(index, comment);
+        }
       }
-    } catch (e) {
-      throw e;
-    }
+    });
+    return true;
   }
 
-  Future<bool> deleteComment(Comment comment) async {
+Future<bool> deleteComment(Comment comment) async {
     bool res = await PostApi.deleteComment(comment.id);
-    if (res) {
-      this.comments.removeWhere((cmt) {
-        return cmt.id == comment.id;
-      });
-    }
+    if (res) removeComment(comment);
     return res;
+  }
+
+  void removeComment(Comment comment) {
+    this.comments.removeWhere((cmt) {
+      return cmt.id == comment.id;
+    });
   }
 
   List<String> getImageUrls() {
@@ -175,11 +171,11 @@ class Post extends Model {
         AuthUser.selfUser.likedPostIds.add(this.id);
       }
       int favCount = await PostApi.likeToPost(this.id);
+      if (favCount == null) return this.favoriteCount;
       this.favoriteCount = favCount;
       return favCount;
-    } else {
-      return this.favoriteCount;
     }
+    return this.favoriteCount;
   }
 
   Future<int> unlike() async {

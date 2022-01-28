@@ -335,8 +335,9 @@ LocalManager {
         return decoded.containsKey('id') ? decoded['id'] == post.id : false;
       });
       if (!(index < 0)) {
-        encodedPosts.removeAt(index);
-        await _set(_key, encodedPosts);
+        List<String> tempList = List<String>.from(encodedPosts);
+        tempList.removeAt(index);
+        await _set(_key, tempList);
       }
     }
   }
@@ -409,6 +410,23 @@ LocalManager {
         _encodedPosts[index] = jsonEncode(post.toJson());
       }
       await _set(key, _encodedPosts);
+    }
+  }
+
+  static Future<void> deleteProfilePost(AuthUser user, Post post) async {
+    String key =
+    _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
+    List<String> _encodedPosts = await _get(key);
+    if (_encodedPosts != null) {
+      int index = _encodedPosts.indexWhere((_encodedPost) {
+        Map decoded = jsonDecode(_encodedPost);
+        return decoded['id'] == post.id;
+      });
+      if (!(index < 0)) {
+        List<String> tempList = List<String>.from(_encodedPosts);
+        tempList.removeAt(index);
+        await _set(key, tempList);
+      }
     }
   }
   //---------------------------------

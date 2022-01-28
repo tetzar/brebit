@@ -143,7 +143,7 @@ class MyErrorDialog extends StatelessWidget {
     print('Error');
     print('=======================================');
     log('error', error: e);
-    debugDumpRenderTree();
+    // debugDumpRenderTree();
     showDialog(
         context: ApplicationRoutes.materialKey.currentContext,
         builder: (context) {

@@ -189,15 +189,8 @@ class _PostListViewState extends State<PostListView> {
                         post: _post));
                 if (removed ?? false) {
                   bool deleteSuccess = await context.read(authProvider).deletePost(_post);
-                  if (deleteSuccess != null) {
-                    if (deleteSuccess) {
-                      context
-                          .read(timelineProvider(friendProviderName))
-                          .removePost(_post);
-                      context
-                          .read(timelineProvider(challengeProviderName))
-                          .removePost(_post);
-                    }
+                  if (deleteSuccess != null && deleteSuccess) {
+                    await removePostFromAllProvider(_post, context);
                   }
                 }
               },
@@ -223,12 +216,7 @@ class _PostListViewState extends State<PostListView> {
                 .read(authProvider)
                 .deletePost(post);
             if (deleted) {
-              context
-                  .read(timelineProvider(friendProviderName))
-                  .removePost(post);
-              context
-                  .read(timelineProvider(challengeProviderName))
-                  .removePost(post);
+              await removePostFromAllProvider(post, context);
             }
           }),
       CancelBottomSheetItem(

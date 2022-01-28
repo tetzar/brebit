@@ -148,8 +148,10 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
   }
 
   void removePost(Post post) {
-    this.state.user.removePost(post);
-    state = state;
+    if (this.state != null && this.state.user != null) {
+      this.state.user.removePost(post);
+      state = state;
+    }
   }
 
   // --------------------------------

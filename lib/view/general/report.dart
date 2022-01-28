@@ -1,3 +1,8 @@
+import 'package:brebit/library/exceptions.dart';
+import 'package:brebit/model/comment.dart';
+import 'package:brebit/view/timeline/post.dart';
+import 'package:brebit/view/timeline/widget/comment-card.dart';
+
 import '../../../model/post.dart';
 import '../../../network/post.dart';
 import '../../../route/route.dart';
@@ -98,6 +103,16 @@ class _ReportViewContentState extends State<ReportViewContent> {
           await MyLoading.dismiss();
           ApplicationRoutes.push(MaterialPageRoute(
               builder: (context) => ReportComplete(widget.reportable)));
+        } on RecordNotFoundException {
+          if (widget.reportable is Comment) {
+            Comment comment = widget.reportable as Comment;
+            removeCommentFromProvider(comment, context);
+          } else {
+            Post post = widget.reportable as Post;
+            await removePostFromAllProvider(post, context);
+          }
+          await MyLoading.dismiss();
+          ApplicationRoutes.materialKey.currentState.pop(true);
         } catch (e) {
           await MyLoading.dismiss();
           MyErrorDialog.show(e);
@@ -191,7 +206,7 @@ class ReportCard extends StatelessWidget {
   }
 }
 
-class ReportComplete extends StatelessWidget {
+class   ReportComplete extends StatelessWidget {
   final dynamic reportable;
 
   ReportComplete(this.reportable);

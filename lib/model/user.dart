@@ -388,6 +388,7 @@ class AuthUser extends Model {
   }
 
   void removePost(Post post) {
+    if (this.posts == null) return;
     this.posts.removeWhere((_post) => _post.id == post.id);
   }
 }

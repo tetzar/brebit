@@ -212,8 +212,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   }
 
   Future<void> reloadTimeLine() async {
-    if (state.user.posts != null) {
-      if (state.user.posts.length > 0) {
+    if (state.user.posts != null && state.user.posts.length > 0) {
         List<Post> newPosts = await ProfileApi.getProfilePosts(
             state.user, state.user.posts.first.createdAt);
         newPosts.addAll(state.user.posts);
@@ -222,24 +221,21 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
         await LocalManager.setProfilePosts(this.state.user, newPosts);
         state = new AuthProviderState(user: user);
         return;
-      }
     }
     await this.getProfileTimeline();
   }
 
   Future<bool> reloadOlderTimeLine() async {
-    if (state.user.posts != null) {
-      if (state.user.posts.length > 0) {
-        List<Post> newPosts = await ProfileApi.getProfilePosts(
-            state.user, state.user.posts.last.createdAt, true);
-        if (newPosts.length == 0) {
-          this.noMoreContent = true;
-          return true;
-        }
-        state.user.posts.addAll(newPosts);
-        await LocalManager.setProfilePosts(this.state.user, state.user.posts);
-        state = new AuthProviderState(user: state.user);
+    if (state.user.posts != null && state.user.posts.length > 0) {
+      List<Post> newPosts = await ProfileApi.getProfilePosts(
+          state.user, state.user.posts.last.createdAt, true);
+      if (newPosts.length == 0) {
+        this.noMoreContent = true;
+        return true;
       }
+      state.user.posts.addAll(newPosts);
+      await LocalManager.setProfilePosts(this.state.user, state.user.posts);
+      state = new AuthProviderState(user: state.user);
     }
     return false;
   }
@@ -251,13 +247,18 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
       bool success = await state.user.deletePost(post);
       if (success) {
         List<Post> posts = state.user.posts;
-        posts.removeWhere((_post) => _post.id == post.id);
-        state.user.posts = posts;
-        state = new AuthProviderState(user: state.user);
+        removePost(post);
         return true;
       }
     }
     return false;
+  }
+
+  void removePost(Post post) {
+    if (this.state != null && this.state.user != null) {
+      this.state.user.removePost(post);
+      state = state;
+    }
   }
 
   //---------------------------------

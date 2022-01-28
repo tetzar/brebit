@@ -1104,13 +1104,7 @@ class _PostListViewState extends State<PostListView> {
             bool result = await ApplicationRoutes.push(
                 MaterialPageRoute(builder: (context) => ReportView(post)));
             if (result) {
-              context.read(profileProvider(post.user.id)).removePost(post);
-              context
-                  .read(timelineProvider(friendProviderName))
-                  .removePost(post);
-              context
-                  .read(timelineProvider(challengeProviderName))
-                  .removePost(post);
+              await removePostFromAllProvider(post, context);
             }
           }),
       CancelBottomSheetItem(
