@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:brebit/library/exceptions.dart';
+import 'package:brebit/provider/posts.dart';
+import 'package:brebit/provider/profile.dart';
+
 import '../../../library/cache.dart';
 import '../../../model/comment.dart';
 import '../../../model/post.dart';
@@ -49,19 +53,25 @@ class _PostPageState extends State<PostPage> {
 
   bool keyboardIsOpen;
 
+  Post _post;
+
   @override
   void initState() {
     if (args.post.hide) {
       Home.pop();
     }
-    Post post = args.post;
-    post.setParentToComments();
+    _post = args.post;
+    _post.setParentToComments();
     if (context.read(postProvider(args.post.id).state) == null) {
       context.read(postProvider(args.post.id)).setPost(args.post);
     } else if (context.read(postProvider(args.post.id).state).post == null) {
       context.read(postProvider(args.post.id)).setPost(args.post);
     }
-    context.read(postProvider(widget.args.post.id)).reload();
+    context.read(postProvider(widget.args.post.id)).reload().catchError(
+        (error) async {
+      await removePostFromAllProvider(widget.args.post, context);
+      Home.pop();
+    }, test: (e) => e is RecordNotFoundException);
     showForm = false;
     keyboardIsOpen = false;
     super.initState();
@@ -69,12 +79,12 @@ class _PostPageState extends State<PostPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return HookBuilder(
       builder: (context) {
         PostProviderState _postProviderState =
             useProvider(postProvider(args.post.id).state);
         useProvider(authProvider.state);
+        _post = _postProviderState.post;
         return KeyboardVisibilityBuilder(builder: (context, visible) {
           if (!visible) {
             if (_focusNode != null) {
@@ -132,6 +142,15 @@ class _PostPageState extends State<PostPage> {
       },
     );
   }
+
+  @override
+  void dispose() {
+    if (_post != null) {
+      LocalManager.updatePost(AuthUser.selfUser, _post, friendProviderName);
+      LocalManager.updatePost(AuthUser.selfUser, _post, challengeProviderName);
+    }
+    super.dispose();
+  }
 }
 
 class PostContent extends StatelessWidget {
@@ -152,7 +171,7 @@ class PostContent extends StatelessWidget {
             context: context,
             text: '投稿を破棄',
             onSelect: () async {
-              ApplicationRoutes.pop(context);
+              ApplicationRoutes.pop();
               Home.pop(true);
             }),
         CancelBottomSheetItem(
@@ -220,22 +239,62 @@ class PostContent extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Container(
-              padding: EdgeInsets.only(left: 8),
-              width: double.infinity,
-              child: post.user.id == thisUserId
-                  ? HookBuilder(
-                builder: (BuildContext context) {
-                  AuthUser user =
-                      useProvider(authProvider.state).user;
-                  return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+              child: Container(
+            padding: EdgeInsets.only(left: 8),
+            width: double.infinity,
+            child: post.user.id == thisUserId
+                ? HookBuilder(
+                    builder: (BuildContext context) {
+                      AuthUser user = useProvider(authProvider.state).user;
+                      return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    user.name,
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1
+                                            .color,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15),
+                                  ),
+                                ),
+                                Text(
+                                  post.getCreatedTime(),
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .subtitle1
+                                          .color,
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 15),
+                                ),
+                              ],
+                            ),
+                            Text('@' + user.customId,
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .subtitle1
+                                        .color,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 15))
+                          ]);
+                    },
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Text(
-                                user.name,
+                                post.user.name,
                                 style: TextStyle(
                                     color: Theme.of(context)
                                         .textTheme
@@ -257,58 +316,14 @@ class PostContent extends StatelessWidget {
                             ),
                           ],
                         ),
-                        Text('@' + user.customId,
+                        Text('@' + post.user.customId,
                             style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .subtitle1
-                                    .color,
+                                color:
+                                    Theme.of(context).textTheme.subtitle1.color,
                                 fontWeight: FontWeight.w400,
                                 fontSize: 15))
-                      ]);
-                },
-              )
-                  : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            post.user.name,
-                            style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyText1
-                                    .color,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15),
-                          ),
-                        ),
-                        Text(
-                          post.getCreatedTime(),
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .subtitle1
-                                  .color,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 15),
-                        ),
-                      ],
-                    ),
-                    Text('@' + post.user.customId,
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .textTheme
-                                .subtitle1
-                                .color,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 15))
-                  ]),
-            )
-          )
+                      ]),
+          ))
         ],
       ),
     );
@@ -343,6 +358,22 @@ class PostContent extends StatelessWidget {
           )),
     );
   }
+}
+
+Future<void> removePostFromAllProvider(Post post, BuildContext context) async {
+  context.read(timelineProvider(friendProviderName)).removePost(post);
+  context.read(timelineProvider(challengeProviderName)).removePost(post);
+  if (post.user.id == AuthUser.selfUser.id) {
+    context.read(authProvider).removePost(post);
+  } else {
+    context.read(profileProvider(post.user.id)).removePost(post);
+  }
+  await LocalManager.deletePost(
+      await context.read(authProvider).getUser(), post, friendProviderName);
+  await LocalManager.deletePost(
+      await context.read(authProvider).getUser(), post, challengeProviderName);
+  await LocalManager.deleteProfilePost(
+      await context.read(authProvider).getUser(), post);
 }
 
 class LikeButton extends StatefulWidget {
@@ -403,16 +434,28 @@ class _LikeButtonState extends State<LikeButton> {
                   _timer?.cancel();
                   _timer = Timer(Duration(milliseconds: 400), () async {
                     waiting = false;
-                    if (this._isLiked) {
-                      await post.like();
-                    } else {
-                      await post.unlike();
+                    try {
+                      if (this._isLiked) {
+                        await post.like();
+                      } else {
+                        await post.unlike();
+                      }
+                    } on RecordNotFoundException {
+                      await removePostFromAllProvider(post, context);
+                      if (Home.navKey.currentState.canPop()) {
+                        Home.navKey.currentState.pop();
+                      }
+                      return;
                     }
                     context.read(postProvider(post.id)).setPostNotify(post);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(), post, friendProviderName);
+                        await context.read(authProvider).getUser(),
+                        post,
+                        friendProviderName);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(), post, challengeProviderName);
+                        await context.read(authProvider).getUser(),
+                        post,
+                        challengeProviderName);
                   });
                 }),
           ),
@@ -679,13 +722,15 @@ class _CommentFormState extends State<CommentForm> {
         await LocalManager.updatePost(
             await context.read(authProvider).getUser(),
             _postProvider.getPost(),
-            friendProviderName
-        );
+            friendProviderName);
         await LocalManager.updatePost(
             await context.read(authProvider).getUser(),
             _postProvider.getPost(),
-            challengeProviderName
-        );
+            challengeProviderName);
+        await MyLoading.dismiss();
+      } on RecordNotFoundException {
+        await removePostFromAllProvider(widget.post, context);
+        Home.pop();
         await MyLoading.dismiss();
       } catch (e) {
         await MyLoading.dismiss();

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:brebit/library/exceptions.dart';
+import 'package:brebit/model/post.dart';
+
 import '../../../../library/cache.dart';
 import '../../../../model/comment.dart';
 import '../../../../model/user.dart';
@@ -30,6 +33,14 @@ class CommentTile extends StatefulWidget {
 class _CommentTileState extends State<CommentTile> {
   Comment _comment;
 
+  @override
+  void didUpdateWidget(covariant CommentTile oldWidget) {
+    setState(() {
+      _comment = widget.comment;
+    });
+    super.didUpdateWidget(oldWidget);
+  }
+
   void redirectToProfile(BuildContext context, AuthUser user) {
     Home.navKey.currentState.pushNamed('/profile', arguments: user);
   }
@@ -49,6 +60,9 @@ class _CommentTileState extends State<CommentTile> {
                     .read(postProvider(_comment.parent.id))
                     .deleteComment(_comment);
                 await MyLoading.dismiss();
+              } on RecordNotFoundException {
+                await MyLoading.dismiss();
+                removeCommentFromProvider(_comment, context);
               } catch (e) {
                 await MyLoading.dismiss();
                 MyErrorDialog.show(e);
@@ -256,6 +270,10 @@ class _CommentTileState extends State<CommentTile> {
   }
 }
 
+void removeCommentFromProvider(Comment comment, BuildContext context) {
+  context.read(postProvider(comment.parent.id)).removeComment(comment);
+}
+
 class CommentLikeButton extends StatefulWidget {
   final Comment comment;
 
@@ -303,10 +321,16 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
         _timer = Timer(Duration(milliseconds: 500), () async {
           waiting = false;
           int count;
-          if (this._isLiked) {
-            count = await comment.like();
-          } else {
-            count = await comment.unlike();
+          try {
+            if (this._isLiked) {
+              count = await comment.like();
+            } else {
+              count = await comment.unlike();
+            }
+          } on RecordNotFoundException {
+            removeCommentFromProvider(comment, context);
+          } catch (e) {
+            MyErrorDialog.show(e);
           }
           if (count != this.favCount && count != null) {
             setState(() {

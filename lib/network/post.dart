@@ -111,17 +111,13 @@ class PostApi {
         data
       )
     );
-    if (response.statusCode == 200) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      return Post.fromJson(body['post']);
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in getPost@PostApi');
+    Network.hasErrorMessage(response, "network/post@getPost");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    if (body.containsKey('message')) {
+      print(body['message']);
+      return null;
     }
+    return Post.fromJson(body['post']);
 
   }
 
@@ -134,37 +130,18 @@ class PostApi {
       data,
       postRoutes["addCommentToPost"],
     );
-    if (response.statusCode == 201) {
-      Map<String, dynamic> json = jsonDecode(response.body);
-      Post post = Post.fromJson(json);
-      return post;
-    } else if (response.statusCode == 404) {
-      Map<String, dynamic> json = jsonDecode(response.body);
-      print(json['message']);
-      return null;
-    } else {
-      print(response.body);
-      throw Exception('Error occurred in route/PostApi@addCommentToPost');
-    }
+    Network.hasErrorMessage(response, "network/post@addCommentToPost");
+    Map<String, dynamic> json = jsonDecode(response.body);
+    Post post = Post.fromJson(json);
+    return post;
   }
 
   static Future<bool> deleteComment(int commentId) async {
     Map<String, String> data = {'commentId': commentId.toString()};
     final http.Response response = await Network.deleteData(
         Network.routeNormalizeDelete(deleteRoutes['deleteComment'], data));
-    if (response.statusCode == 200) {
-      return true;
-    } else if (response.statusCode == 404) {
-      print(response.body);
-      return false;
-    } else if (response.statusCode == 409) {
-      print('comment has been deleted');
-      return false;
-    } else {
-      print('response statusCode : ' + response.statusCode.toString());
-      print(response.body);
-      throw Exception('unexpected error occurred in PostApi@deleteComment');
-    }
+    Network.hasErrorMessage(response, "network/post@deleteComment");
+    return true;
   }
 
   static Future<int> likeToComment(int commentId) async {
@@ -173,18 +150,11 @@ class PostApi {
     };
     final http.Response response =
         await Network.postData(data, postRoutes['likeToComment']);
-    if (response.statusCode == 201) {
+    Network.hasErrorMessage(response, "network/post@likeFromComment");
+    if (response.statusCode == 200) {
       return jsonDecode(response.body)['favorite_count'];
-    } else if (response.statusCode == 404) {
-      print(jsonDecode(response.body)['message']);
-      return null;
-    } else if (response.statusCode == 409) {
-      print('already liked');
-      return jsonDecode(response.body)['favorite_count'];
-    } else {
-      print(response.body);
-      throw Exception('error occurred in PostApi@likeToComment');
     }
+    return null;
   }
 
   static Future<int> unlikeFromComment(int commentId) async {
@@ -193,18 +163,11 @@ class PostApi {
     };
     final http.Response response = await Network.deleteData(
         Network.routeNormalizeDelete(deleteRoutes['unlikeFromComment'], data));
+    Network.hasErrorMessage(response, "network/post@unlikeFromComment");
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['favorite_count'];
-    } else if (response.statusCode == 404) {
-      print(jsonDecode(response.body)['message']);
-      return null;
-    } else if (response.statusCode == 409) {
-      print('already unLiked');
-      return null;
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in PostApi@unlikeFromComment');
     }
+    return null;
   }
 
   static Future<int> likeToPost(int postId) async {
@@ -213,19 +176,12 @@ class PostApi {
     };
     final http.Response response =
         await Network.postData(data, postRoutes['likeToPost']);
+    Network.hasErrorMessage(response, "network/post@likeToPost");
     if (response.statusCode == 201) {
       Map<String, dynamic> json = jsonDecode(response.body);
       return json['favorite_count'];
-    } else if (response.statusCode == 404) {
-      print(jsonDecode(response.body)['message']);
-      return null;
-    } else if (response.statusCode == 409) {
-      print('already liked');
-      return null;
-    } else {
-      print(response.body);
-      throw Exception('error occurred in PostApi@likeToPost');
     }
+    return null;
   }
 
   static Future<int> unlikeFromPost(int postId) async {
@@ -234,18 +190,11 @@ class PostApi {
     };
     final http.Response response = await Network.deleteData(
         Network.routeNormalizeDelete(deleteRoutes['unlikeFromPost'], data));
+    Network.hasErrorMessage(response, "network/post@unlikeFromPost");
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['favorite_count'];
-    } else if (response.statusCode == 404) {
-      print(jsonDecode(response.body)['message']);
-      return null;
-    } else if (response.statusCode == 409) {
-      print('already unLiked');
-      return null;
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in PostApi@unlikeFromPost');
     }
+    return null;
   }
 
   static Future<void> report(dynamic reportable, String body) async {
@@ -266,9 +215,6 @@ class PostApi {
         data,
         postRoutes['report']
     );
-    if (response.statusCode != 200) {
-      print(response.body);
-      throw Exception('unexpected error occurred in PostApi@report');
-    }
+    Network.hasErrorMessage(response, "network/post@report");
   }
 }

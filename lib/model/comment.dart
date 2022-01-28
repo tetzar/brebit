@@ -101,6 +101,7 @@ class Comment extends Model {
         AuthUser.selfUser.likedCommentIds.add(this.id);
       }
       int favCount = await PostApi.likeToComment(this.id);
+      if (favCount == null) return this.favoriteCount;
       this.favoriteCount = favCount;
     }
     return this.favoriteCount;

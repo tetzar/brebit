@@ -154,30 +154,18 @@ class _FriendTabState extends State<FriendTab> {
               Post _post = _timelineProviderState.posts[index];
               bool reported = await Home.pushNamed('/post',
                   args: PostArguments(post: _post));
-              if (reported != null) {
-                if (reported) {
-                  if (_post.isMine()) {
-                    bool deleteSuccess = await context
-                        .read(timelineProvider(friendProviderName))
-                        .deletePost(_post);
-                    if (deleteSuccess) {
-                      context
-                          .read(timelineProvider(challengeProviderName))
-                          .removePost(_post);
-                    } else {
-                      await context
-                          .read(timelineProvider(friendProviderName))
-                          .deletePost(_post);
-                    }
-                  } else {
-                    context
-                        .read(timelineProvider(friendProviderName))
-                        .removePost(_post);
-                    context
+              if (reported != null && reported) {
+                if (_post.isMine()) {
+                  bool deleteSuccess = await context
+                      .read(timelineProvider(friendProviderName))
+                      .deletePost(_post);
+                  if (!deleteSuccess) {
+                    await context
                         .read(timelineProvider(challengeProviderName))
-                        .removePost(_post);
+                        .deletePost(_post);
                   }
                 }
+                await removePostFromAllProvider(_post, context);
               }
             },
             onLongPress: () {
@@ -216,15 +204,12 @@ void _showActions(BuildContext context, Post post) {
               bool deleted = await context
                   .read(timelineProvider(friendProviderName))
                   .deletePost(post);
-              if (deleted) {
-                context
-                    .read(timelineProvider(challengeProviderName))
-                    .removePost(post);
-              } else {
+              if (!deleted) {
                 await context
                     .read(timelineProvider(challengeProviderName))
                     .deletePost(post);
               }
+              await removePostFromAllProvider(post, context);
               await MyLoading.dismiss();
             } catch (e) {
               await MyLoading.dismiss();
@@ -247,15 +232,8 @@ void _showActions(BuildContext context, Post post) {
             ApplicationRoutes.pop();
             bool result = await ApplicationRoutes.push(
                 MaterialPageRoute(builder: (context) => ReportView(post)));
-            if (result != null) {
-              if (result) {
-                context
-                    .read(timelineProvider(friendProviderName))
-                    .removePost(post);
-                context
-                    .read(timelineProvider(challengeProviderName))
-                    .removePost(post);
-              }
+            if (result != null && result) {
+              await removePostFromAllProvider(post, context);
             }
           }),
       CancelBottomSheetItem(

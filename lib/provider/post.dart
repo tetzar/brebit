@@ -1,18 +1,14 @@
-
 import '../../model/comment.dart';
 import '../../model/post.dart';
 import '../../network/post.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final postProvider =
-StateNotifierProvider.family<PostProvider, int>(
-  (ref, postId) => PostProvider(
-    new PostProviderState()
-  )
-);
+final postProvider = StateNotifierProvider.family<PostProvider, int>(
+    (ref, postId) => PostProvider(new PostProviderState()));
 
-class PostProviderState{
+class PostProviderState {
   Post post;
+
   PostProviderState({this.post});
 }
 
@@ -24,26 +20,21 @@ class PostProvider extends StateNotifier<PostProviderState> {
   }
 
   void setPostNotify(Post post) {
-    this.state = new PostProviderState(
-      post: post
-    );
+    this.state = new PostProviderState(post: post);
   }
 
-  Future<void> addCommentToPost(comment) async{
+  Future<void> addCommentToPost(comment) async {
     await state.post.addComment(comment);
     state = state;
   }
 
   Future<void> deleteComment(Comment comment) async {
-    await state.post.deleteComment(comment).then((value){
-      state = new PostProviderState(
-          post: state.post
-      );
-    });
+    await state.post.deleteComment(comment);
+    state = state;
   }
 
   void removeComment(Comment comment) {
-    state.post.comments.removeWhere((_comment) => _comment.id == comment.id);
+    state.post.removeComment(comment);
     state = state;
   }
 
@@ -57,4 +48,3 @@ class PostProvider extends StateNotifier<PostProviderState> {
     this.state = state;
   }
 }
-

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:brebit/library/exceptions.dart';
+import 'package:brebit/view/timeline/post.dart';
+
 import '../../../../library/cache.dart';
 import '../../../../model/post.dart';
 import '../../../../model/user.dart';
@@ -258,10 +261,14 @@ class _LikeButtonState extends State<LikeButton> {
                   _timer?.cancel();
                   _timer = Timer(Duration(milliseconds: 500), () async {
                     waiting = false;
-                    if (this._isLiked) {
-                      await post.like();
-                    } else {
-                      await post.unlike();
+                    try {
+                      if (this._isLiked) {
+                        await post.like();
+                      } else {
+                        await post.unlike();
+                      }
+                    } on RecordNotFoundException {
+                      await removePostFromAllProvider(post, context);
                     }
                     context.read(postProvider(post.id)).setPostNotify(post);
 

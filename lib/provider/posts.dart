@@ -148,20 +148,13 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
   }
 
   Future<bool> deletePost(Post post) async {
-    if (state == null) {
-      return null;
-    }
-    if (state.posts == null) {
-      return null;
-    }
+    if (state == null || state.posts == null) return null;
     Post _post = state.posts
         .firstWhere((_post) => _post.id == post.id, orElse: () => null);
     if (_post != null) {
       bool success = await _post.delete();
       if (success) {
-        List<Post> posts = state.posts;
-        posts.removeWhere((_post) => _post.id == post.id);
-        state = new TimelineProviderState(posts: posts);
+        removePost(_post);
         return true;
       }
     }
