@@ -70,17 +70,13 @@ class FriendTab extends StatefulHookWidget {
 class _FriendTabState extends State<FriendTab> {
   ScrollController _scrollController;
 
-  bool noMoreContent;
   bool nowLoading;
 
   @override
   void initState() {
     nowLoading = false;
-    noMoreContent = false;
     _scrollController = new ScrollController();
-    _scrollController.addListener(() async {
-      await reloadOlder();
-    });
+    _scrollController.addListener(() async {await reloadOlder();});
     super.initState();
   }
 
@@ -91,18 +87,18 @@ class _FriendTabState extends State<FriendTab> {
   }
 
   Future<void> reloadOlder() async {
-    if (!noMoreContent) {
-      if ((_scrollController.position.maxScrollExtent -
-                  _scrollController.position.pixels) <
-              400 &&
-          !nowLoading) {
-        nowLoading = true;
-        noMoreContent = await context
-            .read(timelineProvider(friendProviderName))
-            .reloadPosts(context, true);
-        nowLoading = false;
-        setState(() {});
-      }
+    if (context.read(timelineProvider(friendProviderName)).noMoreContent) return;
+    if ((_scrollController.position.maxScrollExtent -
+        _scrollController.position.pixels) <
+        400 &&
+        !nowLoading) {
+      print("reload older");
+      nowLoading = true;
+      await context
+          .read(timelineProvider(friendProviderName))
+          .reloadPosts(context, true);
+      nowLoading = false;
+      setState(() {});
     }
   }
 
@@ -112,9 +108,6 @@ class _FriendTabState extends State<FriendTab> {
         useProvider(timelineProvider(friendProviderName).state);
     if (_timelineProviderState.posts == null) {
       return Center(child: CircularProgressIndicator());
-    }
-    if (_timelineProviderState.posts.length < 10) {
-      noMoreContent = true;
     }
     return RefreshIndicator(
       onRefresh: () async {
@@ -126,11 +119,12 @@ class _FriendTabState extends State<FriendTab> {
         key: PageStorageKey('timeline/friend'),
         scrollDirection: Axis.vertical,
         controller: _scrollController,
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         shrinkWrap: true,
         itemCount: _timelineProviderState.posts.length + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == (_timelineProviderState.posts.length)) {
-            if (noMoreContent) {
+            if (context.read(timelineProvider(friendProviderName)).noMoreContent) {
               return Container(
                 height: 0,
               );
@@ -257,13 +251,11 @@ class ChallengeTab extends StatefulHookWidget {
 class _ChallengeTabState extends State<ChallengeTab> {
   ScrollController _scrollController;
 
-  bool noMoreContent;
   bool nowLoading;
 
   @override
   void initState() {
     nowLoading = false;
-    noMoreContent = false;
     _scrollController = new ScrollController();
     _scrollController.addListener(() async {
       await reloadOlder();
@@ -278,13 +270,13 @@ class _ChallengeTabState extends State<ChallengeTab> {
   }
 
   Future<void> reloadOlder() async {
-    if (!noMoreContent) {
+    if (context.read(timelineProvider(challengeProviderName)).noMoreContent) {
       if ((_scrollController.position.maxScrollExtent -
                   _scrollController.position.pixels) <
               400 &&
           !nowLoading) {
         nowLoading = true;
-        noMoreContent = await context
+        await context
             .read(timelineProvider(challengeProviderName))
             .reloadPosts(context, true);
         nowLoading = false;
@@ -300,9 +292,6 @@ class _ChallengeTabState extends State<ChallengeTab> {
     if (_timelineProviderState.posts == null) {
       return Center(child: CircularProgressIndicator());
     }
-    if (_timelineProviderState.posts.length < 10) {
-      noMoreContent = true;
-    }
     return RefreshIndicator(
       onRefresh: () async {
         await context
@@ -313,11 +302,12 @@ class _ChallengeTabState extends State<ChallengeTab> {
         key: PageStorageKey('timeline/challenge'),
         scrollDirection: Axis.vertical,
         controller: _scrollController,
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         shrinkWrap: true,
         itemCount: _timelineProviderState.posts.length + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == (_timelineProviderState.posts.length)) {
-            if (noMoreContent) {
+            if (context.read(timelineProvider(challengeProviderName)).noMoreContent) {
               return Container(
                 height: 0,
               );
