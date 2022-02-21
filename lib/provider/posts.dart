@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../library/cache.dart';
 import '../../model/post.dart';
 import '../../model/user.dart';
 import '../../network/post.dart';
 import 'auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final timelineProvider = StateNotifierProvider.family((ref, name) {
   return TimelineProvider(name, new TimelineProviderState());
@@ -24,6 +25,8 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
 
   DateTime lastUpdatedAt;
   DateTime lastOlderUpdatedAt;
+
+  bool noMoreContent = false;
 
   TimelineProvider(this.name, TimelineProviderState state) : super(state);
 
@@ -42,12 +45,15 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
           if (lastUpdatedAt == null) {
             lastUpdatedAt = DateTime.now();
             reloadPosts(context);
+            if (state.posts.length < 10) noMoreContent = true;
           }
           return false;
         } else {
           String json = await PostApi.getTimeLine(_user, name);
           List<Post> posts =
               Post.sortByCreatedAt(PostFromJson(jsonDecode(json)));
+          if (posts.length < 10) reloadPosts(context);
+          if (state.posts.length < 10) noMoreContent = true;
           await LocalManager.setPosts(_user, posts, name);
           state = new TimelineProviderState(posts: posts);
         }
@@ -80,19 +86,18 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
       if (older) {
         Post oldest = Post.getOldestInList(state.posts);
         try {
-          if (lastOlderUpdatedAt == null ? true :
-          lastOlderUpdatedAt.isBefore(
-            DateTime.now().subtract(Duration(minutes: 5))
-          )){
+          if (lastOlderUpdatedAt == null
+              ? true
+              : lastOlderUpdatedAt
+                  .isBefore(DateTime.now().subtract(Duration(minutes: 5)))) {
             String json = await PostApi.getTimeLine(
                 _authProviderState.user, name, oldest.createdAt, true);
             List<Post> newPosts = PostFromJson(jsonDecode(json));
-            if (newPosts.length == 0) {
-              return true;
-            }
+            if (newPosts.length < 10) noMoreContent = true;
+            if (newPosts.length == 0) return true;
             state = new TimelineProviderState(
-                posts:
-                Post.sortByCreatedAt(Post.mergeLists(newPosts, state.posts)));
+                posts: Post.sortByCreatedAt(
+                    Post.mergeLists(newPosts, state.posts)));
             await LocalManager.setPosts(
                 _authProviderState.user, state.posts, name);
           }
@@ -115,9 +120,8 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
             return true;
           }
           state = new TimelineProviderState(
-              posts: Post.sortByCreatedAt(
-                Post.mergeLists(newPosts, state.posts)
-              ));
+              posts:
+                  Post.sortByCreatedAt(Post.mergeLists(newPosts, state.posts)));
           await LocalManager.setPosts(
               _authProviderState.user, state.posts, name);
           return false;

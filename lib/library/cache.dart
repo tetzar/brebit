@@ -282,7 +282,7 @@ LocalManager {
       List<Post> posts = encodedPosts.map((d) {
         return Post.fromJson(jsonDecode(d));
       }).toList();
-      return posts;
+      return Post.sortByCreatedAt(posts);
     } else {
       return null;
     }
