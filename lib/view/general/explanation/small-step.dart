@@ -1,5 +1,6 @@
 
 import 'package:brebit/view/widgets/back-button.dart';
+import 'package:flutter_svg/svg.dart';
 
 import '../../widgets/app-bar.dart';
 import 'package:flutter/cupertino.dart';
@@ -52,22 +53,36 @@ class SmallStepExplanation extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyText1),
               ),
               Container(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: EdgeInsets.only(bottom: 8),
                 child:
                 Text(
                   'Brbitにおけるスモールステップ',
                   style: Theme.of(context).textTheme.bodyText1.copyWith(
-                      fontSize: 26,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700
                   ),
                 ),
               ),
               Container(
-                  margin: EdgeInsets.only(bottom: 24),
                 child:
                 Text("Brebitでは短期目標をクリアしていくことをスモールステップとしています。短期目標では連続して達成できた日数をカウントします。最初のステップ1は1日、最後のステップ8は20日です。",
                     style: Theme.of(context).textTheme.bodyText1),
               ),
+              SizedBox(height: 8,),
+              Container(
+                width: double.infinity,
+                child: SvgPicture.asset(
+                  'assets/steps/step0.svg',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              SizedBox(height: 8,),
+              Container(
+                child:
+                Text("ステップの途中で辞めたい習慣を実行してしまうと、カウントは0日に戻りますがステップは戻りません。\n目先の失敗ではなく過去の積み上げを意識して習慣改善に取り組んでみましょう。",
+                    style: Theme.of(context).textTheme.bodyText1),
+              ),
+              SizedBox(height: 24,),
             ],
           ),
         ),
