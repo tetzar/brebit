@@ -297,23 +297,22 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
   void initState() {
     this._isLiked = this.comment.isLiked();
     waiting = false;
+    this.favCount = comment.getFavCount();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!waiting) {
-      this._isLiked = comment.isLiked();
-    }
-    this.favCount = comment.getFavCount();
     ThemeData _theme = Theme.of(context);
     return InkWell(
       onTap: () async {
         waiting = true;
         setState(() {
           if (this._isLiked) {
+            if (favCount > 0) favCount -= 1;
             this._isLiked = false;
           } else {
+            favCount += 1;
             this._isLiked = true;
           }
         });
@@ -323,10 +322,14 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
           int count;
           try {
             if (this._isLiked) {
-              count = await comment.like();
+              await comment.like();
             } else {
-              count = await comment.unlike();
+              await comment.unlike();
             }
+            setState(() {
+              _isLiked = comment.isLiked();
+              favCount = comment.getFavCount();
+            });
           } on RecordNotFoundException {
             removeCommentFromProvider(comment, context);
           } catch (e) {

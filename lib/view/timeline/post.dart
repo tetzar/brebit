@@ -3,6 +3,12 @@ import 'dart:async';
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/provider/posts.dart';
 import 'package:brebit/provider/profile.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../library/cache.dart';
 import '../../../model/comment.dart';
@@ -15,17 +21,11 @@ import '../general/loading.dart';
 import '../general/report.dart';
 import '../home/navigation.dart';
 import '../profile/widgets/post-card-body/basic.dart';
-import 'posts.dart';
-import 'widget/comment-card.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'posts.dart';
+import 'widget/comment-card.dart';
 
 class PostArguments {
   Post post;
@@ -87,9 +87,7 @@ class _PostPageState extends State<PostPage> {
         _post = _postProviderState.post;
         return KeyboardVisibilityBuilder(builder: (context, visible) {
           if (!visible) {
-            if (_focusNode != null) {
-              _focusNode.unfocus();
-            }
+            if (_focusNode != null) _focusNode.unfocus();
             if (keyboardIsOpen) {
               showForm = false;
               keyboardIsOpen = false;
@@ -390,6 +388,7 @@ class _LikeButtonState extends State<LikeButton> {
   bool _isLiked;
   Timer _timer;
   bool waiting;
+  int favCount;
 
   _LikeButtonState({@required this.post});
 
@@ -397,6 +396,7 @@ class _LikeButtonState extends State<LikeButton> {
   void initState() {
     this._isLiked = this.post.isLiked();
     waiting = false;
+    favCount = post.getFavCount();
     super.initState();
   }
 
@@ -405,7 +405,6 @@ class _LikeButtonState extends State<LikeButton> {
     if (!waiting) {
       this._isLiked = post.isLiked();
     }
-    int favCount = post.getFavCount();
     ThemeData _theme = Theme.of(context);
     return Container(
       child: Row(
@@ -426,8 +425,10 @@ class _LikeButtonState extends State<LikeButton> {
                   waiting = true;
                   setState(() {
                     if (this._isLiked) {
+                      if (favCount > 0) favCount -= 1;
                       this._isLiked = false;
                     } else {
+                      favCount += 1;
                       this._isLiked = true;
                     }
                   });
@@ -440,6 +441,10 @@ class _LikeButtonState extends State<LikeButton> {
                       } else {
                         await post.unlike();
                       }
+                      setState(() {
+                        _isLiked = post.isLiked();
+                        favCount = post.getFavCount();
+                      });
                     } on RecordNotFoundException {
                       await removePostFromAllProvider(post, context);
                       if (Home.navKey.currentState.canPop()) {
