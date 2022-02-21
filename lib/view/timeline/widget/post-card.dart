@@ -211,6 +211,7 @@ class _LikeButtonState extends State<LikeButton> {
   bool _isLiked;
   Timer _timer;
   bool waiting;
+  int favCount;
 
   _LikeButtonState({@required this.post});
 
@@ -218,6 +219,7 @@ class _LikeButtonState extends State<LikeButton> {
   void initState() {
     this._isLiked = this.post.isLiked();
     waiting = false;
+    favCount = context.read(postProvider(post.id).state).post.getFavCount();
     super.initState();
   }
 
@@ -232,7 +234,6 @@ class _LikeButtonState extends State<LikeButton> {
     if (!waiting) {
       this._isLiked = post.isLiked();
     }
-    int favCount = context.read(postProvider(post.id).state).post.getFavCount();
     ThemeData _theme = Theme.of(context);
     return Container(
       child: Row(
@@ -253,8 +254,10 @@ class _LikeButtonState extends State<LikeButton> {
                   waiting = true;
                   setState(() {
                     if (this._isLiked) {
+                      if (favCount > 0) favCount -= 1;
                       this._isLiked = false;
                     } else {
+                      favCount += 1;
                       this._isLiked = true;
                     }
                   });
@@ -267,6 +270,10 @@ class _LikeButtonState extends State<LikeButton> {
                       } else {
                         await post.unlike();
                       }
+                      setState(() {
+                        _isLiked = context.read(postProvider(post.id).state).post.isLiked();
+                        favCount = context.read(postProvider(post.id).state).post.getFavCount();
+                      });
                     } on RecordNotFoundException {
                       await removePostFromAllProvider(post, context);
                     }

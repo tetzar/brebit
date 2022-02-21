@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/view/timeline/post.dart';
 import 'package:brebit/view/widgets/dialog.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../library/cache.dart';
 import '../../../../model/post.dart';
@@ -10,14 +14,9 @@ import '../../../../model/user.dart';
 import '../../../../provider/auth.dart';
 import '../../../../provider/post.dart';
 import '../../home/navigation.dart';
-import 'post-card-body/basic.dart';
 import '../../timeline/posts.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import '../others-profile.dart';
+import 'post-card-body/basic.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -29,8 +28,8 @@ class PostCard extends StatelessWidget {
     if (ctx.read(authProvider.state).user.id == user.id) {
       Home.pushNamed('/profile');
     } else {
-      Home.push(MaterialPageRoute(
-          builder: (context) => OtherProfile(user: user)));
+      Home.push(
+          MaterialPageRoute(builder: (context) => OtherProfile(user: user)));
     }
   }
 
@@ -55,12 +54,13 @@ class PostCard extends StatelessWidget {
                 child: Center(
                   child: CircleAvatar(
                     child: ClipOval(
-                      child: isMine ? HookBuilder(
-                        builder: (context) {
-                          AuthUser _user = useProvider(authProvider.state).user;
-                          return _user.getImageWidget();
-                        }
-                      ) : post.user.getImageWidget(),
+                      child: isMine
+                          ? HookBuilder(builder: (context) {
+                              AuthUser _user =
+                                  useProvider(authProvider.state).user;
+                              return _user.getImageWidget();
+                            })
+                          : post.user.getImageWidget(),
                     ),
                     radius: 28,
                     // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
@@ -103,7 +103,9 @@ class PostCard extends StatelessWidget {
                                                   text: user.name,
                                                 ),
                                                 TextSpan(
-                                                    text: " @${user.customId}".replaceAll("", "\u{200B}"),
+                                                    text: " @${user.customId}"
+                                                        .replaceAll(
+                                                            "", "\u{200B}"),
                                                     style: TextStyle(
                                                         color: Theme.of(context)
                                                             .textTheme
@@ -132,8 +134,8 @@ class PostCard extends StatelessWidget {
                                               text: post.user.name,
                                             ),
                                             TextSpan(
-                                                text:
-                                                    " @${post.user.customId}".replaceAll("", "\u{200B}"),
+                                                text: " @${post.user.customId}"
+                                                    .replaceAll("", "\u{200B}"),
                                                 style: TextStyle(
                                                     color: Theme.of(context)
                                                         .textTheme
@@ -202,6 +204,7 @@ class _LikeButtonState extends State<LikeButton> {
   Post post;
   bool _isLiked;
   Timer _timer;
+  int favCount;
 
   _LikeButtonState({@required this.post});
 
@@ -215,14 +218,13 @@ class _LikeButtonState extends State<LikeButton> {
   void initState() {
     this._isLiked = this.post.isLiked();
     context.read(postProvider(post.id)).setPost(post);
+    favCount = context.read(postProvider(post.id).state).post.getFavCount();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     ThemeData _theme = Theme.of(context);
-    int favCount =
-        context.read(postProvider(post.id).state).post.getFavCount();
     return Container(
       child: Row(
         children: [
@@ -241,8 +243,10 @@ class _LikeButtonState extends State<LikeButton> {
                 onPressed: () async {
                   setState(() {
                     if (this._isLiked) {
+                      if (favCount > 0) favCount -= 1;
                       this._isLiked = false;
                     } else {
+                      favCount += 1;
                       this._isLiked = true;
                     }
                   });
@@ -254,16 +258,24 @@ class _LikeButtonState extends State<LikeButton> {
                       } else {
                         await post.unlike();
                       }
+                      setState(() {
+                        _isLiked = context
+                            .read(postProvider(post.id).state)
+                            .post
+                            .isLiked();
+                        favCount = context
+                            .read(postProvider(post.id).state)
+                            .post
+                            .getFavCount();
+                      });
                     } on RecordNotFoundException {
                       removePostFromAllProvider(post, context);
-                    }catch (e) {
+                    } catch (e) {
                       MyErrorDialog.show(e);
                     }
                     context.read(postProvider(post.id)).setPostNotify(post);
                     await LocalManager.updateProfilePost(
-                      await context.read(authProvider).getUser(),
-                      post
-                    );
+                        await context.read(authProvider).getUser(), post);
                     await LocalManager.updatePost(
                         await context.read(authProvider).getUser(),
                         post,
