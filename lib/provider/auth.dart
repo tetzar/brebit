@@ -203,6 +203,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
           await LocalManager.setProfilePosts(this.state.user, resultPosts);
           state = new AuthProviderState(user: state.user);
         }
+        if (this.state.user.posts.length < 10) reloadOlderTimeLine();
         return true;
       }
     } catch (e) {
@@ -232,6 +233,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
           state.user, state.user.posts.last.createdAt, true);
       if (newPosts.length == 0) {
         this.noMoreContent = true;
+        state = state;
         return true;
       }
       state.user.posts.addAll(newPosts);

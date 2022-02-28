@@ -15,7 +15,7 @@ final timelineProvider = StateNotifierProvider.family((ref, name) {
 });
 
 class TimelineProviderState {
-  TimelineProviderState({this.posts});
+  TimelineProviderState({posts}) : this.posts = posts ??  [];
 
   List<Post> posts;
 }
@@ -31,8 +31,7 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
   TimelineProvider(this.name, TimelineProviderState state) : super(state);
 
   void logout() {
-    this.state.posts = null;
-    print(this.state.posts);
+    this.state.posts = [];
   }
 
   Future<bool> getTimeLine(BuildContext context, [DateTime t]) async {
@@ -40,7 +39,7 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
       try {
         AuthUser _user = await context.read(authProvider).getUser();
         List<Post> posts = await LocalManager.getPosts(_user, name);
-        if (!(posts == null)) {
+        if (posts.length > 0) {
           state = new TimelineProviderState(posts: posts);
           if (lastUpdatedAt == null) {
             lastUpdatedAt = DateTime.now();

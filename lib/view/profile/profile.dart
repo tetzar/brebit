@@ -1,26 +1,23 @@
 import 'dart:async';
 
 import 'package:brebit/view/widgets/app-bar.dart';
-
-import '../../../model/post.dart';
-import '../../../model/partner.dart';
-import '../../../provider/auth.dart';
-import '../../../provider/posts.dart';
-import '../../../route/route.dart';
-import '../home/navigation.dart' as Home;
-import 'widgets/post-card.dart';
-import 'widgets/profile-card.dart';
-import 'widgets/tab-bar.dart';
-import '../timeline/post.dart';
-import '../timeline/posts.dart';
-import '../widgets/back-button.dart';
-import '../widgets/bottom-sheet.dart';
-import '../widgets/user-card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../model/partner.dart';
+import '../../../model/post.dart';
+import '../../../provider/auth.dart';
+import '../../../route/route.dart';
+import '../home/navigation.dart' as Home;
+import '../timeline/post.dart';
+import '../widgets/back-button.dart';
+import '../widgets/bottom-sheet.dart';
+import '../widgets/user-card.dart';
 import 'others-profile.dart';
+import 'widgets/post-card.dart';
+import 'widgets/profile-card.dart';
+import 'widgets/tab-bar.dart';
 
 class Profile extends HookWidget {
   @override
@@ -110,7 +107,7 @@ class _ProfileContentState extends State<ProfileContent>
   }
 }
 
-class PostListView extends StatefulWidget {
+class PostListView extends StatefulHookWidget {
   final ScrollController controller;
 
   PostListView({this.controller});
@@ -124,23 +121,23 @@ class _PostListViewState extends State<PostListView> {
   bool nowLoading;
 
   Future<void> reloadOlder(BuildContext ctx) async {
-    if (!ctx.read(authProvider).noMoreContent) {
-      if ((widget.controller.position.maxScrollExtent -
-                  widget.controller.position.pixels) <
-              400 &&
-          !nowLoading) {
-        nowLoading = true;
-        await ctx.read(authProvider).reloadOlderTimeLine();
-        nowLoading = false;
-        setState(() {});
-      }
+    print("scrolled");
+    if (!ctx.read(authProvider).noMoreContent &&
+        (widget.controller.position.maxScrollExtent -
+                widget.controller.position.pixels) <
+            400 &&
+        !nowLoading) {
+      print("start reload");
+      nowLoading = true;
+      await ctx.read(authProvider).reloadOlderTimeLine();
+      nowLoading = false;
+      setState(() {});
     }
   }
 
   @override
   void initState() {
     nowLoading = false;
-    _posts = context.read(authProvider.state).user.posts;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.controller.addListener(() async {
         if (mounted) {
@@ -153,6 +150,7 @@ class _PostListViewState extends State<PostListView> {
 
   @override
   Widget build(BuildContext context) {
+    _posts = context.read(authProvider.state).user.posts;
     return RefreshIndicator(
       onRefresh: () async {
         await context.read(authProvider).reloadTimeLine();
@@ -185,10 +183,10 @@ class _PostListViewState extends State<PostListView> {
               onTap: () async {
                 Post _post = _posts[index];
                 bool removed = await Home.Home.pushNamed('/post',
-                    args: PostArguments(
-                        post: _post));
+                    args: PostArguments(post: _post));
                 if (removed ?? false) {
-                  bool deleteSuccess = await context.read(authProvider).deletePost(_post);
+                  bool deleteSuccess =
+                      await context.read(authProvider).deletePost(_post);
                   if (deleteSuccess != null && deleteSuccess) {
                     await removePostFromAllProvider(_post, context);
                   }
@@ -197,8 +195,7 @@ class _PostListViewState extends State<PostListView> {
               onLongPress: () {
                 _showActions(context, _posts[index]);
               },
-              child: PostCard(post: _posts[index], index: index)
-          );
+              child: PostCard(post: _posts[index], index: index));
         },
       ),
     );
@@ -212,9 +209,7 @@ class _PostListViewState extends State<PostListView> {
           text: '投稿を破棄',
           onSelect: () async {
             ApplicationRoutes.pop(context);
-            bool deleted = await context
-                .read(authProvider)
-                .deletePost(post);
+            bool deleted = await context.read(authProvider).deletePost(post);
             if (deleted) {
               await removePostFromAllProvider(post, context);
             }

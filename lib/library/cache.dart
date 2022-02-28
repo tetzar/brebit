@@ -284,7 +284,7 @@ LocalManager {
       }).toList();
       return Post.sortByCreatedAt(posts);
     } else {
-      return null;
+      return [];
     }
   }
 

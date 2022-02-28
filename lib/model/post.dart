@@ -248,6 +248,7 @@ Future<bool> deleteComment(Comment comment) async {
   //---------------------------------
 
   static List<Post> sortByCreatedAt(List<Post> posts, [bool desc = true]) {
+    if (posts == null) return [];
     if (desc) {
       posts.sort((a, b) {
         return a.createdAt.isAfter(b.createdAt) ? -1 : 1;
