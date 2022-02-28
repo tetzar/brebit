@@ -130,6 +130,7 @@ flutter:
     - assets/steps/
     - assets/splash/
     - assets/images/
+    - assets/explanation/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 
