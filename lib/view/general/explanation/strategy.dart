@@ -1,9 +1,6 @@
 import 'package:brebit/model/strategy.dart';
-import 'package:brebit/model/user.dart';
 import 'package:brebit/view/widgets/back-button.dart';
 import 'package:brebit/view/widgets/strategy-card.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter_svg/svg.dart';
 
 import '../../widgets/app-bar.dart';
 import 'package:flutter/material.dart';
@@ -32,14 +29,26 @@ class StrategyExplanation extends StatelessWidget {
       'rule': {'data_type': 'text', 'value': 'SNSのアプリを削除する'},
       'tags': {'data_type': 'array(unknown)', 'value': '[]'}
     };
+    final ScrollController _controller = ScrollController();
+    void _scrollTo(key) {
+      Scrollable.ensureVisible(
+        key.currentContext,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+    final ifThenExplanationPositionKey = new GlobalKey();
+    final twentySecExplanationPositionKey = new GlobalKey();
+
     return Scaffold(
       appBar: getMyAppBar(context: context, titleText: '', backButton: AppBarBackButton.none, background: AppBarBackground.white, actions: [MyBackButtonX()]),
       backgroundColor: Theme.of(context).primaryColor,
       body: Container(
         color: Theme.of(context).primaryColor,
         alignment: Alignment.center,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
         child: SingleChildScrollView(
+          controller: _controller,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -66,7 +75,7 @@ class StrategyExplanation extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  //TODO
+                  _scrollTo(ifThenExplanationPositionKey);
                 },
                 child: Stack(
                   children: [
@@ -89,7 +98,7 @@ class StrategyExplanation extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  //TODO
+                  _scrollTo(twentySecExplanationPositionKey);
                 },
                 child: Stack(
                   children: [
@@ -111,6 +120,7 @@ class StrategyExplanation extends StatelessWidget {
                 height: 16,
               ),
               Container(
+                key: ifThenExplanationPositionKey,
                 child: Text(
                   '習慣化の帝王、\nIf-Thenプランニング',
                   style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
@@ -151,6 +161,7 @@ class StrategyExplanation extends StatelessWidget {
                 height: 16,
               ),
               Container(
+                key: twentySecExplanationPositionKey,
                 child: Text(
                   '習慣づくりの基本、20秒ルール',
                   style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
@@ -181,9 +192,6 @@ class StrategyExplanation extends StatelessWidget {
               ),
               Container(
                 child: Text(" こうすることで、SNSはアプリではなくブラウザから見なければならなくなり、手間が増えます。\n\n「20秒ルール」とはいっても20秒にこだわりすぎず、ワンステップずつ手間を増やすところから初めていきましょう。", style: Theme.of(context).textTheme.bodyText1),
-              ),
-              SizedBox(
-                height: 24,
               ),
             ],
           ),

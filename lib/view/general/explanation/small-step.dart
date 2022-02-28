@@ -27,7 +27,7 @@ class SmallStepExplanation extends StatelessWidget {
       body: Container(
         color: Theme.of(context).primaryColor,
         alignment: Alignment.center,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 48),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +82,6 @@ class SmallStepExplanation extends StatelessWidget {
                 Text("ステップの途中で辞めたい習慣を実行してしまうと、カウントは0日に戻りますがステップは戻りません。\n目先の失敗ではなく過去の積み上げを意識して習慣改善に取り組んでみましょう。",
                     style: Theme.of(context).textTheme.bodyText1),
               ),
-              SizedBox(height: 24,),
             ],
           ),
         ),
