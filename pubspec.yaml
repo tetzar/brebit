@@ -98,6 +98,7 @@ dependencies:
   flutter_easyloading: ^3.0.0
   emojis: ^0.9.3
   flutter_html: ^2.1.0
+  flutter_launcher_icons: ^0.9.0
 
 dev_dependencies:
   flutter_test:
@@ -111,6 +112,11 @@ flutter_native_splash:
   image: "assets/splash/logo.png"
   color: "65BDC0"
   android_disable_fullscreen: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon/app_icon.png"
 
 # The following section is specific to Flutter.
 flutter:
@@ -131,6 +137,7 @@ flutter:
     - assets/splash/
     - assets/images/
     - assets/explanation/
+    - assets/app_icon/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 
