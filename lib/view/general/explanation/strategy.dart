@@ -46,9 +46,9 @@ class StrategyExplanation extends StatelessWidget {
       body: Container(
         color: Theme.of(context).primaryColor,
         alignment: Alignment.center,
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
         child: SingleChildScrollView(
           controller: _controller,
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
