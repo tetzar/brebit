@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:brebit/library/image-manager.dart';
 import 'package:brebit/view/timeline/create_post.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,34 +18,41 @@ typedef ImagePickerSavedCallback = Future<List<AssetEntity>> Function(
 class ImageAssetProviderState {
   List<AssetPathEntity> entities;
   List<AssetEntity> selected;
+  List<File> fileOfSelected;
 
-  ImageAssetProviderState({this.entities, this.selected});
+  ImageAssetProviderState({this.entities, this.selected, this.fileOfSelected});
 
   ImageAssetProviderState copyWith(
-      {List<AssetEntity> selected, List<AssetPathEntity> entities}) {
+      {List<AssetEntity> selected,
+      List<AssetPathEntity> entities,
+      List<File> fileOfSelected}) {
     return ImageAssetProviderState(
-        entities: entities != null ? entities : this.entities,
-        selected: selected != null ? selected : this.selected);
+        entities: entities ?? this.entities,
+        selected: selected ?? this.selected,
+        fileOfSelected: fileOfSelected ?? this.selected);
   }
 }
 
 class ImageAssetProvider extends StateNotifier<ImageAssetProviderState> {
   ImageAssetProvider(ImageAssetProviderState state) : super(state);
 
+  int max;
+
   int getSelectedCount() {
     return this.state.selected.length;
   }
 
-  Future<void> initialize(List<AssetEntity> selected) async {
+  Future<void> initialize(List<AssetEntity> selected, int max) async {
     List<AssetPathEntity> entities = await PhotoManager.getAssetPathList(
       type: RequestType.image,
       hasAll: true,
     );
     entities.sort((a, b) => a.assetCount > b.assetCount ? -1 : 1);
-    ImageAssetProviderState _newState = new ImageAssetProviderState();
-    _newState.entities = entities;
-    _newState.selected = selected;
-    this.state = _newState;
+    this.state = new ImageAssetProviderState(
+        entities: entities,
+        selected: selected,
+        fileOfSelected: await ImageManager.assetEntitiesToFiles(selected));
+    max = max;
   }
 
   bool initialized() {
@@ -52,23 +60,47 @@ class ImageAssetProvider extends StateNotifier<ImageAssetProviderState> {
   }
 
   List<AssetPathEntity> getPaths() {
-    if (state != null && state.entities != null) {
-      return state.entities;
-    }
+    if (state != null && state.entities != null) return state.entities;
     return <AssetPathEntity>[];
   }
 
   List<AssetEntity> getSelected() {
-    if (this.state != null) {
-      if (this.state.selected != null) {
-        return this.state.selected;
-      }
-    }
+    if (this.state != null && this.state.selected != null)
+      return this.state.selected;
     return <AssetEntity>[];
   }
 
-  void setSelected(List<AssetEntity> _selected) {
-    state = state.copyWith(selected: _selected);
+  bool isSetImage(File file) {
+    return getIndex(file) >= 0;
+  }
+
+  Future<bool> addSelected(AssetEntity asset) async {
+    if (!initialized() || state.selected.length >= 4) return false;
+    File file = await ImageManager.assetEntityToFile(asset);
+    if (isSetImage(file)) return false;
+    state.selected.add(asset);
+    state.fileOfSelected.add(file);
+    state = state;
+    return true;
+  }
+
+  Future<void> setSelected(List<AssetEntity> _selected) async {
+    state = state.copyWith(
+        selected: _selected,
+        fileOfSelected: await ImageManager.assetEntitiesToFiles(_selected));
+  }
+
+  bool removeSelected(File file) {
+    int index = state.fileOfSelected.indexWhere((f) => f.path == file.path);
+    if (index < 0) return false;
+    state.fileOfSelected.removeAt(index);
+    state.selected.removeAt(index);
+    state = state;
+    return true;
+  }
+
+  int getIndex(File file) {
+    return state.fileOfSelected.indexWhere((f) => f.path == file.path);
   }
 }
 
@@ -100,7 +132,7 @@ class MyMultiImagePicker extends StatefulHookWidget {
 class _MyMultiImagePickerState extends State<MyMultiImagePicker> {
   @override
   void initState() {
-    context.read(imageAssetProvider).initialize(widget.selected);
+    context.read(imageAssetProvider).initialize(widget.selected, widget.max);
     super.initState();
   }
 
@@ -186,9 +218,7 @@ class _GalleryTileState extends State<GalleryTile> {
         List<AssetEntity> assets = await ApplicationRoutes.push(
             MaterialPageRoute(
                 builder: (BuildContext context) => AssetPicker(
-                    pathEntity: widget.pathEntity,
-                    selected: context.read(imageAssetProvider).getSelected(),
-                    max: widget.max)));
+                    pathEntity: widget.pathEntity, max: widget.max)));
         if (assets != null) {
           ApplicationRoutes.pop(assets);
         }
@@ -245,12 +275,10 @@ class _GalleryTileState extends State<GalleryTile> {
 }
 
 class AssetPicker extends StatefulWidget {
-  final List<AssetEntity> selected;
   final int max;
   final AssetPathEntity pathEntity;
 
-  AssetPicker(
-      {@required this.pathEntity, @required this.selected, @required this.max});
+  AssetPicker({@required this.pathEntity, @required this.max});
 
   @override
   _AssetPickerState createState() => _AssetPickerState();
@@ -300,7 +328,6 @@ class _AssetPickerState extends State<AssetPicker> {
               ],
             ),
             body: ImageTiles(
-              selected: widget.selected,
               assets: snapshot.data,
               pageCount: pageCount,
               max: widget.max,
@@ -318,15 +345,13 @@ class _AssetPickerState extends State<AssetPicker> {
 }
 
 class ImageTiles extends StatefulWidget {
-  final List<AssetEntity> selected;
   final List<AssetEntity> assets;
   final int pageCount;
   final int max;
   final AssetPathEntity pathEntity;
 
   ImageTiles(
-      {@required this.selected,
-      @required this.assets,
+      {@required this.assets,
       @required this.pageCount,
       @required this.max,
       @required this.pathEntity});
@@ -341,13 +366,10 @@ class _ImageTilesState extends State<ImageTiles> {
   int loaded;
   ScrollController _scrollController;
   List<AssetEntity> assets;
-  List<AssetEntity> _selected;
-  List<File> _selectedFiles;
 
   @override
   void initState() {
     loaded = 0;
-    setImages(widget.selected);
     _scrollController = new ScrollController();
     nowLoading = false;
     assets = widget.assets;
@@ -387,84 +409,37 @@ class _ImageTilesState extends State<ImageTiles> {
     );
   }
 
-
   bool sameImage(File imgFile1, File imgFile2) {
     return imgFile1.path == imgFile2.path;
   }
 
-
-  Future<bool> setImages(List<AssetEntity> newImages) async {
-    this._selected = <AssetEntity>[];
-    this._selectedFiles = <File>[];
-    bool added = false;
-    for (AssetEntity newImage in newImages) {
-      if (await this.setImage(newImage)) {
-        added = true;
-      }
-    }
-    return added;
+  Future<bool> setImage(BuildContext context, AssetEntity image) async {
+    return await context.read(imageAssetProvider).addSelected(image);
   }
 
-  Future<bool> setImage(AssetEntity image) async {
-    File imageFile = await getFileFromAssetEntity(image);
-    int index = getSameImageIndex(imageFile);
-    if (index < 0) {
-      _selected.add(image);
-      _selectedFiles.add(imageFile);
-      return true;
-    }
-    return false;
+  int getSameImageIndex(BuildContext context, File imageFile) {
+    return context.read(imageAssetProvider).getIndex(imageFile);
   }
 
-
-  int getSameImageIndex(File imageFile) {
-    for (File file in _selectedFiles) {
-      if (sameImage(file, imageFile)) {
-        return _selectedFiles.indexOf(file);
-      }
-    }
-    return -1;
+  Future<File> getFileFromAssetEntity(AssetEntity image) async {
+    return await ImageManager.assetEntityToFile(image);
   }
 
-
-  Future<File> getFileFromAssetEntity(AssetEntity image)async {
-    File imageFile = await image.file;
-    if (!imageFile.isAbsolute) {
-      imageFile = imageFile.absolute;
-    }
-    return imageFile;
+  Future<int> getIndex(BuildContext context, AssetEntity asset) async {
+    return getSameImageIndex(context, await getFileFromAssetEntity(asset));
   }
 
-
-  Future<int> getIndex(AssetEntity asset) async {
-    return getSameImageIndex(
-      await getFileFromAssetEntity(asset)
-    );
-  }
-
-  Future<bool> unsetImage(AssetEntity image) async {
-    File imageFile = await getFileFromAssetEntity(image);
-    int index = getSameImageIndex(imageFile);
-    if (index >= 0) {
-      _selected.removeAt(index);
-      _selectedFiles.removeAt(index);
-      return true;
-    }
-    return false;
+  bool unsetImage(BuildContext context, File file) {
+    return context.read(imageAssetProvider).removeSelected(file);
   }
 
   Future<int> onSelect(AssetEntity asset, BuildContext context) async {
-    int index = await getIndex(asset);
-    if (index < 0) {
-      if (_selected.length < widget.max) {
-        await setImage(asset);
-        context.read(imageAssetProvider).setSelected(this._selected);
-        return _selected.length - 1;
-      }
+    File file = await ImageManager.assetEntityToFile(asset);
+    if (context.read(imageAssetProvider).isSetImage(file)) {
+      unsetImage(context, file);
       return -1;
     } else {
-      await unsetImage(asset);
-      context.read(imageAssetProvider).setSelected(this._selected);
+      if (await setImage(context, asset)) return await getIndex(context, asset);
       return -1;
     }
   }
@@ -492,7 +467,7 @@ class _ImageTilesState extends State<ImageTiles> {
 }
 
 typedef AssetSelectCallback = Future<int> Function(AssetEntity);
-typedef IndexCallback = Future<int> Function(AssetEntity);
+typedef IndexCallback = Future<int> Function(BuildContext, AssetEntity);
 
 class AssetPickerTile extends StatefulWidget {
   final AssetSelectCallback onSelect;
@@ -511,6 +486,7 @@ class AssetPickerTile extends StatefulWidget {
 class _AssetPickerTileState extends State<AssetPickerTile> {
   Uint8List _data;
   int _index = -1;
+  Future<int> futureIndex;
 
   @override
   void initState() {
@@ -520,6 +496,11 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
         .then((assetData) {
       setState(() {
         _data = assetData;
+      });
+    });
+    widget.indexCallback(context, widget.asset).then((index){
+      setState(() {
+        _index = index;
       });
     });
     super.initState();
@@ -532,66 +513,58 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
         _index = await widget.onSelect(widget.asset);
         setState(() {});
       },
-      child: FutureBuilder<int>(
-        future: widget.indexCallback(widget.asset),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-            _index = snapshot.data;
-          }
-          return Container(
-            width: double.infinity,
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Stack(
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 0),
-                    height: double.infinity,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      image: _data != null
-                          ? DecorationImage(
-                              image: MemoryImage(
-                                _data,
-                              ),
-                              colorFilter: ColorFilter.mode(
-                                  _index < 0
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.3),
-                                  BlendMode.modulate),
-                              fit: BoxFit.cover)
-                          : null,
-                    ),
-                  ),
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      height: 20,
-                      width: 20,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1),
-                          color: _index < 0
-                              ? Colors.transparent
-                              : Theme.of(context).accentColor),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _index < 0 ? '' : (_index + 1).toString(),
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400),
+      child: Container(
+        width: double.infinity,
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                duration: Duration(milliseconds: 0),
+                height: double.infinity,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  image: _data != null
+                      ? DecorationImage(
+                      image: MemoryImage(
+                        _data,
                       ),
-                    ),
-                  )
-                ],
+                      colorFilter: ColorFilter.mode(
+                          _index < 0
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.3),
+                          BlendMode.modulate),
+                      fit: BoxFit.cover)
+                      : null,
+                ),
               ),
-            ),
-          );
-        }
-      ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  height: 20,
+                  width: 20,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                      color: _index < 0
+                          ? Colors.transparent
+                          : Theme.of(context).accentColor),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _index < 0 ? '' : (_index + 1).toString(),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      )
     );
   }
 }
