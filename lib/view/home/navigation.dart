@@ -1,4 +1,3 @@
-import 'package:brebit/view/home/widget/home-slider.dart';
 import 'package:brebit/view/widgets/app-bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

@@ -238,27 +238,35 @@ class _FriendListViewState extends State<FriendListView> {
   Widget build(BuildContext context) {
     AuthProviderState _authProviderState = useProvider(authProvider.state);
     List<Partner> _partners = _authProviderState.user.getAcceptedPartners();
-    return ListView.builder(
-      key: PageStorageKey('profile/friend'),
-      itemCount: _partners.length,
-      itemBuilder: (BuildContext context, int index) {
-        bool isFriend = _authProviderState.user.isFriend(_partners[index].user);
-        return InkWell(
-            onTap: () {
-              if (context.read(authProvider.state).user.id ==
-                  _partners[index].user.id) {
-                Home.Home.pushNamed('/profile');
-              } else {
-                Home.Home.push(MaterialPageRoute(
-                    builder: (context) =>
-                        OtherProfile(user: _partners[index].user)));
-              }
-            },
-            child: UserCard(
-              user: _partners[index].user,
-              isFriend: isFriend,
-            ));
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read(authProvider).reloadProfile();
+        if (mounted) {
+          setState(() {});
+        }
       },
+      child: ListView.builder(
+        key: PageStorageKey('profile/friend'),
+        itemCount: _partners.length,
+        itemBuilder: (BuildContext context, int index) {
+          bool isFriend = _authProviderState.user.isFriend(_partners[index].user);
+          return InkWell(
+              onTap: () {
+                if (context.read(authProvider.state).user.id ==
+                    _partners[index].user.id) {
+                  Home.Home.pushNamed('/profile');
+                } else {
+                  Home.Home.push(MaterialPageRoute(
+                      builder: (context) =>
+                          OtherProfile(user: _partners[index].user)));
+                }
+              },
+              child: UserCard(
+                user: _partners[index].user,
+                isFriend: isFriend,
+              ));
+        },
+      ),
     );
   }
 }
