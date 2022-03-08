@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/category.dart';
-import '../../../model/post.dart';
 import '../../../model/habit.dart';
 import '../../../model/habit_log.dart';
 import '../../../model/partner.dart';
+import '../../../model/post.dart';
 import '../../../model/user.dart';
 import '../../../network/partner.dart';
 import '../../../provider/auth.dart';
@@ -14,22 +18,18 @@ import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../general/report.dart';
 import '../home/navigation.dart' as Home;
-import 'did-confirmation.dart';
-import 'widgets/post-card.dart';
-import 'widgets/friend-card.dart';
-import 'widgets/others-profile-card.dart';
-import 'widgets/others-tab-bar.dart';
 import '../timeline/create_post.dart';
 import '../timeline/post.dart';
 import '../timeline/posts.dart';
 import '../widgets/back-button.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'activity.dart';
+import 'did-confirmation.dart';
+import 'widgets/friend-card.dart';
+import 'widgets/others-profile-card.dart';
+import 'widgets/others-tab-bar.dart';
+import 'widgets/post-card.dart';
 
 class OtherProfile extends StatelessWidget {
   final AuthUser user;
@@ -58,10 +58,7 @@ class OtherProfile extends StatelessWidget {
   }
 
   void showActions(BuildContext context) {
-    Partner _partner = context
-        .read(authProvider.state)
-        .user
-        .getPartner(user);
+    Partner _partner = context.read(authProvider.state).user.getPartner(user);
     PartnerState _partnerState = PartnerState.notRelated;
     if (_partner != null) {
       _partnerState = _partner.getState();
@@ -149,24 +146,18 @@ class OtherProfile extends StatelessWidget {
     showCustomBottomSheet(
         hintText: user.customId,
         context: ApplicationRoutes.materialKey.currentContext,
-        backGroundColor: Theme
-            .of(context)
-            .primaryColor,
+        backGroundColor: Theme.of(context).primaryColor,
         items: _items);
   }
 
   Future<void> breakOffFriend(BuildContext context) async {
-    Partner partner = context
-        .read(authProvider.state)
-        .user
-        .getPartner(user);
+    Partner partner = context.read(authProvider.state).user.getPartner(user);
     try {
       MyLoading.startLoading();
       await PartnerApi.breakOffWithPartner(partner);
       context.read(authProvider).breakOffWithFriend(partner);
-      user.removePartner(user.getPartner(context
-          .read(authProvider.state)
-          .user));
+      user.removePartner(
+          user.getPartner(context.read(authProvider.state).user));
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -195,12 +186,11 @@ class OtherProfile extends StatelessWidget {
     try {
       MyLoading.startLoading();
       Map<String, Partner> result = await PartnerApi.acceptPartnerRequest(
-          context
-              .read(authProvider.state)
-              .user
-              .getPartner(user));
+          context.read(authProvider.state).user.getPartner(user));
       context.read(authProvider).setPartner(result['self_relation']);
-      context.read(profileProvider(user.id)).setPartner(result['other_relation']);
+      context
+          .read(profileProvider(user.id))
+          .setPartner(result['other_relation']);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -212,17 +202,12 @@ class OtherProfile extends StatelessWidget {
   Future<void> cancelRequest(BuildContext context) async {
     try {
       MyLoading.startLoading();
-      Partner partner = context
-          .read(authProvider.state)
-          .user
-          .getPartner(user);
+      Partner partner = context.read(authProvider.state).user.getPartner(user);
       await PartnerApi.cancelPartnerRequest(partner);
       context.read(authProvider).removePartner(partner);
       context
           .read(profileProvider(user.id))
-          .removePartner(context
-          .read(authProvider.state)
-          .user);
+          .removePartner(context.read(authProvider.state).user);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -239,8 +224,7 @@ class OtherProfile extends StatelessWidget {
           return MyDialog(
             title: Text(
               '@${user.customId}さん\nをブロック',
-              style: Theme
-                  .of(context)
+              style: Theme.of(context)
                   .textTheme
                   .bodyText1
                   .copyWith(fontWeight: FontWeight.w700, fontSize: 18),
@@ -249,9 +233,7 @@ class OtherProfile extends StatelessWidget {
             body: Text(
               '@${user.customId}さんはあなたのプロフィールを表示したりフレンド申請したりできなくなります。',
               style: TextStyle(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
@@ -261,7 +243,9 @@ class OtherProfile extends StatelessWidget {
               try {
                 MyLoading.startLoading();
                 Map<String, Partner> partners = await PartnerApi.block(user);
-                context.read(authProvider).setPartner(partners['self_relation']);
+                context
+                    .read(authProvider)
+                    .setPartner(partners['self_relation']);
                 context
                     .read(profileProvider(user.id))
                     .setPartner(partners['other_relation']);
@@ -272,11 +256,7 @@ class OtherProfile extends StatelessWidget {
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme
-                .of(context)
-                .accentTextTheme
-                .subtitle1
-                .color,
+            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
           );
         });
   }
@@ -293,9 +273,7 @@ class OtherProfile extends StatelessWidget {
             body: Text(
               '@${user.customId}さんの\nブロックを解除',
               style: TextStyle(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
@@ -306,27 +284,18 @@ class OtherProfile extends StatelessWidget {
                 MyLoading.startLoading();
                 await PartnerApi.unblock(user);
                 context.read(authProvider).removePartner(
-                    context
-                        .read(authProvider.state)
-                        .user
-                        .getPartner(user));
+                    context.read(authProvider.state).user.getPartner(user));
                 context
                     .read(profileProvider(user.id))
-                    .removePartner(context
-                    .read(authProvider.state)
-                    .user);
+                    .removePartner(context.read(authProvider.state).user);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
-              } catch (e){
+              } catch (e) {
                 await MyLoading.dismiss();
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme
-                .of(context)
-                .accentTextTheme
-                .subtitle1
-                .color,
+            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
           );
         });
   }
@@ -347,8 +316,8 @@ class _ProfileContentState extends State<ProfileContent>
   TabController _tabController;
 
   Future<void> _getProfile() async {
-    Partner _partner = await context.read(profileProvider(widget.user.id))
-        .getProfile();
+    Partner _partner =
+        await context.read(profileProvider(widget.user.id)).getProfile();
     if (_partner != null) {
       context.read(authProvider).setPartner(_partner);
     }
@@ -356,16 +325,10 @@ class _ProfileContentState extends State<ProfileContent>
 
   @override
   void initState() {
-    if (context
-        .read(authProvider.state)
-        .user
-        .id == widget.user.id) {
+    if (context.read(authProvider.state).user.id == widget.user.id) {
       Home.Home.pushReplacementNamed('/profile');
     }
-    if (context
-        .read(authProvider.state)
-        .user
-        .isBlocked(widget.user)) {
+    if (context.read(authProvider.state).user.isBlocked(widget.user)) {
       Home.Home.pop();
     }
     context.read(profileProvider(widget.user.id)).setUser(widget.user);
@@ -375,7 +338,7 @@ class _ProfileContentState extends State<ProfileContent>
           length: 3,
           vsync: this,
           initialIndex:
-          context.read(tabProvider(widget.user.id).state).toInt());
+              context.read(tabProvider(widget.user.id).state).toInt());
       _tabController.animation.addListener(() {
         context
             .read(tabProvider(widget.user.id))
@@ -386,7 +349,7 @@ class _ProfileContentState extends State<ProfileContent>
           length: 2,
           vsync: this,
           initialIndex:
-          context.read(tabProvider(widget.user.id).state).toInt());
+              context.read(tabProvider(widget.user.id).state).toInt());
       _tabController.animation.addListener(() {
         context
             .read(tabProvider(widget.user.id))
@@ -443,22 +406,17 @@ class _ProfileContentState extends State<ProfileContent>
       ));
     }
     TabBarView tabBarView =
-    TabBarView(controller: _tabController, children: tabContents);
+        TabBarView(controller: _tabController, children: tabContents);
 
     useProvider(authProvider.state);
-    if (context
-        .read(authProvider.state)
-        .user
-        .isBlocking(widget.user)) {
+    if (context.read(authProvider.state).user.isBlocking(widget.user)) {
       return Container(
         height: double.infinity,
         child: Column(
           children: [
             Container(
               padding: EdgeInsets.only(bottom: 24),
-              color: Theme
-                  .of(context)
-                  .primaryColor,
+              color: Theme.of(context).primaryColor,
               child: ProfileCard(
                 user: widget.user,
               ),
@@ -476,8 +434,7 @@ class _ProfileContentState extends State<ProfileContent>
                     ),
                     Text(
                       '@${widget.user.customId}さんは\nブロックされています',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .bodyText1
                           .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
@@ -489,8 +446,7 @@ class _ProfileContentState extends State<ProfileContent>
                     Text(
                       '@${widget.user.customId}さんはあなたのプロフィールを表示したり' +
                           'フレンド申請することができません。',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .bodyText1
                           .copyWith(fontSize: 17),
@@ -513,15 +469,11 @@ class _ProfileContentState extends State<ProfileContent>
                             padding: EdgeInsets.symmetric(horizontal: 24),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(17),
-                                color: Theme
-                                    .of(context)
-                                    .accentColor),
+                                color: Theme.of(context).accentColor),
                             child: Text(
                               'ブロック解除',
                               style: TextStyle(
-                                  color: Theme
-                                      .of(context)
-                                      .primaryColor,
+                                  color: Theme.of(context).primaryColor,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700),
                             ),
@@ -538,19 +490,15 @@ class _ProfileContentState extends State<ProfileContent>
       );
     }
     if (widget.user.isHidden()) {
-      bool isRequesting = context
-          .read(authProvider.state)
-          .user
-          .isRequesting(widget.user);
+      bool isRequesting =
+          context.read(authProvider.state).user.isRequesting(widget.user);
       return Container(
         height: double.infinity,
         child: Column(
           children: [
             Container(
               padding: EdgeInsets.only(bottom: 24),
-              color: Theme
-                  .of(context)
-                  .primaryColor,
+              color: Theme.of(context).primaryColor,
               child: ProfileCard(
                 user: widget.user,
               ),
@@ -568,8 +516,7 @@ class _ProfileContentState extends State<ProfileContent>
                     ),
                     Text(
                       '@${widget.user.customId}さんは\n非公開アカウントです',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .bodyText1
                           .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
@@ -580,8 +527,7 @@ class _ProfileContentState extends State<ProfileContent>
                     ),
                     Text(
                       'フレンドのみがポストや\nチャレンジを見ることができます。。',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .bodyText1
                           .copyWith(fontSize: 17),
@@ -594,57 +540,50 @@ class _ProfileContentState extends State<ProfileContent>
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        isRequesting ? InkWell(
-                          onTap: () {
-                            cancelRequest(context);
-                          },
-                          child: Container(
-                            height: 34,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(17),
-                                border: Border.all(
-                                  color: Theme.of(context).accentColor,
-                                  width: 1
+                        isRequesting
+                            ? InkWell(
+                                onTap: () {
+                                  cancelRequest(context);
+                                },
+                                child: Container(
+                                  height: 34,
+                                  alignment: Alignment.center,
+                                  padding: EdgeInsets.symmetric(horizontal: 24),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(17),
+                                      border: Border.all(
+                                          color: Theme.of(context).accentColor,
+                                          width: 1),
+                                      color: Theme.of(context).primaryColor),
+                                  child: Text(
+                                    'フレンド申請を取り消す',
+                                    style: TextStyle(
+                                        color: Theme.of(context).accentColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700),
+                                  ),
                                 ),
-                                color: Theme
-                                    .of(context)
-                                    .primaryColor),
-                            child: Text(
-                              'フレンド申請を取り消す',
-                              style: TextStyle(
-                                  color: Theme
-                                      .of(context)
-                                      .accentColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ) : InkWell(
-                          onTap: () {
-                            request(context);
-                          },
-                          child: Container(
-                            height: 34,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(17),
-                                color: Theme
-                                    .of(context)
-                                    .accentColor),
-                            child: Text(
-                              'フレンド申請',
-                              style: TextStyle(
-                                  color: Theme
-                                      .of(context)
-                                      .primaryColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        )
+                              )
+                            : InkWell(
+                                onTap: () {
+                                  request(context);
+                                },
+                                child: Container(
+                                  height: 34,
+                                  alignment: Alignment.center,
+                                  padding: EdgeInsets.symmetric(horizontal: 24),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(17),
+                                      color: Theme.of(context).accentColor),
+                                  child: Text(
+                                    'フレンド申請',
+                                    style: TextStyle(
+                                        color: Theme.of(context).primaryColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              )
                       ],
                     )
                   ],
@@ -662,10 +601,7 @@ class _ProfileContentState extends State<ProfileContent>
         ),
         Expanded(
           child: Container(
-            width: MediaQuery
-                .of(context)
-                .size
-                .width,
+            width: MediaQuery.of(context).size.width,
             child: NestedScrollView(
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) {
@@ -704,9 +640,7 @@ class _ProfileContentState extends State<ProfileContent>
             body: Text(
               '@${widget.user.customId}さんの\nブロックを解除',
               style: TextStyle(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
@@ -722,9 +656,7 @@ class _ProfileContentState extends State<ProfileContent>
                     .getPartner(widget.user));
                 context
                     .read(profileProvider(widget.user.id))
-                    .removePartner(context
-                    .read(authProvider.state)
-                    .user);
+                    .removePartner(context.read(authProvider.state).user);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -732,11 +664,7 @@ class _ProfileContentState extends State<ProfileContent>
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme
-                .of(context)
-                .accentTextTheme
-                .subtitle1
-                .color,
+            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
           );
         });
   }
@@ -752,9 +680,7 @@ class _ProfileContentState extends State<ProfileContent>
             body: Text(
               '@${widget.user.customId}さんに\nフレンド申請',
               style: TextStyle(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
@@ -763,10 +689,14 @@ class _ProfileContentState extends State<ProfileContent>
             action: () async {
               try {
                 MyLoading.startLoading();
-                Map<String, Partner> relations = await PartnerApi.requestPartner(widget.user);
-                context.read(authProvider).setPartner(relations['self_relation']);
+                Map<String, Partner> relations =
+                    await PartnerApi.requestPartner(widget.user);
                 context
-                    .read(profileProvider(widget.user.id)).setPartner(relations['other_relation']);
+                    .read(authProvider)
+                    .setPartner(relations['self_relation']);
+                context
+                    .read(profileProvider(widget.user.id))
+                    .setPartner(relations['other_relation']);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -789,9 +719,7 @@ class _ProfileContentState extends State<ProfileContent>
             body: Text(
               'フレンド申請を取り消す',
               style: TextStyle(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   fontSize: 17,
                   fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
@@ -808,9 +736,7 @@ class _ProfileContentState extends State<ProfileContent>
                 context.read(authProvider).removePartner(partner);
                 context
                     .read(profileProvider(widget.user.id))
-                    .removePartner(context
-                    .read(authProvider.state)
-                    .user);
+                    .removePartner(context.read(authProvider.state).user);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -841,10 +767,7 @@ class _RequestedBarState extends State<RequestedBar> {
     useProvider(authProvider.state);
     _show = false;
     Partner partner =
-    context
-        .read(authProvider.state)
-        .user
-        .getPartner(widget.user);
+        context.read(authProvider.state).user.getPartner(widget.user);
     if (partner != null) {
       if (partner.stateIs(PartnerState.requested)) {
         _show = true;
@@ -856,13 +779,8 @@ class _RequestedBarState extends State<RequestedBar> {
       );
     }
     return Container(
-      color: Theme
-          .of(context)
-          .primaryColor,
-      width: MediaQuery
-          .of(context)
-          .size
-          .width,
+      color: Theme.of(context).primaryColor,
+      width: MediaQuery.of(context).size.width,
       height: 52,
       padding: EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -872,11 +790,7 @@ class _RequestedBarState extends State<RequestedBar> {
             child: Text(
               widget.user.name + 'さんからフレンド申請が届いています',
               style:
-              Theme
-                  .of(context)
-                  .textTheme
-                  .bodyText1
-                  .copyWith(fontSize: 12),
+                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 12),
             ),
           ),
           InkWell(
@@ -889,16 +803,12 @@ class _RequestedBarState extends State<RequestedBar> {
               width: 72,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
-                  color: Theme
-                      .of(context)
-                      .accentColor),
+                  color: Theme.of(context).accentColor),
               alignment: Alignment.center,
               child: Text(
                 '承認',
                 style: TextStyle(
-                    color: Theme
-                        .of(context)
-                        .primaryColor,
+                    color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.w700,
                     fontSize: 12),
               ),
@@ -914,20 +824,14 @@ class _RequestedBarState extends State<RequestedBar> {
               width: 72,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
-                  color: Theme
-                      .of(context)
-                      .primaryColor,
+                  color: Theme.of(context).primaryColor,
                   border: Border.all(
-                      color: Theme
-                          .of(context)
-                          .accentColor, width: 1)),
+                      color: Theme.of(context).accentColor, width: 1)),
               alignment: Alignment.center,
               child: Text(
                 '削除',
                 style: TextStyle(
-                    color: Theme
-                        .of(context)
-                        .accentColor,
+                    color: Theme.of(context).accentColor,
                     fontWeight: FontWeight.w700,
                     fontSize: 12),
               ),
@@ -942,10 +846,7 @@ class _RequestedBarState extends State<RequestedBar> {
     try {
       MyLoading.startLoading();
       Map<String, Partner> result = await PartnerApi.acceptPartnerRequest(
-          context
-              .read(authProvider.state)
-              .user
-              .getPartner(widget.user));
+          context.read(authProvider.state).user.getPartner(widget.user));
       context.read(authProvider).setPartner(result['self_relation']);
       context
           .read(profileProvider(widget.user.id))
@@ -964,10 +865,7 @@ class _RequestedBarState extends State<RequestedBar> {
     try {
       MyLoading.startLoading();
       Partner partner =
-      context
-          .read(authProvider.state)
-          .user
-          .getPartner(widget.user);
+          context.read(authProvider.state).user.getPartner(widget.user);
       await PartnerApi.cancelPartnerRequest(partner);
       context.read(authProvider).breakOffWithFriend(partner);
       await MyLoading.dismiss();
@@ -993,12 +891,10 @@ class _PostListViewState extends State<PostListView> {
   bool nowLoading;
 
   Future<void> reloadOlder(BuildContext ctx) async {
-    if (!ctx
-        .read(profileProvider(widget.user.id))
-        .noMoreContent) {
+    if (!ctx.read(profileProvider(widget.user.id)).noMoreContent) {
       if ((widget.controller.position.maxScrollExtent -
-          widget.controller.position.pixels) <
-          400 &&
+                  widget.controller.position.pixels) <
+              400 &&
           !nowLoading) {
         nowLoading = true;
         await ctx.read(profileProvider(widget.user.id)).reloadOlderTimeLine();
@@ -1011,10 +907,7 @@ class _PostListViewState extends State<PostListView> {
   @override
   void initState() {
     nowLoading = false;
-    _posts = context
-        .read(profileProvider(widget.user.id).state)
-        .user
-        .posts;
+    _posts = context.read(profileProvider(widget.user.id).state).user.posts;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.controller.addListener(() async {
         if (mounted) {
@@ -1033,10 +926,7 @@ class _PostListViewState extends State<PostListView> {
         if (mounted) {
           setState(() {
             _posts =
-                context
-                    .read(profileProvider(widget.user.id).state)
-                    .user
-                    .posts;
+                context.read(profileProvider(widget.user.id).state).user.posts;
           });
         }
       },
@@ -1045,9 +935,7 @@ class _PostListViewState extends State<PostListView> {
         itemCount: _posts.length + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == (_posts.length)) {
-            if (context
-                .read(profileProvider(widget.user.id))
-                .noMoreContent) {
+            if (context.read(profileProvider(widget.user.id)).noMoreContent) {
               return Container(
                 height: 0,
               );
@@ -1073,8 +961,9 @@ class _PostListViewState extends State<PostListView> {
                     args: PostArguments(post: _post));
                 if (reported != null) {
                   if (reported) {
-                    context.read(profileProvider(_post.user.id)).removePost(
-                        _post);
+                    context
+                        .read(profileProvider(_post.user.id))
+                        .removePost(_post);
                     context
                         .read(timelineProvider(friendProviderName))
                         .removePost(_post);
@@ -1116,9 +1005,7 @@ class _PostListViewState extends State<PostListView> {
     ];
     showCustomBottomSheet(
         items: items,
-        backGroundColor: Theme
-            .of(context)
-            .primaryColor,
+        backGroundColor: Theme.of(context).primaryColor,
         context: ApplicationRoutes.materialKey.currentContext);
   }
 }
@@ -1133,17 +1020,39 @@ class FriendListView extends StatefulHookWidget {
 }
 
 class _FriendListViewState extends State<FriendListView> {
+  List<Partner> _partners;
+
+  @override
+  void initState() {
+    _partners = context
+        .read(profileProvider(widget.user.id).state)
+        .user
+        .getAcceptedPartners();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    ProfileProviderState _profileProviderState =
     useProvider(profileProvider(widget.user.id).state);
-    List<Partner> _partners = _profileProviderState.user.getAcceptedPartners();
-    return ListView.builder(
-      key: PageStorageKey('profile/${widget.user.id}/friend'),
-      itemCount: _partners.length,
-      itemBuilder: (BuildContext context, int index) {
-        return FriendCard(user: _partners[index].user);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read(profileProvider(widget.user.id)).getProfile();
+        if (mounted) {
+          setState(() {
+            _partners = context
+                .read(profileProvider(widget.user.id).state)
+                .user
+                .getAcceptedPartners();
+          });
+        }
       },
+      child: ListView.builder(
+        key: PageStorageKey('profile/${widget.user.id}/friend'),
+        itemCount: _partners.length,
+        itemBuilder: (BuildContext context, int index) {
+          return FriendCard(user: _partners[index].user);
+        },
+      ),
     );
   }
 }
@@ -1156,9 +1065,7 @@ class ChallengeTab extends HookWidget {
   @override
   Widget build(BuildContext context) {
     useProvider(profileProvider(user.id).state);
-    List<HabitLog> logs = context
-        .read(profileProvider(user.id).state)
-        .logs;
+    List<HabitLog> logs = context.read(profileProvider(user.id).state).logs;
     List<List<HabitLog>> collected = HabitLog.collectByDate(logs);
     return Stack(
       children: [
@@ -1174,10 +1081,7 @@ class ChallengeTab extends HookWidget {
         Positioned(
           bottom: 24,
           child: Container(
-            width: MediaQuery
-                .of(context)
-                .size
-                .width,
+            width: MediaQuery.of(context).size.width,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -1191,14 +1095,10 @@ class ChallengeTab extends HookWidget {
                     height: 34,
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(17),
-                        color: Theme
-                            .of(context)
-                            .primaryColor,
+                        color: Theme.of(context).primaryColor,
                         boxShadow: [
                           BoxShadow(
-                            color: Theme
-                                .of(context)
-                                .shadowColor,
+                            color: Theme.of(context).shadowColor,
                             spreadRadius: 1,
                             blurRadius: 4,
                             offset: Offset(0, 0),
@@ -1208,9 +1108,7 @@ class ChallengeTab extends HookWidget {
                     alignment: Alignment.center,
                     child: Text('詳細なアクティビティ',
                         style: TextStyle(
-                            color: Theme
-                                .of(context)
-                                .accentColor,
+                            color: Theme.of(context).accentColor,
                             fontSize: 12,
                             fontWeight: FontWeight.w700)),
                   ),
@@ -1244,9 +1142,7 @@ class LogCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Theme
-            .of(context)
-            .primaryColor,
+        color: Theme.of(context).primaryColor,
       ),
       margin: EdgeInsets.symmetric(vertical: 8),
       padding: EdgeInsets.all(16),
@@ -1255,8 +1151,7 @@ class LogCard extends StatelessWidget {
         children: [
           Text(
             date,
-            style: Theme
-                .of(context)
+            style: Theme.of(context)
                 .textTheme
                 .bodyText1
                 .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
@@ -1274,8 +1169,7 @@ class LogCard extends StatelessWidget {
   }
 
   Widget getSubject(HabitLog log, BuildContext context) {
-    TextStyle _style = Theme
-        .of(context)
+    TextStyle _style = Theme.of(context)
         .textTheme
         .bodyText1
         .copyWith(fontSize: 13, fontWeight: FontWeight.w400);
@@ -1324,20 +1218,11 @@ class LogCard extends StatelessWidget {
                   builder: (context) => DidConfirmation(log: log)));
             },
             child: RichText(
-                text: TextSpan(
-                    text: '・',
-                    style: _style,
-                    children: [
-                      TextSpan(
-                          text: text,
-                          style: TextStyle(
-                              decoration: TextDecoration.underline
-                          )
-                      )
-                    ]
-                )
-            )
-        );
+                text: TextSpan(text: '・', style: _style, children: [
+              TextSpan(
+                  text: text,
+                  style: TextStyle(decoration: TextDecoration.underline))
+            ])));
         break;
       case HabitLogStateName.wannaDo:
         final Map<CategoryName, String> wannaDoText = {

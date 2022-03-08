@@ -303,6 +303,12 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     this.setUser(user);
   }
 
+  Future<void> reloadProfile() async {
+    AuthUser user = await AuthApi.getUser();
+    user.posts = state.user.posts;
+    this.setUser(user);
+  }
+
   Future<void> switchOpened(bool toOpen) async {
     AuthUser user = await AuthApi.setOpened(toOpen);
     state = state..user = user;
