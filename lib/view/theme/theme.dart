@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class BrightThemeData {
   static ThemeData getThemeData(BuildContext context) => ThemeData(
         backgroundColor: Color(0xFFF7F8F9),
+        // backgroundColor: Color(0xFFFFFFFF),
         accentColor: Color(0xFF65BDC0),
         primaryColorDark: Color(0xFFDBDBDB),
         primaryColorLight: Color(0xFFEDF7F9),

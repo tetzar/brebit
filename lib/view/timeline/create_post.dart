@@ -412,8 +412,10 @@ class CreatePost extends StatelessWidget {
               await onBack(context);
             },
             background: AppBarBackground.white),
-        body: InputForm(
-          args: args,
+        body: Container(
+          child: InputForm(
+            args: args,
+          ),
         ),
         // body: TextFormField(
         //   focusNode: _focusNode,
