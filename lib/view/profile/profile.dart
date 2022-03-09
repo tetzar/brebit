@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:brebit/view/widgets/app-bar.dart';
 import 'package:flutter/material.dart';
@@ -53,8 +54,25 @@ class _ProfileContentState extends State<ProfileContent>
   Future<bool> _futureGetTimeline;
   TabController _tabController;
 
+  StreamController _scrollStream;
+
+  ScrollController scrollController;
+
+  GlobalKey _profileCardKey;
+
   @override
   void initState() {
+    _profileCardKey = GlobalKey();
+    scrollController = ScrollController();
+    _scrollStream = StreamController<double>();
+    scrollController.addListener(() {
+      if (mounted) {
+        _scrollStream.sink.add(max<double>(
+            scrollController.offset -
+                _profileCardKey.currentContext.size.height,
+            0));
+      }
+    });
     _futureGetTimeline = context.read(authProvider).getProfileTimeline();
     _tabController = new TabController(
         length: 2,
@@ -64,6 +82,12 @@ class _ProfileContentState extends State<ProfileContent>
       context.read(tabProvider).set(_tabController.animation.value);
     });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollStream.close();
+    super.dispose();
   }
 
   @override
@@ -89,11 +113,13 @@ class _ProfileContentState extends State<ProfileContent>
     return Container(
       width: MediaQuery.of(context).size.width,
       child: NestedScrollView(
+        controller: scrollController,
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
             // AppBarとTabBarの間のコンテンツ
             SliverList(
-              delegate: SliverChildListDelegate([ProfileCard()]),
+              delegate: SliverChildListDelegate(
+                  [ProfileCard(containerKey: _profileCardKey)]),
             ),
             SliverPersistentHeader(
               pinned: true,
@@ -101,7 +127,18 @@ class _ProfileContentState extends State<ProfileContent>
             ),
           ];
         },
-        body: tabBarView,
+        body: Column(
+          children: [
+            StreamBuilder<double>(
+                stream: _scrollStream.stream,
+                builder: (context, snapshot) {
+                  return SizedBox(
+                    height: snapshot.data ?? 0,
+                  );
+                }),
+            Expanded(child: tabBarView),
+          ],
+        ),
       ),
     );
   }
@@ -122,11 +159,7 @@ class _PostListViewState extends State<PostListView> {
 
   Future<void> reloadOlder(BuildContext ctx) async {
     print("scrolled");
-    if (!ctx.read(authProvider).noMoreContent &&
-        (widget.controller.position.maxScrollExtent -
-                widget.controller.position.pixels) <
-            400 &&
-        !nowLoading) {
+    if (!ctx.read(authProvider).noMoreContent && !nowLoading) {
       print("start reload");
       nowLoading = true;
       await ctx.read(authProvider).reloadOlderTimeLine();
@@ -160,43 +193,53 @@ class _PostListViewState extends State<PostListView> {
           });
         }
       },
-      child: ListView.builder(
-        key: PageStorageKey('profile/post'),
-        itemCount: _posts.length + 1,
-        itemBuilder: (BuildContext context, int index) {
-          if (index == (_posts.length)) {
-            if (context.read(authProvider).noMoreContent) {
+      child: NotificationListener(
+        onNotification: (t) {
+          if (t is ScrollEndNotification) {
+            reloadOlder(context);
+          }
+          return true;
+        },
+        child: ListView.builder(
+          key: PageStorageKey('profile/post'),
+          itemCount: _posts.length + 1,
+          itemBuilder: (BuildContext context, int index) {
+            if (index == (_posts.length)) {
+              if (context.read(authProvider).noMoreContent) {
+                return Container(
+                  height: 0,
+                );
+              }
               return Container(
-                height: 0,
+                width: double.infinity,
+                height: 50,
+                child: Center(
+                  child: Container(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator()),
+                ),
               );
             }
-            return Container(
-              width: double.infinity,
-              height: 50,
-              child: Center(
-                child: Container(
-                    height: 20, width: 20, child: CircularProgressIndicator()),
-              ),
-            );
-          }
-          return InkWell(
-              onTap: () async {
-                Post _post = _posts[index];
-                bool removed = await Home.Home.pushNamed('/post',
-                    args: PostArguments(post: _post));
-                if (removed ?? false) {
-                  bool deleteSuccess =
-                      await context.read(authProvider).deletePost(_post);
-                  if (deleteSuccess != null && deleteSuccess) {
-                    await removePostFromAllProvider(_post, context);
+            return InkWell(
+                onTap: () async {
+                  Post _post = _posts[index];
+                  bool removed = await Home.Home.pushNamed('/post',
+                      args: PostArguments(post: _post));
+                  if (removed ?? false) {
+                    bool deleteSuccess =
+                        await context.read(authProvider).deletePost(_post);
+                    if (deleteSuccess != null && deleteSuccess) {
+                      await removePostFromAllProvider(_post, context);
+                    }
                   }
-                }
-              },
-              onLongPress: () {
-                _showActions(context, _posts[index]);
-              },
-              child: PostCard(post: _posts[index], index: index));
-        },
+                },
+                onLongPress: () {
+                  _showActions(context, _posts[index]);
+                },
+                child: PostCard(post: _posts[index], index: index));
+          },
+        ),
       ),
     );
   }
@@ -249,7 +292,8 @@ class _FriendListViewState extends State<FriendListView> {
         key: PageStorageKey('profile/friend'),
         itemCount: _partners.length,
         itemBuilder: (BuildContext context, int index) {
-          bool isFriend = _authProviderState.user.isFriend(_partners[index].user);
+          bool isFriend =
+              _authProviderState.user.isFriend(_partners[index].user);
           return InkWell(
               onTap: () {
                 if (context.read(authProvider.state).user.id ==

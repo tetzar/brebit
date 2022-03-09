@@ -25,6 +25,8 @@ final Map<CategoryName, String> _imagePath = {
 };
 
 class ProfileCard extends StatefulHookWidget {
+  final GlobalKey containerKey;
+  ProfileCard({@required this.containerKey});
   @override
   _ProfileCardState createState() => _ProfileCardState();
 }
@@ -57,6 +59,7 @@ class _ProfileCardState extends State<ProfileCard> {
       _textEditingController.text = currentName;
     }
     return Container(
+      key: widget.containerKey,
       color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
       padding: EdgeInsets.only(

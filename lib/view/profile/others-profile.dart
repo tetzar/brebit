@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -323,8 +324,25 @@ class _ProfileContentState extends State<ProfileContent>
     }
   }
 
+  GlobalKey _profileCardKey;
+
+  StreamController _scrollStream;
+
+  ScrollController scrollController;
+
   @override
   void initState() {
+    _profileCardKey = GlobalKey();
+    scrollController = ScrollController();
+    _scrollStream = StreamController<double>();
+    scrollController.addListener(() {
+      if (mounted) {
+        _scrollStream.sink.add(max<double>(
+            scrollController.offset -
+                _profileCardKey.currentContext.size.height,
+            0));
+      }
+    });
     if (context.read(authProvider.state).user.id == widget.user.id) {
       Home.Home.pushReplacementNamed('/profile');
     }
@@ -357,6 +375,12 @@ class _ProfileContentState extends State<ProfileContent>
       });
     }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollStream?.close();
+    super.dispose();
   }
 
   @override
@@ -418,6 +442,7 @@ class _ProfileContentState extends State<ProfileContent>
               padding: EdgeInsets.only(bottom: 24),
               color: Theme.of(context).primaryColor,
               child: ProfileCard(
+                containerKey: _profileCardKey,
                 user: widget.user,
               ),
             ),
@@ -500,6 +525,7 @@ class _ProfileContentState extends State<ProfileContent>
               padding: EdgeInsets.only(bottom: 24),
               color: Theme.of(context).primaryColor,
               child: ProfileCard(
+                containerKey: _profileCardKey,
                 user: widget.user,
               ),
             ),
@@ -603,6 +629,7 @@ class _ProfileContentState extends State<ProfileContent>
           child: Container(
             width: MediaQuery.of(context).size.width,
             child: NestedScrollView(
+              controller: scrollController,
               headerSliverBuilder:
                   (BuildContext context, bool innerBoxIsScrolled) {
                 return <Widget>[
@@ -610,6 +637,7 @@ class _ProfileContentState extends State<ProfileContent>
                   SliverList(
                     delegate: SliverChildListDelegate([
                       ProfileCard(
+                        containerKey: _profileCardKey,
                         user: widget.user,
                       )
                     ]),
@@ -621,7 +649,16 @@ class _ProfileContentState extends State<ProfileContent>
                   ),
                 ];
               },
-              body: tabBarView,
+              body: Column(
+                children: [
+                  StreamBuilder<double>(
+                    stream: _scrollStream.stream,
+                      builder: (context, snapshot) {
+                      return SizedBox(height: snapshot.data?? 0,);
+                      }),
+                  Expanded(child: tabBarView),
+                ],
+              ),
             ),
           ),
         )

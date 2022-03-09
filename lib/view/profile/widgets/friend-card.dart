@@ -12,7 +12,6 @@ class FriendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("the bio is${user.bio}");
     return InkWell(
       onTap: () {
         if (context.read(authProvider.state).user.id != user.id) {

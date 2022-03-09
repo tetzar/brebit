@@ -89,6 +89,7 @@ class UserCard extends StatelessWidget {
                   //---------------------------------
                   Container(
                     margin: EdgeInsets.only(top: 4),
+                    alignment: Alignment.centerLeft,
                     child: Text(
                       user.bio,
                       style: TextStyle(

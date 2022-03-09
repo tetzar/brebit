@@ -27,8 +27,9 @@ final Map<CategoryName, String> _imagePath = {
 
 class ProfileCard extends StatefulWidget {
   final AuthUser user;
+  final GlobalKey containerKey;
 
-  ProfileCard({@required this.user});
+  ProfileCard({@required this.containerKey, @required this.user});
 
   @override
   _ProfileCardState createState() => _ProfileCardState();
@@ -44,9 +45,15 @@ class _ProfileCardState extends State<ProfileCard> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     AuthUser user = context.read(profileProvider(widget.user.id).state).user;
     return Container(
+      key: widget.containerKey,
       color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
       padding: EdgeInsets.only(left: 24, right: 24, top: 24),
