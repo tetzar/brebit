@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:brebit/widgets/ordinary_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +28,9 @@ class _TitleAnimateState extends State<TitleAnimate>
 
   bool _showText = false;
 
+  OrdinaryButtonSupplier registerButtonSupplier;
+  OrdinaryButtonSupplier loginButtonSupplier;
+
   void startAnimation() {
     _animationController.reset();
     _animationController.forward();
@@ -51,6 +55,24 @@ class _TitleAnimateState extends State<TitleAnimate>
 
   @override
   Widget build(BuildContext context) {
+    registerButtonSupplier = OrdinaryButtonSupplier(
+      type: ButtonType.primary,
+      label: "新規登録",
+      onPressed: () async {
+        await Navigator.pushNamed(context, '/register');
+        startAnimation();
+      },
+      theme: Theme.of(context),
+    );
+    loginButtonSupplier = OrdinaryButtonSupplier(
+        type: ButtonType.primary,
+        label: "ログイン",
+        onPressed: () async {
+          await Navigator.pushNamed(context, '/login');
+          startAnimation();
+        },
+        theme: Theme.of(context));
+
     return Container(
       height: MediaQuery.of(context).size.height,
       child: Stack(
@@ -63,57 +85,11 @@ class _TitleAnimateState extends State<TitleAnimate>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  InkWell(
-                  borderRadius: BorderRadius.all(Radius.circular(28)),
-                    onTap: () async {
-                      await Navigator.pushNamed(context, '/register');
-                      startAnimation();
-                    },
-                    child: Container(
-                      width: 300,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(28)),
-                        color: Theme.of(context).accentColor,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '新規登録',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      )
-                    ),
+                  registerButtonSupplier.widget,
+                  SizedBox(
+                    height: 20,
                   ),
-                  Container(
-                    margin: EdgeInsets.only(top: 20),
-                    child: InkWell(
-                      borderRadius: BorderRadius.all(Radius.circular(28)),
-                      onTap: () async {
-                        await Navigator.pushNamed(context, '/login');
-                        startAnimation();
-                      },
-                      child: Container(
-                          width: 300,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.all(Radius.circular(28)),
-                            color: Theme.of(context).accentColor,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'ログイン',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          )
-                      ),
-                    ),
-                  )
+                  loginButtonSupplier.widget
                 ],
               ),
             ),
@@ -135,8 +111,7 @@ class _TitleAnimateState extends State<TitleAnimate>
                         position: _curve.value,
                         backGroundColor: Theme.of(context).accentColor,
                         maxDeg: _painterMaxDeg,
-                      shadowColor: Theme.of(context).shadowColor
-                    ),
+                        shadowColor: Theme.of(context).shadowColor),
                   ),
                 );
               }),
@@ -169,7 +144,7 @@ class _TitleAnimateState extends State<TitleAnimate>
                                   MediaQuery.of(context).size.width / 2 - 187.5,
                             ),
                             Positioned(
-                              top: _boxHeight / 2 + 30,
+                                top: _boxHeight / 2 + 30,
                                 child: AnimatedOpacity(
                                   opacity: _showText ? 1.0 : 0.0,
                                   duration: Duration(milliseconds: 500),
@@ -178,12 +153,12 @@ class _TitleAnimateState extends State<TitleAnimate>
                                     height: 30,
                                     alignment: Alignment.center,
                                     child: Text(
-                              '習慣を改善しよう',
-                              style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700),
-                            ),
+                                      '習慣を改善しよう',
+                                      style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ))
                           ],
@@ -230,7 +205,6 @@ class TitlePainter extends CustomPainter {
       ..lineTo(size.width, 0);
     canvas.drawShadow(path, Color(0x80000000), 8, true);
     canvas.drawPath(path, _paint);
-
   }
 
   @override
