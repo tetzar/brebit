@@ -1,16 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
-import '../../library/cache.dart';
-import '../../library/exceptions.dart';
-import '../../model/user.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
+import '../../library/cache.dart';
+import '../../library/exceptions.dart';
+import '../../model/user.dart';
 import 'auth.dart';
 
-class   Network {
+class Network {
   // for emulator (Android)
   static final String _url = 'http://10.0.2.2:80';
+
   // for emulator (iOS)
   // static final String _url = 'http://localhost:80';
   // マイハウス
@@ -26,7 +28,6 @@ class   Network {
   static String getFullUrl(String apiUrl) {
     return _url + '/api' + apiUrl;
   }
-
 
   static _getToken() async {
     String tkn = await LocalManager.getToken(AuthUser.getSelfUid());
@@ -54,8 +55,7 @@ class   Network {
     await _getToken();
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    return await http.post(url,
-        body: jsonEncode(data), headers: _setHeaders());
+    return await http.post(url, body: jsonEncode(data), headers: _setHeaders());
   }
 
   static postDataWithImage(
@@ -116,8 +116,6 @@ class   Network {
     return await http.delete(url, headers: _setHeaders());
   }
 
-
-
   static _setHeadersWithoutToken() => {
         'Content-type': 'application/json',
         'Accept': 'application/json',
@@ -135,7 +133,6 @@ class   Network {
         'Accept': 'application/json',
       };
 
-
   static String routeNormalize(String apiUrl, Map<String, String> data) {
     data.forEach((key, value) {
       apiUrl = apiUrl.replaceAll('{$key}', value);
@@ -143,8 +140,7 @@ class   Network {
     return apiUrl;
   }
 
-  static String routeNormalizeDelete(
-      String apiUrl, Map<String, String> data) {
+  static String routeNormalizeDelete(String apiUrl, Map<String, String> data) {
     data.forEach((key, value) {
       apiUrl = apiUrl.replaceAll('{$key}', value);
     });
@@ -167,39 +163,25 @@ class   Network {
       if (body.containsKey('exception_code')) {
         switch (body['exception_code']) {
           case 'record-not-found':
-            throw RecordNotFoundException(
-              body['message']
-            );
+            throw RecordNotFoundException(body['message']);
             break;
           case 'unauthorized':
-            throw UnauthorizedException(
-              body['message']
-            );
+            throw UnauthorizedException(body['message']);
             break;
           case 'user-not-found':
-            throw UserNotFoundException(
-              body['message']
-            );
+            throw UserNotFoundException(body['message']);
             break;
           case 'invalid-token':
-            throw InvalidTokenException(
-              body['message']
-            );
+            throw InvalidTokenException(body['message']);
             break;
           case 'create-record-failed':
-            throw CreateRecordFailedException(
-              body['message']
-            );
+            throw CreateRecordFailedException(body['message']);
             break;
           case 'firebase-not-found':
-            throw FirebaseNotFoundException(
-              body['message']
-            );
+            throw FirebaseNotFoundException(body['message']);
             break;
           case 'access-denied':
-            throw AccessDeniedException(
-              body['message']
-            );
+            throw AccessDeniedException(body['message']);
             break;
         }
       }

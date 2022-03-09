@@ -18,6 +18,8 @@ class ProfileTabBar extends SliverPersistentHeaderDelegate {
   final TabController tabController;
   final AuthUser user;
 
+  static const double EXTENT = 43;
+
   ProfileTabBar({
     @required this.tabController,
     @required this.user,
@@ -38,10 +40,10 @@ class ProfileTabBar extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 43;
+  double get maxExtent => EXTENT;
 
   @override
-  double get minExtent => 43;
+  double get minExtent => EXTENT;
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
