@@ -56,6 +56,48 @@ void main() async {
     if (deepLink != null) {
       _initialRoute = '/';
     }
+
+    FirebaseDynamicLinks.instance.onLink(
+        onSuccess: (PendingDynamicLinkData dynamicLink) async {
+          final Uri deepLink = dynamicLink?.link;
+          if (deepLink.queryParameters.containsKey('continueUrl')) {
+            final Uri continueUrl =
+            Uri.parse(deepLink.queryParameters['continueUrl']);
+            if (deepLink.queryParameters['mode'] == 'verifyEmail') {
+              FirebaseAuth.instance.currentUser.reload();
+              if (continueUrl.path == '/email-verifying') {
+                if (!FirebaseAuth.instance.currentUser.emailVerified) {
+                  ApplicationRoutes.pushReplacementNamed('/email-verifying', arguments: dynamicLink);
+                }
+                return;
+              }
+              if (continueUrl.path == '/email-set') {
+                if (!FirebaseAuth.instance.currentUser.emailVerified) {
+                  ApplicationRoutes.pushReplacementNamed('/title');
+                }
+                return;
+              }
+            }
+            if (deepLink.queryParameters['mode'] == 'resetPassword') {
+              try {
+                await FirebaseAuth.instance
+                    .verifyPasswordResetCode(deepLink.queryParameters['oobCode']);
+                ApplicationRoutes.pushReplacementNamed('/password-reset/form',
+                    arguments: dynamicLink);
+              } catch (e) {
+                ApplicationRoutes.pushReplacementNamed('/title');
+              }
+            }
+            ApplicationRoutes.pushReplacementNamed(continueUrl.path, arguments: dynamicLink);
+            return;
+          }
+          if (deepLink != null) {
+            ApplicationRoutes.pushReplacementNamed(deepLink.path);
+          }
+        }, onError: (OnLinkErrorException e) async {
+      print('onLinkError');
+      print(e.message);
+    });
   }
 
   runApp(ProviderScope(child: MyApp()));
