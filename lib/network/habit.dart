@@ -88,7 +88,7 @@ class HabitApi {
     http.Response response = await Network.getData(
         Network.routeNormalize(getRoutes['getConditionSuggestions'], data));
     Network.hasErrorMessage(response, 'getConditionSuggestions@HabitApi');
-    return TagFromJson(jsonDecode(response.body));
+    return TagFromJson(jsonDecode(response.body)['tags']);
   }
 
   static Future<Habit> suppressedWant(
