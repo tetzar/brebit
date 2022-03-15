@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/view/timeline/post.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../library/cache.dart';
 import '../../../../model/post.dart';
@@ -12,11 +17,6 @@ import '../../home/navigation.dart';
 import '../../profile/others-profile.dart';
 import '../../profile/widgets/post-card-body/basic.dart';
 import '../posts.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class PostCard extends HookWidget {
   final Post post;
@@ -28,8 +28,8 @@ class PostCard extends HookWidget {
     if (ctx.read(authProvider.state).user.id == user.id) {
       Home.pushNamed('/profile');
     } else {
-      Home.push(MaterialPageRoute(
-          builder: (context) => OtherProfile(user: user)));
+      Home.push(
+          MaterialPageRoute(builder: (context) => OtherProfile(user: user)));
     }
   }
 
@@ -60,12 +60,13 @@ class PostCard extends HookWidget {
                 child: Center(
                   child: CircleAvatar(
                     child: ClipOval(
-                      child: isMine ? HookBuilder(
-                          builder: (context) {
-                            AuthUser _user = useProvider(authProvider.state).user;
-                            return _user.getImageWidget();
-                          }
-                      ) : post.user.getImageWidget(),
+                      child: isMine
+                          ? HookBuilder(builder: (context) {
+                              AuthUser _user =
+                                  useProvider(authProvider.state).user;
+                              return _user.getImageWidget();
+                            })
+                          : post.user.getImageWidget(),
                     ),
                     radius: 28,
                     // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
@@ -106,50 +107,48 @@ class PostCard extends HookWidget {
                                                 text: user.name,
                                               ),
                                               TextSpan(
-                                                  text:
-                                                  " @${user.customId}"
+                                                  text: " @${user.customId}"
                                                       .replaceAll(
-                                                      "", "\u{200B}"),
+                                                          "", "\u{200B}"),
                                                   style: TextStyle(
                                                       color: Theme.of(context)
                                                           .textTheme
                                                           .subtitle1
                                                           .color,
-                                                      fontWeight: FontWeight.w400,
+                                                      fontWeight:
+                                                          FontWeight.w400,
                                                       fontSize: 15))
                                             ]),
                                       );
                                     },
                                   )
                                 : RichText(
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .color,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15),
-                                  children: <InlineSpan>[
-                                    TextSpan(
-                                      text: _post.user.name,
-                                    ),
-                                    TextSpan(
-                                        text:
-                                        " @${_post.user.customId}"
-                                            .replaceAll(
-                                            "", "\u{200B}"),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    text: TextSpan(
                                         style: TextStyle(
                                             color: Theme.of(context)
                                                 .textTheme
-                                                .subtitle1
+                                                .bodyText1
                                                 .color,
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 15))
-                                  ]),
-                            ),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 15),
+                                        children: <InlineSpan>[
+                                          TextSpan(
+                                            text: _post.user.name,
+                                          ),
+                                          TextSpan(
+                                              text: " @${_post.user.customId}"
+                                                  .replaceAll("", "\u{200B}"),
+                                              style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .textTheme
+                                                      .subtitle1
+                                                      .color,
+                                                  fontWeight: FontWeight.w400,
+                                                  fontSize: 15))
+                                        ]),
+                                  ),
                           ),
                           Container(
                             alignment: Alignment.centerRight,
@@ -171,7 +170,8 @@ class PostCard extends HookWidget {
                       margin: EdgeInsets.only(top: 4),
                       width: double.infinity,
                       child: PostBody(
-                          post: _post, num: index),
+                        post: _post,
+                      ),
                     ),
                     Container(
                       margin: EdgeInsets.only(top: 8),
@@ -180,8 +180,7 @@ class PostCard extends HookWidget {
                           LikeButton(post: _post),
                           Padding(
                             padding: EdgeInsets.only(left: 16),
-                            child:
-                                CommentButton(post: _post),
+                            child: CommentButton(post: _post),
                           )
                         ],
                       ),
@@ -271,8 +270,14 @@ class _LikeButtonState extends State<LikeButton> {
                         await post.unlike();
                       }
                       setState(() {
-                        _isLiked = context.read(postProvider(post.id).state).post.isLiked();
-                        favCount = context.read(postProvider(post.id).state).post.getFavCount();
+                        _isLiked = context
+                            .read(postProvider(post.id).state)
+                            .post
+                            .isLiked();
+                        favCount = context
+                            .read(postProvider(post.id).state)
+                            .post
+                            .getFavCount();
                       });
                     } on RecordNotFoundException {
                       await removePostFromAllProvider(post, context);
@@ -280,9 +285,7 @@ class _LikeButtonState extends State<LikeButton> {
                     context.read(postProvider(post.id)).setPostNotify(post);
 
                     await LocalManager.updateProfilePost(
-                        await context.read(authProvider).getUser(),
-                        post
-                    );
+                        await context.read(authProvider).getUser(), post);
                     await LocalManager.updatePost(
                         await context.read(authProvider).getUser(),
                         post,

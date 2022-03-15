@@ -166,7 +166,7 @@ class PostCard extends StatelessWidget {
                     Container(
                       margin: EdgeInsets.only(top: 4),
                       width: double.infinity,
-                      child: PostBody(post: post, num: index),
+                      child: PostBody(post: post),
                     ),
                     Container(
                       margin: EdgeInsets.only(top: 8),
