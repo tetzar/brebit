@@ -5,15 +5,14 @@ import 'package:flutter/material.dart';
 import 'custom.dart';
 class PostBody extends StatelessWidget {
   final Post post;
-  final int num;
-  PostBody({@required this.post, @required this.num});
+  PostBody({@required this.post});
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> body = post.getBody();
     Widget bodyWidget;
     switch (body['type']) {
       case 'custom':
-        bodyWidget = CustomBody(body: body, imageUrls: post.getImageUrls(), num: num,);
+        bodyWidget = CustomBody(body: body, imageUrls: post.getImageUrls());
         break;
       default:
         bodyWidget = Container(

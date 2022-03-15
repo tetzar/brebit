@@ -338,7 +338,7 @@ class PostContent extends StatelessWidget {
               Container(
                 margin: EdgeInsets.only(top: 16),
                 width: double.infinity,
-                child: PostBody(post: post, num: 0),
+                child: PostBody(post: post),
               ),
               Container(
                 margin: EdgeInsets.only(top: 8),
