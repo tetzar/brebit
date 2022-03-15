@@ -51,8 +51,8 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
           String json = await PostApi.getTimeLine(_user, name);
           List<Post> posts =
               Post.sortByCreatedAt(PostFromJson(jsonDecode(json)));
-          if (posts.length < 10) reloadPosts(context);
-          if (state.posts.length < 10) noMoreContent = true;
+          if ((posts?.length ?? 0) < 10) reloadPosts(context);
+          if ((state?.posts?.length ?? 0) < 10) noMoreContent = true;
           await LocalManager.setPosts(_user, posts, name);
           state = new TimelineProviderState(posts: posts);
         }
