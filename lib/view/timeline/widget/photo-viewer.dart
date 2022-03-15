@@ -140,7 +140,7 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
       barsOpacity = (currentDragPosition.distance < 20.0) ? 1.0 : 0.0;
       currentDragPosition = Offset(
         details.globalPosition.dx - beginningDragPosition.dx,
-        exp (details.globalPosition.dy - beginningDragPosition.dy),
+        details.globalPosition.dy - beginningDragPosition.dy,
       );
     });
   }
