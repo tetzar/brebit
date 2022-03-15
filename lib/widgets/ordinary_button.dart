@@ -19,6 +19,7 @@ class OrdinaryButtonSupplier {
   final ThemeData theme;
 
   StreamController<ButtonState> streamController;
+  StreamController<String> labelStreamController;
 
   OrdinaryButtonSupplier(
       {@required this.type,
@@ -28,10 +29,12 @@ class OrdinaryButtonSupplier {
       @required this.theme}) {
     streamController = StreamController();
     streamController.add(ButtonState(enabled));
+    labelStreamController = StreamController();
+    labelStreamController.add(this.label);
     _enabled = enabled;
     widget = OrdinaryButton(
       type: type,
-      label: label,
+      labelStream: labelStreamController.stream,
       onPressed: onPressed,
       closeStream: close,
       stream: streamController.stream,
@@ -46,6 +49,11 @@ class OrdinaryButtonSupplier {
 
   void close() {
     streamController.close();
+    labelStreamController.close();
+  }
+
+  void changeLabelText(String t) {
+    labelStreamController.add(t);
   }
 
   void enable(BuildContext context) {
@@ -63,7 +71,7 @@ class OrdinaryButtonSupplier {
 
 class OrdinaryButton extends StatefulWidget {
   final ButtonType type;
-  final String label;
+  final Stream labelStream;
   final OrdinaryButtonCallback onPressed;
   final bool enabled;
   final Stream<ButtonState> stream;
@@ -72,7 +80,7 @@ class OrdinaryButton extends StatefulWidget {
 
   const OrdinaryButton(
       {@required this.type,
-      @required this.label,
+      @required this.labelStream,
       @required this.enabled,
       @required this.onPressed,
       @required this.stream,
@@ -180,13 +188,18 @@ class _OrdinaryButtonState extends State<OrdinaryButton>
                   color: _bgColorAnimation.value,
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: _textColorAnimation.value,
-                  ),
+                child: StreamBuilder<String>(
+                  stream: widget.labelStream,
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: _textColorAnimation.value,
+                      ),
+                    );
+                  }
                 )),
           );
         });
