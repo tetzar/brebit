@@ -20,59 +20,11 @@ class _ApplicationHomeState extends State<ApplicationHome> {
   }
 
   void initDynamicLinks() async {
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
-      final Uri deepLink = dynamicLink?.link;
-      if (deepLink.queryParameters.containsKey('continueUrl')) {
-        final Uri continueUrl =
-            Uri.parse(deepLink.queryParameters['continueUrl']);
-        if (deepLink.queryParameters['mode'] == 'verifyEmail') {
-          FirebaseAuth.instance.currentUser.reload();
-          if (continueUrl.path == '/email-verifying') {
-            if (FirebaseAuth.instance.currentUser.emailVerified) {
-              pushReplacementNamed(context, '/home');
-            } else {
-              pushReplacementNamed(context, '/email-verifying',
-                  arguments: dynamicLink);
-            }
-            return;
-          }
-          if (continueUrl.path == '/email-set') {
-            if (FirebaseAuth.instance.currentUser.emailVerified) {
-              pushReplacementNamed(context, '/home');
-            } else {
-              pushReplacementNamed(context, '/title');
-            }
-            return;
-          }
-        }
-        if (deepLink.queryParameters['mode'] == 'resetPassword') {
-          try {
-            await FirebaseAuth.instance
-                .verifyPasswordResetCode(deepLink.queryParameters['oobCode']);
-            pushReplacementNamed(context, '/password-reset/form',
-                arguments: dynamicLink);
-          } catch (e) {
-            pushReplacementNamed(context, '/title');
-          }
-        }
-        pushReplacementNamed(context, continueUrl.path, arguments: dynamicLink);
-        return;
-      }
-      if (deepLink != null) {
-        pushReplacementNamed(context, deepLink.path);
-      }
-    }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
-    });
 
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri deepLink = data?.link;
-    if (deepLink == null) {
-      return;
-    }
+    if (deepLink == null) return;
     if (deepLink.queryParameters.containsKey('continueUrl')) {
       final Uri continueUrl =
           Uri.parse(deepLink.queryParameters['continueUrl']);

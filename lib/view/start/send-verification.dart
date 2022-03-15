@@ -80,6 +80,11 @@ class _SendVerificationCodeScreenContentState
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
@@ -345,8 +350,9 @@ class _EmailVerifyingScreenState extends State<EmailVerifyingScreen>
   }
 
   void startPageTransition() {
-    Navigator.of(context).pushReplacement(
+    ApplicationRoutes.materialKey.currentState.pushReplacement(
       PageRouteBuilder(
+        settings: RouteSettings(name: '/home'),
         pageBuilder: (context, animation1, animation2) =>
             Home(HomeActionCodes.verifyComplete),
         transitionDuration: Duration(seconds: 0),
