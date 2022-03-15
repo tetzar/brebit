@@ -35,7 +35,7 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
   }
 
   Future<bool> getTimeLine(BuildContext context, [DateTime t]) async {
-    if (state.posts == null ? true : state.posts.length == 0) {
+    if (state.posts == null || state.posts.length == 0) {
       try {
         AuthUser _user = await context.read(authProvider).getUser();
         List<Post> posts = await LocalManager.getPosts(_user, name);
@@ -44,7 +44,7 @@ class TimelineProvider extends StateNotifier<TimelineProviderState> {
           if (lastUpdatedAt == null) {
             lastUpdatedAt = DateTime.now();
             reloadPosts(context);
-            if (state.posts.length < 10) noMoreContent = true;
+            if ((state?.posts?.length ?? 0) < 10) noMoreContent = true;
           }
           return false;
         } else {

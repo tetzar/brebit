@@ -277,7 +277,7 @@ LocalManager {
     List<String> encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       if (encodedPosts.length == 0) {
-        return null;
+        return [];
       }
       List<Post> posts = encodedPosts.map((d) {
         return Post.fromJson(jsonDecode(d));
