@@ -16,7 +16,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final authProvider = StateNotifierProvider<AuthProvider>(
+final authProvider = StateNotifierProvider<AuthProvider*, AuthProviderState*>(
         (ref) => AuthProvider(new AuthProviderState(user: null)));
 
 class AuthProviderState {

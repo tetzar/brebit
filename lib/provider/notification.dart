@@ -11,7 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 StreamController<FcmNotification> _notificationStreamController;
 
-final notificationProvider = StateNotifierProvider<NotificationProvider>((ref) {
+final notificationProvider = StateNotifierProvider<NotificationProvider*, NotificationProviderState*>((ref) {
   _notificationStreamController = MyFirebaseMessaging.notificationStream;
   ref.onDispose(() {
     _notificationStreamController.close();

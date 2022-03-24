@@ -1,3 +1,5 @@
+import 'package:provider/src/provider.dart';
+
 import '../../../../model/habit.dart';
 import '../../../../model/tag.dart';
 import '../../../../provider/condition.dart';

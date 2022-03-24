@@ -22,6 +22,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:provider/provider.dart';
 
 import 'library/cache.dart';
 import 'model/user.dart';
@@ -141,19 +142,19 @@ class MyApp extends StatelessWidget {
         return;
       }
     }
-    AuthUser user = await context.read(authProvider).getUser();
+    AuthUser user = await context.read().getUser();
     AuthUser.selfUser = user;
     Map<String, dynamic> result =
-        await context.read(homeProvider).getHome(user);
+        await context.read().getHome(user);
     if (result != null) {
-      context.read(notificationProvider).unreadCount =
+      context.read().unreadCount =
           result['notificationCount'];
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    context.read(authProvider.state).user = _user;
+    context.read().user = _user;
     return MaterialApp(
         title: 'Brebit',
         initialRoute: '/splash',

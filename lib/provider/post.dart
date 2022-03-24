@@ -2,8 +2,9 @@ import '../../model/comment.dart';
 import '../../model/post.dart';
 import '../../network/post.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:provider/provider.dart';
 
-final postProvider = StateNotifierProvider.family<PostProvider, int>(
+final postProvider = StateNotifierProvider.family<PostProvider*, PostProviderState*, int*>(
     (ref, postId) => PostProvider(new PostProviderState()));
 
 class PostProviderState {

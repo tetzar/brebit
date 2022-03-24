@@ -15,7 +15,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 Map<int, StreamController<FcmNotification>> _notificationStreamControllers;
 
 var profileProvider =
-    StateNotifierProvider.family<ProfileProvider, int>((ref, id) {
+    StateNotifierProvider.family<ProfileProvider*, ProfileProviderState*, int*>((ref, id) {
   if (_notificationStreamControllers == null) {
     _notificationStreamControllers = <int, StreamController<FcmNotification>>{};
   }

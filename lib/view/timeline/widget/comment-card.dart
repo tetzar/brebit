@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:core';
 
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/model/post.dart';
+import 'package:provider/src/provider.dart';
 
 import '../../../../library/cache.dart';
 import '../../../../model/comment.dart';
@@ -113,7 +115,7 @@ class _CommentTileState extends State<CommentTile> {
 
   @override
   Widget build(BuildContext context) {
-    int thisUserId = context.read(authProvider.state).user.id;
+    int thisUserId = context.read().user.id;
     return InkWell(
       onLongPress: () {
         _showActions(context);

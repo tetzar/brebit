@@ -27,7 +27,7 @@ class HomeProviderState {
 HomeProviderState providerState = new HomeProviderState();
 
 final homeProvider =
-    StateNotifierProvider((ref) => HomeProvider(providerState));
+    StateNotifierProvider<HomeProvider*, HomeProviderState*>((ref) => HomeProvider(providerState));
 
 class
 HomeProvider extends StateNotifier<HomeProviderState> {
