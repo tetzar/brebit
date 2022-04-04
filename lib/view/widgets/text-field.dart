@@ -1,10 +1,12 @@
 import 'dart:async';
 
-import '../../../network/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../network/profile.dart';
 
 class MyTextField extends StatefulWidget {
   final Function(String text) validate;
@@ -247,7 +249,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                 Container(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    widget.label ??  'パスワード',
+                    widget.label ?? 'パスワード',
                     style: Theme.of(context).inputDecorationTheme.labelStyle,
                   ),
                 ),
@@ -285,7 +287,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                     fontWeight: FontWeight.w400,
                     fontSize: 14),
                 scrollPadding:
-                EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
+                    EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
                 focusNode: widget.focusNode,
                 onSaved: widget.onSaved,
                 onFieldSubmitted: widget.onFieldSubmitted,
@@ -399,14 +401,12 @@ class MyBottomFixedButton extends StatelessWidget {
   }
 }
 
-class MyHookBottomFixedButton extends StatelessWidget {
+class MyHookBottomFixedButton extends StatefulHookWidget {
   final Widget child;
   final Function enable;
   final Function onTapped;
   final String label;
   final AutoDisposeStateNotifierProvider provider;
-
-  static final buttonHeight = 64.0;
 
   MyHookBottomFixedButton(
       {@required this.child,
@@ -416,6 +416,31 @@ class MyHookBottomFixedButton extends StatelessWidget {
       @required this.provider});
 
   @override
+  _MyHookBottomFixedButtonState createState() =>
+      _MyHookBottomFixedButtonState();
+}
+
+class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
+  static final buttonHeight = 64.0;
+  StreamSubscription<bool> keyboardSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    var keyboardVisibilityController = KeyboardVisibilityController();
+    keyboardSubscription =
+        keyboardVisibilityController.onChange.listen((bool visible) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    keyboardSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
@@ -423,32 +448,37 @@ class MyHookBottomFixedButton extends StatelessWidget {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            child,
+            widget.child,
             SizedBox(
               height: buttonHeight,
             )
           ],
         )),
         HookBuilder(builder: (BuildContext context) {
-          useProvider(provider.state);
-          bool t = enable();
+          useProvider(widget.provider.state);
+          bool t = widget.enable();
           return Align(
             alignment: Alignment.bottomCenter,
             child: InkWell(
-              onTap: t ? onTapped : null,
+              onTap: t ? widget.onTapped : null,
               child: Container(
-                height: buttonHeight,
+                height: buttonHeight + MediaQuery.of(context).viewPadding.bottom,
                 width: MediaQuery.of(context).size.width,
-                alignment: Alignment.center,
+                alignment: Alignment.topCenter,
                 color: t
                     ? Theme.of(context).accentColor
                     : Theme.of(context).disabledColor,
-                child: Text(
-                  label,
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).buttonTheme.colorScheme.primary),
+                child: Container(
+                  height: buttonHeight,
+                  color: Colors.transparent,
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.label,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).buttonTheme.colorScheme.primary),
+                  ),
                 ),
               ),
             ),
