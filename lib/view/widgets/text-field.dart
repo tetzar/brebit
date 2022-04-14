@@ -99,28 +99,19 @@ class _MyTextFieldState extends State<MyTextField> {
                         if (_hintMessage != null) {
                           child = Text(
                             _hintMessage,
-                            style: Theme.of(context)
-                                .inputDecorationTheme
-                                .errorStyle
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style: Theme.of(context).inputDecorationTheme.errorStyle.copyWith(color: Theme.of(context).accentColor),
                           );
                         }
                         if (_errorMessage != null) {
                           child = Text(
                             _errorMessage,
-                            style: Theme.of(context)
-                                .inputDecorationTheme
-                                .errorStyle,
+                            style: Theme.of(context).inputDecorationTheme.errorStyle,
                           );
                         }
                         return AnimatedOpacity(
-                          opacity:
-                              (_errorMessage == null && _hintMessage == null)
-                                  ? 0
-                                  : 1,
+                          opacity: (_errorMessage == null && _hintMessage == null) ? 0 : 1,
                           duration: Duration(milliseconds: 250),
-                          child: Container(
-                              alignment: Alignment.centerRight, child: child),
+                          child: Container(alignment: Alignment.centerRight, child: child),
                         );
                       }),
                 )
@@ -135,24 +126,17 @@ class _MyTextFieldState extends State<MyTextField> {
             initialValue: widget.initialValue,
             keyboardType: widget.keyboardType,
             inputFormatters: widget.inputFormatter,
-            style: TextStyle(
-                color: Theme.of(context).textTheme.bodyText1.color,
-                fontWeight: FontWeight.w400,
-                fontSize: 14),
+            style: TextStyle(color: Theme.of(context).textTheme.bodyText1.color, fontWeight: FontWeight.w400, fontSize: 14),
             autovalidateMode: widget.autoValidateMode,
             onSaved: widget.onSaved,
             onChanged: widget.onChanged,
             maxLength: widget.maxLength,
             maxLines: widget.maxLines,
-            scrollPadding:
-                EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
+            scrollPadding: EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
             decoration: InputDecoration(
                 errorStyle: TextStyle(height: 0),
                 suffixText: widget.suffixText,
-                suffixStyle: TextStyle(
-                    color: Theme.of(context).disabledColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14),
+                suffixStyle: TextStyle(color: Theme.of(context).disabledColor, fontWeight: FontWeight.w700, fontSize: 14),
                 isDense: true,
                 prefixIcon: widget.prefixText != null
                     ? Padding(
@@ -160,23 +144,16 @@ class _MyTextFieldState extends State<MyTextField> {
                         child: Text(
                           widget.prefixText,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .subtitle1
-                              .copyWith(fontSize: 14),
+                          style: Theme.of(context).textTheme.subtitle1.copyWith(fontSize: 14),
                         ),
                       )
                     : null,
-                prefixIconConstraints:
-                    BoxConstraints(minWidth: 0, minHeight: 0),
+                prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
                 counter: SizedBox(
                   height: 0,
                 ),
                 hintText: widget.hintText,
-                hintStyle: TextStyle(
-                    color: Theme.of(context).disabledColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400)),
+                hintStyle: TextStyle(color: Theme.of(context).disabledColor, fontSize: 14, fontWeight: FontWeight.w400)),
             validator: (String text) {
               String errorMessage = widget.validate(text);
               String hintMessage;
@@ -206,14 +183,7 @@ class MyPasswordField extends StatefulWidget {
   final FocusNode focusNode;
   final String label;
 
-  MyPasswordField(
-      {@required this.validate,
-      this.onSaved,
-      this.onChanged,
-      this.onFieldSubmitted,
-      this.textInputAction,
-      this.label,
-      this.focusNode});
+  MyPasswordField({@required this.validate, this.onSaved, this.onChanged, this.onFieldSubmitted, this.textInputAction, this.label, this.focusNode});
 
   @override
   _MyPasswordFieldState createState() => _MyPasswordFieldState();
@@ -267,9 +237,7 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                                 ? null
                                 : Text(
                                     _errorMessage,
-                                    style: Theme.of(context)
-                                        .inputDecorationTheme
-                                        .errorStyle,
+                                    style: Theme.of(context).inputDecorationTheme.errorStyle,
                                   ),
                           ),
                         );
@@ -282,12 +250,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
             alignment: Alignment.centerRight,
             children: <Widget>[
               TextFormField(
-                style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14),
-                scrollPadding:
-                    EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyText1.color, fontWeight: FontWeight.w400, fontSize: 14),
+                scrollPadding: EdgeInsets.all(MyBottomFixedButton.buttonHeight + 20),
                 focusNode: widget.focusNode,
                 onSaved: widget.onSaved,
                 onFieldSubmitted: widget.onFieldSubmitted,
@@ -297,19 +261,13 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                 textInputAction: widget.textInputAction,
                 decoration: InputDecoration(
                     errorStyle: TextStyle(height: 0),
-                    suffixStyle: TextStyle(
-                        color: Theme.of(context).disabledColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14),
+                    suffixStyle: TextStyle(color: Theme.of(context).disabledColor, fontWeight: FontWeight.w700, fontSize: 14),
                     isDense: true,
                     counter: SizedBox(
                       height: 0,
                     ),
                     hintText: '●●●●●●',
-                    hintStyle: TextStyle(
-                        color: Theme.of(context).disabledColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400)),
+                    hintStyle: TextStyle(color: Theme.of(context).disabledColor, fontSize: 14, fontWeight: FontWeight.w400)),
                 validator: (String text) {
                   String message = widget.validate(text);
                   _streamController.sink.add(message);
@@ -328,12 +286,8 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                 child: Container(
                   margin: EdgeInsets.only(right: 16, bottom: 8),
                   child: Icon(
-                    hidden
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: hidden
-                        ? Theme.of(context).disabledColor
-                        : Theme.of(context).textTheme.bodyText1.color,
+                    hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: hidden ? Theme.of(context).disabledColor : Theme.of(context).textTheme.bodyText1.color,
                     size: 24,
                   ),
                 ),
@@ -383,15 +337,10 @@ class MyBottomFixedButton extends StatelessWidget {
               height: buttonHeight,
               width: MediaQuery.of(context).size.width,
               alignment: Alignment.center,
-              color: enable
-                  ? Theme.of(context).accentColor
-                  : Theme.of(context).disabledColor,
+              color: enable ? Theme.of(context).accentColor : Theme.of(context).disabledColor,
               child: Text(
                 label,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).buttonTheme.colorScheme.primary),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).buttonTheme.colorScheme.primary),
               ),
             ),
           ),
@@ -408,16 +357,10 @@ class MyHookBottomFixedButton extends StatefulHookWidget {
   final String label;
   final AutoDisposeStateNotifierProvider provider;
 
-  MyHookBottomFixedButton(
-      {@required this.child,
-      @required this.label,
-      this.onTapped,
-      @required this.enable,
-      @required this.provider});
+  MyHookBottomFixedButton({@required this.child, @required this.label, this.onTapped, @required this.enable, @required this.provider});
 
   @override
-  _MyHookBottomFixedButtonState createState() =>
-      _MyHookBottomFixedButtonState();
+  _MyHookBottomFixedButtonState createState() => _MyHookBottomFixedButtonState();
 }
 
 class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
@@ -428,8 +371,7 @@ class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
   void initState() {
     super.initState();
     var keyboardVisibilityController = KeyboardVisibilityController();
-    keyboardSubscription =
-        keyboardVisibilityController.onChange.listen((bool visible) {
+    keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
       setState(() {});
     });
   }
@@ -465,19 +407,14 @@ class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
                 height: buttonHeight + MediaQuery.of(context).viewPadding.bottom,
                 width: MediaQuery.of(context).size.width,
                 alignment: Alignment.topCenter,
-                color: t
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).disabledColor,
+                color: t ? Theme.of(context).accentColor : Theme.of(context).disabledColor,
                 child: Container(
                   height: buttonHeight,
                   color: Colors.transparent,
                   alignment: Alignment.center,
                   child: Text(
                     widget.label,
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).buttonTheme.colorScheme.primary),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).buttonTheme.colorScheme.primary),
                   ),
                 ),
               ),
@@ -496,38 +433,30 @@ class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
   final Function labelChange;
   final AutoDisposeStateNotifierProvider provider;
 
-  MyHookFlexibleLabelBottomFixedButton(
-      {@required this.child,
-      @required this.labelChange,
-      this.onTapped,
-      @required this.enable,
-      @required this.provider});
+  MyHookFlexibleLabelBottomFixedButton({@required this.child, @required this.labelChange, this.onTapped, @required this.enable, @required this.provider});
 
   @override
   _MyHookFlexibleLabelBottomFixedButtonState createState() => _MyHookFlexibleLabelBottomFixedButtonState();
 }
 
-  class _MyHookFlexibleLabelBottomFixedButtonState extends State<MyHookFlexibleLabelBottomFixedButton> {
-    static final buttonHeight = 64.0;
-    // TODO: This
-    // final LabelChange labelChange = () => "";
-    StreamSubscription<bool> keyboardSubscription;
+class _MyHookFlexibleLabelBottomFixedButtonState extends State<MyHookFlexibleLabelBottomFixedButton> {
+  static final buttonHeight = 64.0;
+  StreamSubscription<bool> keyboardSubscription;
 
-    @override
-    void initState() {
-      super.initState();
-      var keyboardVisibilityController = KeyboardVisibilityController();
-      keyboardSubscription =
-          keyboardVisibilityController.onChange.listen((bool visible) {
-            setState(() {});
-          });
-    }
+  @override
+  void initState() {
+    super.initState();
+    var keyboardVisibilityController = KeyboardVisibilityController();
+    keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
+      setState(() {});
+    });
+  }
 
-    @override
-    void dispose() {
-      keyboardSubscription.cancel();
-      super.dispose();
-    }
+  @override
+  void dispose() {
+    keyboardSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -535,14 +464,14 @@ class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
       children: [
         SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                widget.child,
-                SizedBox(
-                  height: buttonHeight,
-                )
-              ],
-            )),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            widget.child,
+            SizedBox(
+              height: buttonHeight,
+            )
+          ],
+        )),
         HookBuilder(builder: (BuildContext context) {
           useProvider(widget.provider.state);
           bool t = widget.enable();
@@ -552,18 +481,18 @@ class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
             child: InkWell(
               onTap: t ? widget.onTapped : null,
               child: Container(
-                height: buttonHeight,
+                height: buttonHeight + MediaQuery.of(context).viewPadding.bottom,
                 width: MediaQuery.of(context).size.width,
-                alignment: Alignment.center,
-                color: t
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).disabledColor,
-                child: Text(
-                  label,
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).buttonTheme.colorScheme.primary),
+                alignment: Alignment.topCenter,
+                color: t ? Theme.of(context).accentColor : Theme.of(context).disabledColor,
+                child: Container(
+                  height: buttonHeight,
+                  color: Colors.transparent,
+                  alignment: Alignment.center,
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).buttonTheme.colorScheme.primary),
+                  ),
                 ),
               ),
             ),
@@ -651,9 +580,7 @@ class _MyUserNameFieldState extends State<MyUserNameField> {
       onSaved: (text) async {
         await widget.onSaved(text);
       },
-      inputFormatter: [
-        FilteringTextInputFormatter.allow(RegExp(r"^[a-zA-Z0-9_]+$"))
-      ],
+      inputFormatter: [FilteringTextInputFormatter.allow(RegExp(r"^[a-zA-Z0-9_]+$"))],
     );
   }
 
@@ -673,8 +600,7 @@ class _MyUserNameFieldState extends State<MyUserNameField> {
       if (text.length == 0) {
         changeState(CustomIdFieldState.empty);
       } else {
-        CustomIdFieldState res = await checkAvailability(
-            text, widget.initialCheck ? '' : widget.initialValue);
+        CustomIdFieldState res = await checkAvailability(text, widget.initialCheck ? '' : widget.initialValue);
         if (res != null) {
           changeState(res);
         }
@@ -682,8 +608,7 @@ class _MyUserNameFieldState extends State<MyUserNameField> {
     }
   }
 
-  Future<CustomIdFieldState> checkAvailability(
-      String input, String initialValue) async {
+  Future<CustomIdFieldState> checkAvailability(String input, String initialValue) async {
     if (initialValue == input && !widget.initialCheck) {
       this.customId = input;
       return CustomIdFieldState.unchanged;
