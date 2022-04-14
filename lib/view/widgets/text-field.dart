@@ -489,13 +489,11 @@ class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
   }
 }
 
-typedef String LabelChange();
-
 class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
   final Widget child;
   final Function enable;
   final Function onTapped;
-  final LabelChange labelChange;
+  final Function labelChange;
   final AutoDisposeStateNotifierProvider provider;
 
   MyHookFlexibleLabelBottomFixedButton(
@@ -513,7 +511,6 @@ class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
     static final buttonHeight = 64.0;
     // TODO: This
     // final LabelChange labelChange = () => "";
-    final LabelChange labelChange; // Error
     StreamSubscription<bool> keyboardSubscription;
 
     @override
@@ -549,7 +546,7 @@ class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
         HookBuilder(builder: (BuildContext context) {
           useProvider(widget.provider.state);
           bool t = widget.enable();
-          String label = labelChange();
+          String label = widget.labelChange();
           return Align(
             alignment: Alignment.bottomCenter,
             child: InkWell(
