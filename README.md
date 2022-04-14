@@ -1,16 +1,43 @@
 # Brebit
 
-An awesome breaking habit application
+**An awesome breaking habit application.**
 
-## Getting Started
+## Usage
 
-This project is a starting point for a Flutter application.
+### 0. 準備
 
-A few resources to get you started if this is your first Flutter project:
+1. flutter をインストール
+2. Backend を起動: `https://github.com/tetzar/laradoc-rep`
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+### 1. API の URL を設定
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+`lib/network/api.dart` で`_url`を適切なやつに変える
+
+### 2. Dependencies を取得する
+
+```bash
+flutter pub get
+```
+
+### 3. App を起動する
+
+```bash
+flutter run
+```
+
+## iOS Tips
+
+- `flutter doctor`, `flutter buid ios`で様子を見る
+- とりあえず`open ~/Applications/JetBrains\ Toolbox/Android\ Studio.app`する。ターミナルから開くだけとかいう嘘みたいな方法だが**本当に効果がある**
+- `flutter clean`, `rm -rf ~/Library/Developer/Xcode/DerivedData/`でキャッシュ削除
+
+### Cocoapods
+
+- Ruby Version を上げて CocoaPods を再 install
+- Ruby を rbenv で管理して gem が rbenv の管理下に置かれているのを確認してから`gem install cocoapods`
+- RubyGems で pod を入れるとうまく動かない時がある (`Warning: CocoaPods is installed but broken. Skipping pod install.`)
+  - ので、`brew install cocoapods` && `brew link --overwrite cocoapods`
+
+pod install が通らないときは `cd ios`,
+- `pod repo update`
+- `rm -rf Podfile.lock`
