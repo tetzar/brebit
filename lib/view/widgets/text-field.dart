@@ -491,14 +491,12 @@ class _MyHookBottomFixedButtonState extends State<MyHookBottomFixedButton> {
 
 typedef String LabelChange();
 
-class MyHookFlexibleLabelBottomFixedButton extends StatelessWidget {
+class MyHookFlexibleLabelBottomFixedButton extends StatefulHookWidget {
   final Widget child;
   final Function enable;
   final Function onTapped;
   final LabelChange labelChange;
   final AutoDisposeStateNotifierProvider provider;
-
-  static final buttonHeight = 64.0;
 
   MyHookFlexibleLabelBottomFixedButton(
       {@required this.child,
@@ -508,27 +506,54 @@ class MyHookFlexibleLabelBottomFixedButton extends StatelessWidget {
       @required this.provider});
 
   @override
+  _MyHookFlexibleLabelBottomFixedButtonState createState() => _MyHookFlexibleLabelBottomFixedButtonState();
+}
+
+  class _MyHookFlexibleLabelBottomFixedButtonState extends State<MyHookFlexibleLabelBottomFixedButton> {
+    static final buttonHeight = 64.0;
+    // TODO: This
+    // final LabelChange labelChange = () => "";
+    final LabelChange labelChange; // Error
+    StreamSubscription<bool> keyboardSubscription;
+
+    @override
+    void initState() {
+      super.initState();
+      var keyboardVisibilityController = KeyboardVisibilityController();
+      keyboardSubscription =
+          keyboardVisibilityController.onChange.listen((bool visible) {
+            setState(() {});
+          });
+    }
+
+    @override
+    void dispose() {
+      keyboardSubscription.cancel();
+      super.dispose();
+    }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         SingleChildScrollView(
             child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            child,
-            SizedBox(
-              height: buttonHeight,
-            )
-          ],
-        )),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                widget.child,
+                SizedBox(
+                  height: buttonHeight,
+                )
+              ],
+            )),
         HookBuilder(builder: (BuildContext context) {
-          useProvider(provider.state);
-          bool t = enable();
+          useProvider(widget.provider.state);
+          bool t = widget.enable();
           String label = labelChange();
           return Align(
             alignment: Alignment.bottomCenter,
             child: InkWell(
-              onTap: t ? onTapped : null,
+              onTap: t ? widget.onTapped : null,
               child: Container(
                 height: buttonHeight,
                 width: MediaQuery.of(context).size.width,
