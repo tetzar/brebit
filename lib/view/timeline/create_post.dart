@@ -329,95 +329,100 @@ class CreatePost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        await onBack(context);
-        return false;
-      },
-      child: Scaffold(
-        appBar: getMyAppBar(
-            context: context,
-            titleText: '',
-            actions: [
-              InkWell(
-                  onTap: () async {
-                    context.read(_inputScopeProvider).set(InputState.disabled);
-                    Draft draft = await ApplicationRoutes.push(
-                        MaterialPageRoute(
-                            builder: (BuildContext context) => DraftScreen()));
-                    if (draft != null) {
-                      context.read(_draftProvider).set(draft);
-                      context
-                          .read(imageSelectProvider)
-                          .setAll(draft.imageAssets);
-                      context.read(_savableProvider).set(_formValue.savable());
-                    }
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: 16),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '下書き',
-                      style: TextStyle(
-                          color: Theme
-                              .of(context)
-                              .accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  )),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+    return Container(
+      color: Theme.of(context).primaryColor,
+      child: SafeArea(
+        child: WillPopScope(
+          onWillPop: () async {
+            await onBack(context);
+            return false;
+          },
+          child: Scaffold(
+            appBar: getMyAppBar(
+                context: context,
+                titleText: '',
+                actions: [
                   InkWell(
-                    onTap: () async {
-                      await save();
-                    },
-                    child: HookBuilder(
-                      builder: (BuildContext context) {
-                        bool savable = useProvider(_savableProvider.state);
-                        return Container(
-                          margin: EdgeInsets.only(right: 16),
-                          width: 84,
-                          height: 34,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(17),
-                              color: savable
-                                  ? Theme
-                                  .of(context)
-                                  .accentColor
-                                  : Theme
-                                  .of(context)
-                                  .accentColor
-                                  .withOpacity(0.4)),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'ポスト',
-                            style: TextStyle(
-                                color: Theme
-                                    .of(context)
-                                    .primaryColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12),
-                          ),
-                        );
+                      onTap: () async {
+                        context.read(_inputScopeProvider).set(InputState.disabled);
+                        Draft draft = await ApplicationRoutes.push(
+                            MaterialPageRoute(
+                                builder: (BuildContext context) => DraftScreen()));
+                        if (draft != null) {
+                          context.read(_draftProvider).set(draft);
+                          context
+                              .read(imageSelectProvider)
+                              .setAll(draft.imageAssets);
+                          context.read(_savableProvider).set(_formValue.savable());
+                        }
                       },
-                    ),
+                      child: Container(
+                        margin: EdgeInsets.only(right: 16),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '下書き',
+                          style: TextStyle(
+                              color: Theme
+                                  .of(context)
+                                  .accentColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      )),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          await save();
+                        },
+                        child: HookBuilder(
+                          builder: (BuildContext context) {
+                            bool savable = useProvider(_savableProvider.state);
+                            return Container(
+                              margin: EdgeInsets.only(right: 16),
+                              width: 84,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(17),
+                                  color: savable
+                                      ? Theme
+                                      .of(context)
+                                      .accentColor
+                                      : Theme
+                                      .of(context)
+                                      .accentColor
+                                      .withOpacity(0.4)),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'ポスト',
+                                style: TextStyle(
+                                    color: Theme
+                                        .of(context)
+                                        .primaryColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-            onBack: () async {
-              await onBack(context);
-            },
-            background: AppBarBackground.white),
-        body: InputForm(
-          args: args,
+                onBack: () async {
+                  await onBack(context);
+                },
+                background: AppBarBackground.white),
+            body: InputForm(
+              args: args,
+            ),
+            // body: TextFormField(
+            //   focusNode: _focusNode,
+            // ),
+          ),
         ),
-        // body: TextFormField(
-        //   focusNode: _focusNode,
-        // ),
       ),
     );
   }
