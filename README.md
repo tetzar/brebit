@@ -1,6 +1,6 @@
 # Brebit
 
-**An awesome breaking habit application.**
+**An awesome HABIT-BREAKING APPLICATION.**
 
 ## Usage
 
