@@ -1,16 +1,17 @@
 import 'dart:async';
+import 'dart:developer';
 
-import '../../../library/cache.dart';
-import '../../../model/analysis.dart';
-import '../../../model/strategy.dart';
-import '../../../model/user.dart';
-import '../../../network/search.dart';
-import '../../../provider/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../api/search.dart';
+import '../../../library/cache.dart';
+import '../../../model/analysis.dart';
+import '../../../model/strategy.dart';
+import '../../../model/user.dart';
+import '../../../provider/auth.dart';
 import 'account.dart';
 import 'analysis.dart';
 import 'search-slider.dart';
@@ -27,7 +28,9 @@ class InputFormProviderState {
   InputFormProviderState({this.analyses, this.users, this.strategies});
 
   InputFormProviderState copyWith(
-      {List<Analysis> analyses, List<AuthUser> users, List<Strategy> strategies}) {
+      {List<Analysis> analyses,
+      List<AuthUser> users,
+      List<Strategy> strategies}) {
     return new InputFormProviderState(
       analyses: analyses == null ? this.analyses : analyses,
       strategies: strategies == null ? this.strategies : strategies,
@@ -77,16 +80,15 @@ class InputFormProvider extends StateNotifier<InputFormProviderState> {
 
   void removeStrategy(Strategy strategy) {
     List<Strategy> _strategies = state.strategies;
-    _strategies.removeWhere((existingStrategy){
+    _strategies.removeWhere((existingStrategy) {
       return existingStrategy.id == strategy.id;
     });
     List<Strategy> _recommendationStrategies = recommendation.strategies;
-    _recommendationStrategies.removeWhere((existingStrategy){
+    _recommendationStrategies.removeWhere((existingStrategy) {
       return existingStrategy.id == strategy.id;
     });
-    recommendation = recommendation.copyWith(
-      strategies: _recommendationStrategies
-    );
+    recommendation =
+        recommendation.copyWith(strategies: _recommendationStrategies);
     state = state.copyWith(strategies: _strategies);
   }
 
@@ -95,12 +97,12 @@ class InputFormProvider extends StateNotifier<InputFormProviderState> {
   }
 
   void removeAnalysis(Analysis analysis) {
-    List<Analysis> _analyses= state.analyses;
-    _analyses.removeWhere((existingAnalysis){
+    List<Analysis> _analyses = state.analyses;
+    _analyses.removeWhere((existingAnalysis) {
       return existingAnalysis.id == analysis.id;
     });
     List<Analysis> _recommendationAnalyses = recommendation.analyses;
-    _recommendationAnalyses.removeWhere((existingAnalysis){
+    _recommendationAnalyses.removeWhere((existingAnalysis) {
       return existingAnalysis.id == analysis.id;
     });
     recommendation = recommendation.copyWith(analyses: _recommendationAnalyses);
@@ -226,9 +228,13 @@ class _SearchState extends State<Search> {
                       _timer?.cancel();
                       _timer = Timer(Duration(milliseconds: 300), () async {
                         context.read(inputFormProvider).setWord(text);
-                        await context
-                            .read(inputFormProvider)
-                            .getSearchResult(text);
+                        try {
+                          await context
+                              .read(inputFormProvider)
+                              .getSearchResult(text);
+                        } catch (e) {
+                          log('debug', error: e);
+                        }
                       });
                     },
                     onEditingComplete: () async {
@@ -274,7 +280,11 @@ class _SearchState extends State<Search> {
               node.unfocus();
               LocalManager.setRecentSearch(
                   context.read(authProvider.state).user, text);
-              await context.read(inputFormProvider).getSearchResult(text);
+              try {
+                await context.read(inputFormProvider).getSearchResult(text);
+              } catch (e) {
+                log('debug', error: e);
+              }
               context.read(recentShowProvider).hide();
             },
             recentSearchFuture:

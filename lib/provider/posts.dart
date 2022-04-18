@@ -7,7 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../library/cache.dart';
 import '../../model/post.dart';
 import '../../model/user.dart';
-import '../../network/post.dart';
+import '../../api/post.dart';
 import 'auth.dart';
 
 final timelineProvider = StateNotifierProvider.family((ref, name) {

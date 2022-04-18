@@ -1,15 +1,18 @@
+import 'dart:async';
+
+import 'package:brebit/view/widgets/text-field.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../provider/auth.dart';
 import '../../../../route/route.dart';
 import '../../general/loading.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/back-button.dart';
 import '../../widgets/dialog.dart';
-import '../../widgets/text-field.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class EmailSetting extends StatelessWidget {
   @override
@@ -447,10 +450,8 @@ class _ChangeEmailState extends State<ChangeEmail> {
       _passwordKey.currentState.save();
       try {
         MyLoading.startLoading();
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: email,
-            password: password
-        );
+        await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
         User firebaseUser = FirebaseAuth.instance.currentUser;
         await firebaseUser.reload();
         await firebaseUser.updateEmail(email);

@@ -1,10 +1,10 @@
-import '../../../model/analysis.dart';
-import '../../../provider/home.dart';
-import '../search/search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../model/analysis.dart';
+import '../../../provider/home.dart';
+import '../search/search.dart';
 import 'navigation.dart';
 import 'widget/analysis-card.dart';
 
@@ -42,13 +42,10 @@ class AnalysisContent extends HookWidget {
           alignment: Alignment.center,
           child: InkWell(
             onTap: () {
-              Home.navKey.currentState.push(
-                  MaterialPageRoute(
-                      builder: (context) => Search(
+              Home.navKey.currentState.push(MaterialPageRoute(
+                  builder: (context) => Search(
                         args: 'analysis',
-                      )
-                  )
-              );
+                      )));
             },
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,

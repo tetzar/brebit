@@ -2,16 +2,16 @@ import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/model/comment.dart';
 import 'package:brebit/view/timeline/post.dart';
 import 'package:brebit/view/timeline/widget/comment-card.dart';
+import 'package:flutter/material.dart';
 
+import '../../../api/post.dart';
 import '../../../model/post.dart';
-import '../../../network/post.dart';
 import '../../../route/route.dart';
-import 'loading.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
-import 'package:flutter/material.dart';
+import 'loading.dart';
 
 enum ReportableType {
   comment,
@@ -206,7 +206,7 @@ class ReportCard extends StatelessWidget {
   }
 }
 
-class   ReportComplete extends StatelessWidget {
+class ReportComplete extends StatelessWidget {
   final dynamic reportable;
 
   ReportComplete(this.reportable);

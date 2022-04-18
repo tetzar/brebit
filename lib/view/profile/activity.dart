@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../model/habit_log.dart';
@@ -10,11 +15,6 @@ import '../../../route/route.dart';
 import '../timeline/create_post.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'did-confirmation.dart';
 
 final _activityProvider =

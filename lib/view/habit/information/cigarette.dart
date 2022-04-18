@@ -1,12 +1,16 @@
+import 'dart:async';
+
+import 'package:brebit/view/general/loading.dart';
+import 'package:flutter/material.dart';
+
+import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
-import '../../../../network/habit.dart';
 import '../../../../route/route.dart';
-import 'widgets.dart';
-import '../select-strategy.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
+import '../select-strategy.dart';
+import 'widgets.dart';
 
 class CigaretteInformation extends StatefulWidget {
   @override
@@ -35,36 +39,37 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
               !data.containsKey('nicotine-integer') &&
               !data.containsKey('nicotine-decimal') &&
               !data.containsKey('history-year') &&
-              !data.containsKey('history-month')
-          ) {
+              !data.containsKey('history-month')) {
             return true;
           }
         }
         showDialog(
             context: context,
             builder: (context) => MyDialog(
-                title: SizedBox(height: 0,),
-                body: Text('戻りますか？',
+                title: SizedBox(
+                  height: 0,
+                ),
+                body: Text(
+                  '戻りますか？',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: Theme.of(context).disabledColor,
                       fontWeight: FontWeight.w700,
-                      fontSize: 17
-                  ),),
+                      fontSize: 17),
+                ),
                 actionText: '戻る',
                 action: () {
                   Navigator.pop(context);
                   ApplicationRoutes.popUntil('/startHabit');
-                })
-        );
+                }));
         return false;
       },
       child: Scaffold(
         appBar: getMyAppBar(
-          context: context,
-          backButton: AppBarBackButton.arrow,
-          background: AppBarBackground.gray,
-          titleText: 'たばこを減らす',
+            context: context,
+            backButton: AppBarBackButton.arrow,
+            background: AppBarBackground.gray,
+            titleText: 'たばこを減らす',
             onBack: () {
               if (data['target'] == 0) {
                 if (!data.containsKey('amount') &&
@@ -74,8 +79,7 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
                     !data.containsKey('nicotine-integer') &&
                     !data.containsKey('nicotine-decimal') &&
                     !data.containsKey('history-year') &&
-                    !data.containsKey('history-month')
-                ) {
+                    !data.containsKey('history-month')) {
                   ApplicationRoutes.pop();
                   return;
                 }
@@ -83,22 +87,23 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
               showDialog(
                   context: context,
                   builder: (context) => MyDialog(
-                      title: SizedBox(height: 0,),
-                      body: Text('戻りますか？',
+                      title: SizedBox(
+                        height: 0,
+                      ),
+                      body: Text(
+                        '戻りますか？',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: Theme.of(context).disabledColor,
                             fontWeight: FontWeight.w700,
-                            fontSize: 17
-                        ),),
+                            fontSize: 17),
+                      ),
                       actionText: '戻る',
                       action: () {
                         Navigator.pop(context);
                         ApplicationRoutes.popUntil('/startHabit');
-                      })
-              );
-            }
-        ),
+                      }));
+            }),
         body: MyBottomFixedButton(
           enable: savable(),
           onTapped: () async {
@@ -314,21 +319,27 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
     if (savable()) {
       Map<String, dynamic> _data = <String, dynamic>{};
       _data['average'] = data['number'];
-      _data['history'] =
-          (data['history-year'] * 12 + data['history-month']);
+      _data['history'] = (data['history-year'] * 12 + data['history-month']);
       _data['nicotine'] =
           data['nicotine-integer'] + data['nicotine-decimal'] * 0.1;
       _data['limit'] = data['target'] > 0 ? data['target'] : null;
       _data['number-per-box'] = data['number-per-box'];
       _data['price'] = data['price'];
       _data['price-unit'] = 'JPY';
-      Map<String, dynamic> result =
-          await HabitApi.saveInformation(_category, _data);
-      SelectStrategyParams params = new SelectStrategyParams(
-          recommendStrategies: result['strategies']['recommend'],
-          habit: result['habit'],
-          otherStrategies: result['strategies']['others']);
-      ApplicationRoutes.pushNamed('/strategy/select', params);
+      MyLoading.startLoading();
+      try {
+        Map<String, dynamic> result =
+            await HabitApi.saveInformation(_category, _data);
+        SelectStrategyParams params = new SelectStrategyParams(
+            recommendStrategies: result['strategies']['recommend'],
+            habit: result['habit'],
+            otherStrategies: result['strategies']['others']);
+        await MyLoading.dismiss();
+        ApplicationRoutes.pushNamed('/strategy/select', params);
+      } catch (e) {
+        await MyLoading.dismiss();
+        MyErrorDialog.show(e);
+      }
     }
   }
 }

@@ -1,17 +1,18 @@
-import '../../../../model/habit.dart';
-import '../../../../model/strategy.dart';
-import '../../../../network/strategy.dart';
-import '../../../../provider/home.dart';
-import '../../../../route/route.dart';
-import '../../search/search.dart';
-import '../../widgets/bottom-sheet.dart';
-import '../../widgets/strategy-card.dart';
+import 'package:brebit/view/widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../../api/strategy.dart';
+import '../../../../model/habit.dart';
+import '../../../../model/strategy.dart';
+import '../../../../provider/home.dart';
+import '../../../../route/route.dart';
+import '../../search/search.dart';
+import '../../widgets/bottom-sheet.dart';
+import '../../widgets/strategy-card.dart';
 import '../navigation.dart';
 
 final rulesEditProvider = StateNotifierProvider((_) => RuleEditProvider(false));
@@ -62,36 +63,33 @@ class MyRules extends HookWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-      Container(
-          margin: EdgeInsets.only(top: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                    '自分のストラテジー',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 13,
-                        color: Theme.of(context).disabledColor),
+          Container(
+              margin: EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '自分のストラテジー',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13,
+                          color: Theme.of(context).disabledColor),
+                    ),
                   ),
-                ),
-              GestureDetector(
-                  onTap: () {
-                    ApplicationRoutes.pushNamed(
-                      '/explanation/strategy'
-                    );
-                  },
-                  child: SvgPicture.asset(
-                    'assets/icon/explanation.svg',
-                    width: 20,
-                      height: 20,
-                    color: Theme.of(context).disabledColor,
-                  )
-              )
-            ],
-          )),
+                  GestureDetector(
+                      onTap: () {
+                        ApplicationRoutes.pushNamed('/explanation/strategy');
+                      },
+                      child: SvgPicture.asset(
+                        'assets/icon/explanation.svg',
+                        width: 20,
+                        height: 20,
+                        color: Theme.of(context).disabledColor,
+                      ))
+                ],
+              )),
           RuleCards(strategies: _homeProviderState.habit.strategies),
           Container(
             margin: EdgeInsets.symmetric(vertical: 8),
@@ -99,13 +97,10 @@ class MyRules extends HookWidget {
             alignment: Alignment.center,
             child: InkWell(
               onTap: () {
-                Home.navKey.currentState.push(
-                  MaterialPageRoute(
+                Home.navKey.currentState.push(MaterialPageRoute(
                     builder: (context) => Search(
-                      args: 'strategy',
-                    )
-                  )
-                );
+                          args: 'strategy',
+                        )));
               },
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -166,10 +161,14 @@ class RuleCards extends StatelessWidget {
       isUsing
           ? BottomSheetItem(
               onTap: () async {
-                Habit habit = await StrategyApi.removeStrategies(
-                    context.read(homeProvider).getHabit(), [strategy.id]);
-                context.read(homeProvider).setHabit(habit);
-                ApplicationRoutes.pop();
+                try {
+                  Habit habit = await StrategyApi.removeStrategies(
+                      context.read(homeProvider).getHabit(), [strategy.id]);
+                  context.read(homeProvider).setHabit(habit);
+                  ApplicationRoutes.pop();
+                } catch (e) {
+                  MyErrorDialog.show(e);
+                }
               },
               child: Text(
                 '自分のストラテジーから削除',
@@ -180,10 +179,14 @@ class RuleCards extends StatelessWidget {
               ))
           : BottomSheetItem(
               onTap: () async {
-                Habit habit = await StrategyApi.addStrategy(
-                    strategy, context.read(homeProvider).getHabit());
-                context.read(homeProvider).setHabit(habit);
-                ApplicationRoutes.pop();
+                try {
+                  Habit habit = await StrategyApi.addStrategy(
+                      strategy, context.read(homeProvider).getHabit());
+                  context.read(homeProvider).setHabit(habit);
+                  ApplicationRoutes.pop();
+                } catch (e) {
+                  MyErrorDialog.show(e);
+                }
               },
               child: Text(
                 '自分のストラテジーに追加',

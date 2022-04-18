@@ -1,8 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../api/strategy.dart';
 import '../../../library/resolver.dart';
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../model/strategy.dart';
-import '../../../network/strategy.dart';
 import '../../../provider/auth.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
@@ -11,9 +17,6 @@ import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 import '../widgets/strategy-card.dart';
 import '../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SelectedStrategy {
   List<InputFormValue> createdValues = <InputFormValue>[];
@@ -115,7 +118,7 @@ class SelectStrategy extends StatelessWidget {
             width: MediaQuery.of(context).size.width,
             child: SingleChildScrollView(
               child: Container(
-                width: double.infinity,
+                  width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: SelectStrategyContent(
                     params: params,
@@ -275,54 +278,51 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                 ],
               )),
           Container(
-            margin: EdgeInsets.only(
-              top: 16
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Container(
-                  child: Text(
-                    'おすすめ',
-                    style: _style,
-                  ),
-                  alignment: Alignment.centerLeft,
-                )),
-                Expanded(
+            margin: EdgeInsets.only(top: 16),
+            child: Row(children: [
+              Expanded(
                   child: Container(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      child: Text(
-                        'ストラテジーとは？',
-                        style: TextStyle(
-                            decoration: TextDecoration.underline,
-                            color: Theme.of(context).accentColor),
-                      ),
-                      onTap: () {
-                        print('jump to description');
-                      },
+                child: Text(
+                  'おすすめ',
+                  style: _style,
+                ),
+                alignment: Alignment.centerLeft,
+              )),
+              Expanded(
+                child: Container(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    child: Text(
+                      'ストラテジーとは？',
+                      style: TextStyle(
+                          decoration: TextDecoration.underline,
+                          color: Theme.of(context).accentColor),
                     ),
+                    onTap: () {
+                      print('jump to description');
+                    },
                   ),
                 ),
-              ]
-            ),
+              ),
+            ]),
           )
-        ]..addAll(widget.params.recommendStrategies
-            .map((strategy) => StrategyCard(
-          strategy: strategy,
-          showFollower: true,
-          initialSelected: _selected.isSelected(strategy),
-          onSelect: () {
-            if (_selected.isSelected(strategy)) {
-              _selected.removeStrategyFromSelected(strategy);
-              return false;
-            } else {
-              _selected.selectStrategy(strategy);
-              return true;
-            }
-          },
-        ))
-            .toList())
+        ]
+          ..addAll(widget.params.recommendStrategies
+              .map((strategy) => StrategyCard(
+                    strategy: strategy,
+                    showFollower: true,
+                    initialSelected: _selected.isSelected(strategy),
+                    onSelect: () {
+                      if (_selected.isSelected(strategy)) {
+                        _selected.removeStrategyFromSelected(strategy);
+                        return false;
+                      } else {
+                        _selected.selectStrategy(strategy);
+                        return true;
+                      }
+                    },
+                  ))
+              .toList())
           ..add(Container(
             margin: EdgeInsets.only(top: 8),
             child: Text(
@@ -334,10 +334,10 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
             onTap: () {
               StrategyCreateParams params = StrategyCreateParams(
                   onSaved: (InputFormValue _formValue) async {
-                    _selected.addCreatedValue(_formValue);
-                    Navigator.pop(context);
-                    setState(() {});
-                  });
+                _selected.addCreatedValue(_formValue);
+                Navigator.pop(context);
+                setState(() {});
+              });
               ApplicationRoutes.pushNamed('/strategy/create', params);
             },
             child: Container(
@@ -421,8 +421,7 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
               style: _style,
             ),
           ))
-          ..addAll(
-              widget.params.otherStrategies.map((strategy) => StrategyCard(
+          ..addAll(widget.params.otherStrategies.map((strategy) => StrategyCard(
                 strategy: strategy,
                 showFollower: true,
                 initialSelected: _selected.isSelected(strategy),
@@ -435,7 +434,10 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                     return true;
                   }
                 },
-              )))..add(SizedBox(height: 64,)),
+              )))
+          ..add(SizedBox(
+            height: 64,
+          )),
       ),
     );
   }

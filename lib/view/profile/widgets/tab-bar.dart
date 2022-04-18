@@ -1,14 +1,14 @@
-import '../../../../provider/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final tabProvider = StateNotifierProvider.autoDispose(
-    (ref) => TabProvider(0)
-);
+import '../../../../provider/auth.dart';
 
-class TabProvider extends StateNotifier<double>{
+final tabProvider = StateNotifierProvider.autoDispose((ref) => TabProvider(0));
+
+class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
+
   void set(double s) {
     state = s;
   }
@@ -16,11 +16,15 @@ class TabProvider extends StateNotifier<double>{
 
 class ProfileTabBar extends SliverPersistentHeaderDelegate {
   final TabController tabController;
+
   ProfileTabBar({@required this.tabController});
+
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return _ProfileTabBarContent(tabController: tabController,);
+    return _ProfileTabBarContent(
+      tabController: tabController,
+    );
   }
 
   @override
@@ -42,7 +46,9 @@ enum ShowingTab {
 
 class _ProfileTabBarContent extends StatefulHookWidget {
   final TabController tabController;
+
   _ProfileTabBarContent({@required this.tabController});
+
   @override
   __ProfileTabBarContentState createState() => __ProfileTabBarContentState();
 }
@@ -99,13 +105,13 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                 fontWeight: FontWeight.w400,
                                 color: _showingTab == ShowingTab.posts
                                     ? Theme.of(context)
-                                    .textTheme
-                                    .bodyText1
-                                    .color
+                                        .textTheme
+                                        .bodyText1
+                                        .color
                                     : Theme.of(context)
-                                    .textTheme
-                                    .subtitle1
-                                    .color),
+                                        .textTheme
+                                        .subtitle1
+                                        .color),
                           ),
                         )),
                   ),
@@ -122,13 +128,13 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                 fontWeight: FontWeight.w400,
                                 color: _showingTab == ShowingTab.friend
                                     ? Theme.of(context)
-                                    .textTheme
-                                    .bodyText1
-                                    .color
+                                        .textTheme
+                                        .bodyText1
+                                        .color
                                     : Theme.of(context)
-                                    .textTheme
-                                    .subtitle1
-                                    .color),
+                                        .textTheme
+                                        .subtitle1
+                                        .color),
                           ),
                         )),
                   )

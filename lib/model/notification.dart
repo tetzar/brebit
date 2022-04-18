@@ -4,7 +4,7 @@ import 'partner.dart';
 import 'post.dart';
 import 'favorite.dart';
 import 'model.dart';
-import '../network/notification.dart';
+import '../api/notification.dart';
 
 // ignore: non_constant_identifier_names
 List<UserNotification> UserNotificationFromJson(List<dynamic> decodedList) =>

@@ -17,7 +17,7 @@ import '../../../model/draft.dart';
 import '../../../model/habit_log.dart';
 import '../../../model/image.dart' as ImageModel;
 import '../../../model/user.dart';
-import '../../../network/post.dart';
+import '../../../api/post.dart';
 import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';

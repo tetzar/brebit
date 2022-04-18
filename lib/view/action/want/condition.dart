@@ -1,7 +1,7 @@
 import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
 import '../../../../model/tag.dart';
-import '../../../../network/strategy.dart';
+import '../../../../api/strategy.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';

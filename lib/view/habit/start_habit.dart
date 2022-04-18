@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../provider/auth.dart';
@@ -6,9 +10,6 @@ import '../../../route/route.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class StartHabit extends StatefulWidget {
   @override
@@ -152,9 +153,14 @@ class HabitCards extends StatelessWidget {
               ),
               actionText: '再開する',
               action: () async {
-                Habit _habit =
-                    await context.read(authProvider).restartHabit(categoryName);
-                await context.read(homeProvider).restart(_habit);
+                try {
+                  Habit _habit = await context
+                      .read(authProvider)
+                      .restartHabit(categoryName);
+                  await context.read(homeProvider).restart(_habit);
+                } catch (e) {
+                  MyErrorDialog.show(e);
+                }
                 ApplicationRoutes.pop();
                 ApplicationRoutes.pop();
               });

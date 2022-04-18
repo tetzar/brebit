@@ -1,14 +1,16 @@
-import '../../../provider/auth.dart';
-import '../general/loading.dart';
-import '../widgets/app-bar.dart';
-import '../widgets/dialog.dart';
-import '../widgets/text-field.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../provider/auth.dart';
 import '../../main.dart';
+import '../general/loading.dart';
+import '../widgets/app-bar.dart';
+import '../widgets/dialog.dart';
+import '../widgets/text-field.dart';
 
 class NameInput extends StatelessWidget {
   @override

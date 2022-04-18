@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,10 +12,12 @@ import 'auth.dart';
 
 class Network {
   // for emulator (Android)
-  // static final String _url = 'http://10.0.2.2:80';
+  static final String _url = 'http://10.0.2.2:80';
+
+  static const int TIME_OUT_SECONDS = 30;
 
   // for emulator (iOS)
-  static final String _url = 'http://localhost:80';
+  // static final String _url = 'http://localhost:80';
   // マイハウス
   // static final String _url = 'http://192.168.3.40:80';
   // イマジナリーハウス
@@ -47,7 +50,9 @@ class Network {
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
     return await http.post(url,
-        body: jsonEncode(data), headers: _setHeadersWithoutToken());
+        body: jsonEncode(data), headers: _setHeadersWithoutToken()).timeout(
+        Duration(seconds: TIME_OUT_SECONDS)
+    );
   }
 
   static postData(data, apiUrl) async {
@@ -55,7 +60,9 @@ class Network {
     await _getToken();
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    return await http.post(url, body: jsonEncode(data), headers: _setHeaders());
+    return await http.post(url, body: jsonEncode(data), headers: _setHeaders()).timeout(
+      Duration(seconds: TIME_OUT_SECONDS)
+    );
   }
 
   static postDataWithImage(

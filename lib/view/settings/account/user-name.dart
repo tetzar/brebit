@@ -1,6 +1,6 @@
 
 import '../../../../model/user.dart';
-import '../../../../network/profile.dart';
+import '../../../../api/profile.dart';
 import '../../../../provider/auth.dart';
 import '../../../../route/route.dart';
 import '../../general/loading.dart';

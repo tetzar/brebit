@@ -28,9 +28,7 @@ import 'home.dart';
 
 FirebaseAuth _auth = FirebaseAuth.instance;
 
-enum HomeActionCodes {
-  verifyComplete
-}
+enum HomeActionCodes { verifyComplete }
 
 class Home extends StatelessWidget {
   final HomeActionCodes actionCode;
@@ -101,7 +99,10 @@ class TabState extends StateNotifier<int> {
   }
 
   void set(int s) {
-    if (callback != null && s == 0 && state == 0 && !Home.navKey.currentState.canPop()) callback(state);
+    if (callback != null &&
+        s == 0 &&
+        state == 0 &&
+        !Home.navKey.currentState.canPop()) callback(state);
     state = s;
   }
 }
@@ -115,7 +116,8 @@ class HomeNavigation extends StatefulWidget {
   _HomeNavigationState createState() => _HomeNavigationState();
 }
 
-class _HomeNavigationState extends State<HomeNavigation> with SingleTickerProviderStateMixin{
+class _HomeNavigationState extends State<HomeNavigation>
+    with SingleTickerProviderStateMixin {
   User firebaseUser;
   AnimationController _animationController;
   Animation<double> _curve;
@@ -151,28 +153,30 @@ class _HomeNavigationState extends State<HomeNavigation> with SingleTickerProvid
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: widget.actionCode == HomeActionCodes.verifyComplete ? Stack(
-        children: [
-          Scaffold(
+      child: widget.actionCode == HomeActionCodes.verifyComplete
+          ? Stack(
+              children: [
+                Scaffold(
+                    body: HomeNavigator(),
+                    bottomNavigationBar: HomeBottomNavigationBar(
+                      onTapped: _onItemTapped,
+                    )),
+                AnimatedBuilder(
+                    animation: _curve,
+                    builder: (context, child) {
+                      return Container(
+                        height:
+                            MediaQuery.of(context).size.height * _curve.value,
+                        color: Theme.of(context).accentColor,
+                      );
+                    })
+              ],
+            )
+          : Scaffold(
               body: HomeNavigator(),
               bottomNavigationBar: HomeBottomNavigationBar(
                 onTapped: _onItemTapped,
               )),
-          AnimatedBuilder(
-              animation: _curve,
-              builder: (context, child) {
-                return Container(
-                  height: MediaQuery.of(context).size.height * _curve.value,
-                  color: Theme.of(context).accentColor,
-                );
-              }
-          )
-        ],
-      ) : Scaffold(
-          body: HomeNavigator(),
-          bottomNavigationBar: HomeBottomNavigationBar(
-            onTapped: _onItemTapped,
-          )),
     );
   }
 
@@ -217,9 +221,7 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
   }
 
   Widget getIcon(String name) {
-    return SvgPicture.asset(
-        'assets/icon/$name.svg'
-    );
+    return SvgPicture.asset('assets/icon/$name.svg');
   }
 
   @override
@@ -228,14 +230,8 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
     return BottomNavigationBar(
       showSelectedLabels: true,
       showUnselectedLabels: true,
-      unselectedLabelStyle: TextStyle(
-        height: 0,
-        fontSize: 0
-      ),
-      selectedLabelStyle: TextStyle(
-        height: 0,
-        fontSize: 0
-      ),
+      unselectedLabelStyle: TextStyle(height: 0, fontSize: 0),
+      selectedLabelStyle: TextStyle(height: 0, fontSize: 0),
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           activeIcon: getIcon('home_filled'),
@@ -328,62 +324,59 @@ class _HomeTabsState extends State<HomeTabs> {
     Habit habit = context.read(homeProvider).getHabit();
     List<Widget> actions = <Widget>[];
     if (habit != null) {
-      actions.add(
-          IconButton(
-              icon: SvgPicture.asset(
-                'assets/icon/search.svg',
-                height: 32,
-                width: 32,
-              ),
-              onPressed: () {
-                Home.pushNamed('/search');
-              })
-      );
+      actions.add(IconButton(
+          icon: SvgPicture.asset(
+            'assets/icon/search.svg',
+            height: 32,
+            width: 32,
+          ),
+          onPressed: () {
+            Home.pushNamed('/search');
+          }));
     }
-    actions.add(
-        RawMaterialButton(
-          onPressed: () async {
-            Navigator.pushNamed(context, '/profile');
-          },
-          child: Center(
-            child: CircleAvatar(
-              child: ClipOval(
-                child: Stack(
-                  children: <Widget>[
-                    context.read(authProvider.state).user.getImageWidget()
-                    /// replace y
-                  ],
-                ),
-              ),
-              radius: 16,
-              // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
-              backgroundColor: Colors.transparent,
+    actions.add(RawMaterialButton(
+      onPressed: () async {
+        Navigator.pushNamed(context, '/profile');
+      },
+      child: Center(
+        child: CircleAvatar(
+          child: ClipOval(
+            child: Stack(
+              children: <Widget>[
+                context.read(authProvider.state).user.getImageWidget()
+
+                /// replace y
+              ],
             ),
           ),
-          shape: CircleBorder(),
-        )
-    );
+          radius: 16,
+          // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
+          backgroundColor: Colors.transparent,
+        ),
+      ),
+      shape: CircleBorder(),
+    ));
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: getMyAppBarTitle(_appbarTitle.containsKey(index) ? _appbarTitle[index] : 'Brebit', context),
+        title: getMyAppBarTitle(
+            _appbarTitle.containsKey(index) ? _appbarTitle[index] : 'Brebit',
+            context),
         leading: HookBuilder(builder: (context) {
           useProvider(notificationProvider.state);
-          int unreadCount =
-              context.read(notificationProvider).unreadCount;
+          int unreadCount = context.read(notificationProvider).unreadCount;
           return GestureDetector(
             child: IconButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/notification');
-              },
-              icon: SvgPicture.asset(
-                unreadCount > 0 ?
-                'assets/icon/notification_marked.svg'
-                : 'assets/icon/notification_outlined.svg',
-                height: 32,
+                onPressed: () {
+                  Navigator.pushNamed(context, '/notification');
+                },
+                icon: SvgPicture.asset(
+                  unreadCount > 0
+                      ? 'assets/icon/notification_marked.svg'
+                      : 'assets/icon/notification_outlined.svg',
+                  height: 32,
                   width: 32,
-              )
-            ),
+                )),
           );
         }),
         actions: actions,

@@ -1,12 +1,17 @@
-import '../../../../model/habit.dart';
-import '../../../../provider/home.dart';
+import 'dart:async';
+
+import 'package:brebit/view/widgets/dialog.dart';
 import 'package:emojis/emojis.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../../model/habit.dart';
+import '../../../../provider/home.dart';
+
 class AchievedDialog {
   static bool isShowing = false;
+
   static Future<void> show(BuildContext context) async {
     if (isShowing) {
       return;
@@ -23,7 +28,7 @@ class AchievedDialog {
         next = days.last;
       }
       showDialog(
-        barrierDismissible: false,
+          barrierDismissible: false,
           context: context,
           builder: (context) {
             return WillPopScope(
@@ -48,10 +53,8 @@ class AchievedDialog {
                         Text(
                           'スモールステップ${step + 1}を\n達成しました${Emojis.partyPopper}',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyText1
-                              .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                          style: Theme.of(context).textTheme.bodyText1.copyWith(
+                              fontWeight: FontWeight.w700, fontSize: 20),
                         ),
                         Container(
                           margin: EdgeInsets.symmetric(vertical: 16),
@@ -64,28 +67,34 @@ class AchievedDialog {
                           '次の目標は$next日です',
                           style: Theme.of(context).textTheme.bodyText1,
                         ),
-                        SizedBox(height: 40,),
+                        SizedBox(
+                          height: 40,
+                        ),
                         Material(
                           child: InkWell(
                             onTap: () async {
-                              await context.read(homeProvider).updateAimDate(next);
-                              Navigator.pop(context);
+                              try {
+                                await context
+                                    .read(homeProvider)
+                                    .updateAimDate(next);
+                                Navigator.pop(context);
+                              } catch (e) {
+                                MyErrorDialog.show(e);
+                              }
                             },
                             child: Container(
                               height: 56,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(28),
-                                  color: Theme.of(context).accentColor
-                              ),
+                                  color: Theme.of(context).accentColor),
                               alignment: Alignment.center,
                               child: Text(
                                 '目標日数を更新する',
                                 style: TextStyle(
                                     color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 17
-                                ),
+                                    fontSize: 17),
                               ),
                             ),
                           ),

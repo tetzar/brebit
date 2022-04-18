@@ -1,10 +1,13 @@
+import 'dart:async';
+
+import 'package:brebit/view/general/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
-import '../../../../network/habit.dart';
 import '../../../../route/route.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
@@ -324,13 +327,20 @@ class _AlcoholInformationState extends State<AlcoholInformation> {
       _data['concentration'] = data['concentration'].toDouble();
       _data['target-concentration'] = data['target-concentration'].toDouble();
       _data['days-per-week'] = data['per-week'].toDouble();
-      Map<String, dynamic> result =
-          await HabitApi.saveInformation(_category, _data);
-      SelectStrategyParams params = new SelectStrategyParams(
-          recommendStrategies: result['strategies']['recommend'],
-          habit: result['habit'],
-          otherStrategies: result['strategies']['others']);
-      ApplicationRoutes.pushNamed('/strategy/select', params);
+      MyLoading.startLoading();
+      try {
+        Map<String, dynamic> result =
+            await HabitApi.saveInformation(_category, _data);
+        SelectStrategyParams params = new SelectStrategyParams(
+            recommendStrategies: result['strategies']['recommend'],
+            habit: result['habit'],
+            otherStrategies: result['strategies']['others']);
+        await MyLoading.dismiss();
+        ApplicationRoutes.pushNamed('/strategy/select', params);
+      } catch (e) {
+        await MyLoading.dismiss();
+        MyErrorDialog.show(e);
+      }
     }
   }
 }

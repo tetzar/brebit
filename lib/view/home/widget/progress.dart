@@ -1,12 +1,12 @@
 import 'dart:async';
+import 'dart:math' as Math;
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../provider/home.dart';
 import 'achievd-dialog.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'dart:math' as Math;
-
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ProgressCircle extends StatefulWidget {
   @override
@@ -39,11 +39,8 @@ class _ProgressCircleState extends State<ProgressCircle> {
     timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
       if (this.mounted) {
         setState(() {
-          toNowMin = context
-              .read(homeProvider.state)
-              .habit
-              .getStartToNow()
-              .inMinutes;
+          toNowMin =
+              context.read(homeProvider.state).habit.getStartToNow().inMinutes;
           if (!(toNowMin < toAimMin)) {
             percentage = 1;
             t.cancel();

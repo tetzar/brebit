@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 
 import '../../../route/route.dart';
-import 'package:flutter/material.dart';
 
 class MyDialog extends StatelessWidget {
   final Widget title;
@@ -134,29 +137,38 @@ class MyDialog extends StatelessWidget {
 
 class MyErrorDialog extends StatelessWidget {
   final Function onConfirm;
+  final String message;
 
-  MyErrorDialog({this.onConfirm});
+  MyErrorDialog({this.onConfirm, this.message});
 
-  static void show(var e, {Function onConfirm}) {
-    assert (e is Error || e is Exception);
+  static void show(var e, {Function onConfirm, String message}) {
+    assert(e is Error || e is Exception);
     print('=======================================');
     print('Error');
     print('=======================================');
     log('error', error: e);
     // debugDumpRenderTree();
+    if (e is TimeoutException) {
+      message = message ?? "サーバーに接続出来ませんでした";
+    }
+    if (e is SocketException) {
+      message = message ?? "インターネットの接続を\n確認してください";
+    }
     showDialog(
         context: ApplicationRoutes.materialKey.currentContext,
         builder: (context) {
-          return MyErrorDialog(onConfirm: onConfirm);
-        }
-    );
+          return MyErrorDialog(
+            onConfirm: onConfirm,
+            message: message,
+          );
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     return MyDialog(
       title: Text(
-        '予期せぬエラーが発生したため\n処理を完了できませんでした',
+        message ?? '予期せぬエラーが発生したため\n処理を完了できませんでした',
         textAlign: TextAlign.center,
         style: Theme.of(context)
             .textTheme
@@ -167,11 +179,14 @@ class MyErrorDialog extends StatelessWidget {
         height: 0,
       ),
       actionText: '戻る',
-      action: onConfirm ?? () {
-        ApplicationRoutes.pop();
-      },
+      action: onConfirm ??
+          () {
+            ApplicationRoutes.pop();
+          },
       actionColor: Theme.of(context).disabledColor,
       onlyAction: true,
     );
   }
+
+
 }

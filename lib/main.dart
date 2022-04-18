@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
+import 'package:brebit/view/widgets/dialog.dart';
+
 import 'library/messaging.dart';
 import 'library/notification.dart';
 import 'provider/auth.dart';
@@ -25,7 +29,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'library/cache.dart';
 import 'model/user.dart';
-import 'network/auth.dart';
+import 'api/auth.dart';
 
 String _initialRoute;
 AuthUser _user;

@@ -1,4 +1,4 @@
-import 'package:brebit/network/system.dart';
+import 'package:brebit/api/system.dart';
 
 class Version {
   static final String version = '1.0.0';

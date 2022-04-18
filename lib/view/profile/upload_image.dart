@@ -1,11 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class UploadImageArguments {
   UploadImageArguments({@required this.imageFile});
