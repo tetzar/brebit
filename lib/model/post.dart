@@ -4,8 +4,8 @@ import 'comment.dart';
 import 'favorite.dart';
 import 'model.dart';
 import 'user.dart';
-import '../network/api.dart';
-import '../network/post.dart';
+import '../api/api.dart';
+import '../api/post.dart';
 
 // ignore: non_constant_identifier_names
 List<Post> PostFromJson(List<dynamic> jsonList) =>

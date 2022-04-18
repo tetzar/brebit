@@ -2,7 +2,7 @@
 // ignore: non_constant_identifier_names
 import 'package:brebit/library/data-set.dart';
 import 'package:brebit/model/user.dart';
-import 'package:brebit/network/post.dart';
+import 'package:brebit/api/post.dart';
 
 import 'favorite.dart';
 import 'model.dart';

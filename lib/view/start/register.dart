@@ -1,13 +1,7 @@
 // package:brebit/view/regiter.dart
 
-import '../../../library/cache.dart';
-import '../../../library/exceptions.dart';
-import '../../../provider/auth.dart';
-import '../../../route/route.dart';
-import '../general/loading.dart';
-import '../widgets/app-bar.dart';
-import '../widgets/dialog.dart';
-import '../widgets/text-field.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +9,15 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../library/cache.dart';
+import '../../../library/exceptions.dart';
+import '../../../provider/auth.dart';
+import '../../../route/route.dart';
 import '../../main.dart';
+import '../general/loading.dart';
+import '../widgets/app-bar.dart';
+import '../widgets/dialog.dart';
+import '../widgets/text-field.dart';
 import 'name-form.dart';
 
 class RegisterProviderState {
@@ -29,7 +31,10 @@ class RegisterProvider extends StateNotifier<RegisterProviderState> {
   RegisterProvider(RegisterProviderState state) : super(state);
 
   void set(
-      {bool emailValid, bool nickNameValid, bool userNameValid, bool passwordValid}) {
+      {bool emailValid,
+      bool nickNameValid,
+      bool userNameValid,
+      bool passwordValid}) {
     RegisterProviderState newState = new RegisterProviderState();
     newState.email = emailValid ?? false;
     newState.nickName = nickNameValid ?? false;
@@ -99,7 +104,7 @@ class RegisterProvider extends StateNotifier<RegisterProviderState> {
 }
 
 final _registerProvider = StateNotifierProvider.autoDispose(
-        (ref) => RegisterProvider(new RegisterProviderState()));
+    (ref) => RegisterProvider(new RegisterProviderState()));
 
 class Registration extends StatelessWidget {
   final Map<String, String> registrationInitialData;
@@ -111,9 +116,7 @@ class Registration extends StatelessWidget {
     return Scaffold(
       appBar: getMyAppBar(context: context, titleText: '新規登録'),
       body: RegistrationForm(registrationInitialData),
-      backgroundColor: Theme
-          .of(context)
-          .primaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
     );
   }
 }
@@ -144,11 +147,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   @override
   void initState() {
-    initialData = widget.registrationInitialData ?? {
-      'nickName': '',
-      'userName': '',
-      'email': '',
-    };
+    initialData = widget.registrationInitialData ??
+        {
+          'nickName': '',
+          'userName': '',
+          'email': '',
+        };
     _keys = [
       new GlobalKey<FormState>(),
       new GlobalKey<FormState>(),
@@ -188,9 +192,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
     emailInUse = false;
     if (widget.registrationInitialData != null) {
       context.read(_registerProvider).set(
-        nickNameValid: initialData['nickName'].length > 0,
-        emailValid: isEmail(initialData['email']),
-      );
+            nickNameValid: initialData['nickName'].length > 0,
+            emailValid: isEmail(initialData['email']),
+          );
     }
     super.initState();
   }
@@ -379,8 +383,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
               margin: EdgeInsets.symmetric(vertical: 24),
               child: RichText(
                 text: TextSpan(
-                  style: Theme
-                      .of(context)
+                  style: Theme.of(context)
                       .textTheme
                       .subtitle1
                       .copyWith(fontSize: 12),
@@ -395,9 +398,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             ApplicationRoutes.pushReplacementNamed('/login');
                           },
                         style: (TextStyle(
-                          color: Theme
-                              .of(context)
-                              .accentColor,
+                          color: Theme.of(context).accentColor,
                           decoration: TextDecoration.underline,
                         ))),
                   ],
@@ -443,7 +444,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-            email: inputData['email'], password: inputData['password']);
+                email: inputData['email'], password: inputData['password']);
         if (userCredential.user.emailVerified) {
           try {
             await MyApp.initialize(ctx);
@@ -454,7 +455,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
             }
             Navigator.pushReplacement(
                 context, MaterialPageRoute(builder: (context) => NameInput()));
-          } catch (e){
+          } catch (e) {
             await MyLoading.dismiss();
             while (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -493,7 +494,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
       }
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser.authentication;
 
       // Create a new credential
       final GoogleAuthCredential credential = GoogleAuthProvider.credential(
@@ -503,7 +504,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
       // Once signed in, return the UserCredential
       UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
+          await FirebaseAuth.instance.signInWithCredential(credential);
       await context.read(authProvider).loginWithFirebase(userCredential.user);
       await MyApp.initialize(context);
       await MyLoading.dismiss();

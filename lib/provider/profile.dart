@@ -8,8 +8,8 @@ import '../../model/habit.dart';
 import '../../model/habit_log.dart';
 import '../../model/partner.dart';
 import '../../model/user.dart';
-import '../../network/partner.dart';
-import '../../network/profile.dart';
+import '../../api/partner.dart';
+import '../../api/profile.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Map<int, StreamController<FcmNotification>> _notificationStreamControllers;

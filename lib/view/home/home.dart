@@ -1,20 +1,19 @@
 // package:brebit/view/register.dart
 
 import 'package:brebit/view/home/navigation.dart';
-
-import '../../../model/habit.dart';
-import '../../../provider/home.dart';
-import '../../../route/route.dart';
-import 'widget/home-slider.dart';
-import 'widget/activity.dart';
-import 'widget/progress.dart';
-import 'widget/rules.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../model/habit.dart';
+import '../../../provider/home.dart';
+import '../../../route/route.dart';
 import 'analysis.dart';
+import 'widget/activity.dart';
+import 'widget/home-slider.dart';
+import 'widget/progress.dart';
+import 'widget/rules.dart';
 
 class HomeContent extends StatefulHookWidget {
   @override
@@ -71,13 +70,11 @@ class _HomeContentState extends State<HomeContent>
                 height: smallMediaQuery ? 196 : 256,
               ),
               Container(
-                margin: EdgeInsets.only(
-                    bottom: smallMediaQuery ? 20 : 48
-                ),
+                margin: EdgeInsets.only(bottom: smallMediaQuery ? 20 : 48),
                 child: InkWell(
                   onTap: () {
-                    bool hasHabit = context
-                        .read(homeProvider).getHabit() != null;
+                    bool hasHabit =
+                        context.read(homeProvider).getHabit() != null;
                     if (!hasHabit) {
                       ApplicationRoutes.pushNamed('/startHabit');
                     }
@@ -136,69 +133,69 @@ class Progress extends StatelessWidget {
     int maxStep = getMaxStep();
     return Container(
       width: MediaQuery.of(context).size.width,
-      child: CustomScrollView(
-        slivers:[
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child:  Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.only(top: 24),
-                  color: Theme.of(context).primaryColor,
-                  child: Column(
-                    children: [
-                      ProgressCircle(),
-                      InkWell(
-                        onTap: () {
-                          ApplicationRoutes.pushNamed('/home/small-step');
-                        },
-                        child: Container(
-                          margin: EdgeInsets.only(top: 5),
-                          color: Theme.of(context).primaryColor,
-                          width: MediaQuery.of(context).size.width,
-                          height: 52,
-                          padding: EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: RichText(
-                                  text: TextSpan(
-                                      text: 'スモールステップ',
-                                      style: TextStyle(
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodyText1
-                                              .color,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w400),
-                                      children: <TextSpan>[
-                                        TextSpan(
-                                            text: (nowStep + 1).toString() +
-                                                '/' +
-                                                maxStep.toString(),
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w700))
-                                      ]),
-                                ),
+      child: CustomScrollView(slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.only(top: 24),
+                color: Theme.of(context).primaryColor,
+                child: Column(
+                  children: [
+                    ProgressCircle(),
+                    InkWell(
+                      onTap: () {
+                        ApplicationRoutes.pushNamed('/home/small-step');
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(top: 5),
+                        color: Theme.of(context).primaryColor,
+                        width: MediaQuery.of(context).size.width,
+                        height: 52,
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: RichText(
+                                text: TextSpan(
+                                    text: 'スモールステップ',
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1
+                                            .color,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text: (nowStep + 1).toString() +
+                                              '/' +
+                                              maxStep.toString(),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w700))
+                                    ]),
                               ),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 12,
-                                color: Theme.of(context).disabledColor,
-                              )
-                            ],
-                          ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 12,
+                              color: Theme.of(context).disabledColor,
+                            )
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Expanded(child: Container(margin: EdgeInsets.only(top: 8), child: MyRules())),
-              ],
-            ),
-          )
-        ]
-      ),
+              ),
+              Expanded(
+                  child: Container(
+                      margin: EdgeInsets.only(top: 8), child: MyRules())),
+            ],
+          ),
+        )
+      ]),
     );
   }
 

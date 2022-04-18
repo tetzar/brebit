@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../model/category.dart';
 import '../../../../model/habit.dart';
 import '../../../../model/habit_log.dart';
@@ -9,13 +14,9 @@ import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
 import '../../profile/did-confirmation.dart';
 import '../../timeline/create_post.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final _activityProvider =
-StateNotifierProvider.autoDispose((ref) => ActivityProvider(<HabitLog>[]));
+    StateNotifierProvider.autoDispose((ref) => ActivityProvider(<HabitLog>[]));
 
 class ActivityProvider extends StateNotifier<List<HabitLog>> {
   ActivityProvider(List<HabitLog> state) : super(state);
@@ -66,10 +67,10 @@ class _HomeActivityState extends State<HomeActivity> {
     RenderBox _largerBox = _largerKey.currentContext.findRenderObject();
     double _position =
         (_smallerBox.localToGlobal(_box.globalToLocal(Offset.zero)).dy +
-            _smallerBox.size.height) *
-            (1 - rate) +
+                    _smallerBox.size.height) *
+                (1 - rate) +
             (_largerBox.localToGlobal(_box.globalToLocal(Offset.zero)).dy +
-                _largerBox.size.height) *
+                    _largerBox.size.height) *
                 rate;
     _streamController.sink.add(_bodyHeight - _position);
   }
@@ -78,19 +79,21 @@ class _HomeActivityState extends State<HomeActivity> {
   void initState() {
     _keyHolder = <int, GlobalKey>{};
     _bodyKey = GlobalKey();
-    HabitLog startLog = context.read(homeProvider.state).habit
+    HabitLog startLog = context
+        .read(homeProvider.state)
+        .habit
         .getLatestLogIn([HabitLogStateName.started]);
-    int months = (DateTime.now().year - startLog.createdAt.year) * 12
-        + DateTime.now().month - startLog.createdAt.month + 1;
-    _pageController = new PageController(
-        viewportFraction: 0.85,
-        initialPage: months - 1);
+    int months = (DateTime.now().year - startLog.createdAt.year) * 12 +
+        DateTime.now().month -
+        startLog.createdAt.month +
+        1;
+    _pageController =
+        new PageController(viewportFraction: 0.85, initialPage: months - 1);
     _pageController.addListener(() {
       dailyCardAnimate();
     });
     _streamController = new StreamController<double>();
-    List<HabitLog> _logs =
-        context.read(homeProvider.state).habit.habitLogs;
+    List<HabitLog> _logs = context.read(homeProvider.state).habit.habitLogs;
     List<List<HabitLog>> _collected = HabitLog.collectByDate(_logs);
     DateTime _now = DateTime.now();
     List<HabitLog> _logInADay = _collected.firstWhere((collection) {
@@ -131,11 +134,10 @@ class _HomeActivityState extends State<HomeActivity> {
   @override
   Widget build(BuildContext context) {
     useProvider(homeProvider.state);
-    List<HabitLog> _logs =
-        context.read(homeProvider.state).habit.habitLogs;
+    List<HabitLog> _logs = context.read(homeProvider.state).habit.habitLogs;
     List<List<HabitLog>> _collected = HabitLog.collectByDate(_logs);
     SplayTreeMap<int, List<List<HabitLog>>> _monthlyCollected =
-    SplayTreeMap<int, List<List<HabitLog>>>();
+        SplayTreeMap<int, List<List<HabitLog>>>();
     DateTime _t;
     List<List<HabitLog>> _monthlyCollection;
     int month = DateTime.now().month;
@@ -161,7 +163,7 @@ class _HomeActivityState extends State<HomeActivity> {
           String timeText = '';
           timeText += _t.year.toString() + '-';
           timeText +=
-          _t.month ~/ 10 == 0 ? '0${_t.month}-01' : '${_t.month}-01';
+              _t.month ~/ 10 == 0 ? '0${_t.month}-01' : '${_t.month}-01';
           _monthlyCollected[dateTimeToMonthId(DateTime.parse(timeText))] =
               _monthlyCollection;
           _t = dailyLogs.first.createdAt;
@@ -203,9 +205,7 @@ class _HomeActivityState extends State<HomeActivity> {
                       _key,
                       _monthlyCollected.values.toList()[i],
                       monthIdToDateTime(_monthlyCollected.keys.toList()[i]),
-                      context
-                          .read(homeProvider.state)
-                          .habit);
+                      context.read(homeProvider.state).habit);
                 },
               )),
           Positioned(
@@ -223,7 +223,7 @@ class _HomeActivityState extends State<HomeActivity> {
                           width: MediaQuery.of(context).size.width,
                           padding: EdgeInsets.symmetric(
                             horizontal:
-                            MediaQuery.of(context).size.width * 0.075 + 4,
+                                MediaQuery.of(context).size.width * 0.075 + 4,
                           ),
                           child: LogCard(context.read(_activityProvider.state),
                               context.read(_activityProvider).t, _height),
@@ -278,51 +278,51 @@ class MonthlyCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            key: containerKey,
-            margin: EdgeInsets.only(right: 4, left: 4, top: 8),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).shadowColor,
-                    spreadRadius: -3,
-                    blurRadius: 10,
-                    offset: Offset(0, 0),
-                  ),
-                ],
-                color: Theme.of(context).primaryColor),
-            child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      child: GridView.count(
-                        padding: EdgeInsets.only(top: 20, left: 16, right: 16, bottom: 16),
-                        shrinkWrap: true,
-                        crossAxisCount: 7,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 4,
-                        children: tiles,
-                      ),
+              key: containerKey,
+              margin: EdgeInsets.only(right: 4, left: 4, top: 8),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).shadowColor,
+                      spreadRadius: -3,
+                      blurRadius: 10,
+                      offset: Offset(0, 0),
                     ),
-                    Container(
-                      margin: EdgeInsets.only(top: 16, right: 16, left: 16),
-                      child: Text(
-                        '${date.year}年${date.month}月',
-                        style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyText1.color,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    Container(
-                      width: double.infinity,
-                      margin: EdgeInsets.only(top: 50),
-                      alignment: Alignment.center,
-                      child: CircularProgressIndicator(),
-                    )
                   ],
-                )
-          ),
+                  color: Theme.of(context).primaryColor),
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    child: GridView.count(
+                      padding: EdgeInsets.only(
+                          top: 20, left: 16, right: 16, bottom: 16),
+                      shrinkWrap: true,
+                      crossAxisCount: 7,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 4,
+                      children: tiles,
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(top: 16, right: 16, left: 16),
+                    child: Text(
+                      '${date.year}年${date.month}月',
+                      style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyText1.color,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.only(top: 50),
+                    alignment: Alignment.center,
+                    child: CircularProgressIndicator(),
+                  )
+                ],
+              )),
         ],
       );
     }
@@ -382,13 +382,13 @@ class _ActivityCalenderState extends State<ActivityCalender> {
   @override
   Widget build(BuildContext context) {
     DateTime _t =
-    DateTime.utc(widget.date.year, widget.date.month, 1).toLocal();
+        DateTime.utc(widget.date.year, widget.date.month, 1).toLocal();
     List<ActivityTile> _tiles = <ActivityTile>[];
     List<DateTime> _inactive = widget.habit.isActiveDayListInMonth(_t);
     DateTime _providerTime = context.read(_activityProvider).t;
     while (_t.month == widget.date.month) {
       List<HabitLog> logs = widget.monthlyLog.firstWhere(
-              (dailyLogs) => dailyLogs.first.createdAt.day == _t.day,
+          (dailyLogs) => dailyLogs.first.createdAt.day == _t.day,
           orElse: () => null);
       if (logs == null) {
         logs = <HabitLog>[];
@@ -401,8 +401,8 @@ class _ActivityCalenderState extends State<ActivityCalender> {
         day: _t,
         selected: selected,
         inactive: !(_inactive.indexWhere((time) {
-          return time.day == _t.day;
-        }) <
+              return time.day == _t.day;
+            }) <
             0),
       ));
       _t = _t.add(Duration(days: 1));
@@ -415,12 +415,14 @@ class _ActivityCalenderState extends State<ActivityCalender> {
     ];
     if (_gridWidget.length ~/ 7 < 5) {
       _gridWidget = [
-        ...List.filled(7, Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-          ),
-        )),
+        ...List.filled(
+            7,
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                shape: BoxShape.rectangle,
+              ),
+            )),
         ..._gridWidget
       ];
     }
@@ -446,9 +448,9 @@ class ActivityTile extends StatefulWidget {
 
   ActivityTile(
       {@required this.logs,
-        @required this.day,
-        @required this.inactive,
-        @required this.selected});
+      @required this.day,
+      @required this.inactive,
+      @required this.selected});
 
   @override
   _ActivityTileState createState() => _ActivityTileState();
@@ -500,84 +502,84 @@ class _ActivityTileState extends State<ActivityTile> {
       onTap: widget.inactive
           ? null
           : () {
-        this.selected = true;
-        context.read(_activityProvider).set(widget.logs, widget.day,
-            onOtherTap: () {
-              setState(() {
-                this.selected = false;
+              this.selected = true;
+              context.read(_activityProvider).set(widget.logs, widget.day,
+                  onOtherTap: () {
+                setState(() {
+                  this.selected = false;
+                });
               });
-            });
-        setState(() {});
-      },
+              setState(() {});
+            },
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(shape: BoxShape.rectangle),
         child: today
             ? Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(context).accentColor,
-                width: 3,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: selected
-                      ? Theme.of(context).shadowColor
-                      : Colors.transparent,
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                )
-              ],
-              color: Theme.of(context).accentColor),
-          alignment: Alignment.center,
-          child: Text(
-            '${widget.day.day}',
-            style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 20),
-          ),
-        )
-            : Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: hasActivity
-                  ? Theme.of(context).accentColor
-                  : Theme.of(context).primaryColorDark,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: selected
-                    ? Theme.of(context).shadowColor
-                    : Colors.transparent,
-                spreadRadius: 2,
-                blurRadius: 10,
-                offset: Offset(0, 4),
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context).accentColor,
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: selected
+                            ? Theme.of(context).shadowColor
+                            : Colors.transparent,
+                        spreadRadius: 2,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      )
+                    ],
+                    color: Theme.of(context).accentColor),
+                alignment: Alignment.center,
+                child: Text(
+                  '${widget.day.day}',
+                  style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20),
+                ),
               )
-            ],
-          ),
-          alignment: Alignment.center,
-          child: did
-              ? SizedBox(
-            height: 0,
-            width: 0,
-          )
-              : SvgPicture.asset(
-            'assets/icon/check.svg',
-            height: 22,
-            width: 22,
-            color: Theme.of(context).accentColor,
-          ),
-        ),
+            : Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: hasActivity
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).primaryColorDark,
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: selected
+                          ? Theme.of(context).shadowColor
+                          : Colors.transparent,
+                      spreadRadius: 2,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    )
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: did
+                    ? SizedBox(
+                        height: 0,
+                        width: 0,
+                      )
+                    : SvgPicture.asset(
+                        'assets/icon/check.svg',
+                        height: 22,
+                        width: 22,
+                        color: Theme.of(context).accentColor,
+                      ),
+              ),
       ),
     );
   }
@@ -606,14 +608,10 @@ class LogCard extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Theme
-                  .of(context)
-                  .primaryColor,
+              color: Theme.of(context).primaryColor,
               boxShadow: [
                 BoxShadow(
-                  color: Theme
-                      .of(context)
-                      .shadowColor,
+                  color: Theme.of(context).shadowColor,
                   spreadRadius: -3,
                   blurRadius: 10,
                   offset: Offset(0, 0),
@@ -627,8 +625,7 @@ class LogCard extends StatelessWidget {
             children: [
               Text(
                 date,
-                style: Theme
-                    .of(context)
+                style: Theme.of(context)
                     .textTheme
                     .bodyText1
                     .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
@@ -640,28 +637,27 @@ class LogCard extends StatelessWidget {
                 constraints: BoxConstraints(maxHeight: maxHeight - 101),
                 child: logs.length > 0
                     ? ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 4),
-                          child: getSubject(logs[index], context));
-                    })
+                        shrinkWrap: true,
+                        itemCount: logs.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                              margin: EdgeInsets.only(bottom: 4),
+                              child: getSubject(logs[index], context));
+                        })
                     : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: 1,
-                  itemBuilder: (context, index) {
-                    return Text(
-                      '・チャレンジを継続しました。',
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .bodyText1
-                          .copyWith(
-                          fontSize: 13, fontWeight: FontWeight.w400),
-                    );
-                  },
-                ),
+                        shrinkWrap: true,
+                        itemCount: 1,
+                        itemBuilder: (context, index) {
+                          return Text(
+                            '・チャレンジを継続しました。',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyText1
+                                .copyWith(
+                                    fontSize: 13, fontWeight: FontWeight.w400),
+                          );
+                        },
+                      ),
               )
             ],
           ),
@@ -671,8 +667,7 @@ class LogCard extends StatelessWidget {
   }
 
   Widget getSubject(HabitLog log, BuildContext context) {
-    TextStyle _style = Theme
-        .of(context)
+    TextStyle _style = Theme.of(context)
         .textTheme
         .bodyText1
         .copyWith(fontSize: 13, fontWeight: FontWeight.w400);
@@ -690,59 +685,44 @@ class LogCard extends StatelessWidget {
         );
         break;
       case HabitLogStateName.strategyChanged:
-
         return GestureDetector(
-          onTap: () {
-            CreatePostArguments args = new CreatePostArguments();
-            args.log = log;
-            ApplicationRoutes.push(MaterialPageRoute(
-                builder: (context) => CreatePost(args: args,)));
-          },
-          child: RichText(
-              text: TextSpan(
-                  text: '・',
-                  style: _style,
-                  children: [
-                    TextSpan(
-                        text: 'ストラテジーを変更しました。',
-                        style: TextStyle(
-                            decoration: TextDecoration.underline
-                        )
-                    )
-                  ]
-              )
-          )
-        );
+            onTap: () {
+              CreatePostArguments args = new CreatePostArguments();
+              args.log = log;
+              ApplicationRoutes.push(MaterialPageRoute(
+                  builder: (context) => CreatePost(
+                        args: args,
+                      )));
+            },
+            child: RichText(
+                text: TextSpan(text: '・', style: _style, children: [
+              TextSpan(
+                  text: 'ストラテジーを変更しました。',
+                  style: TextStyle(decoration: TextDecoration.underline))
+            ])));
         break;
       case HabitLogStateName.aimdateUpdated:
-        return  Text(
+        return Text(
           '・スモールステップを更新しました。',
           style: _style,
         );
       case HabitLogStateName.aimdateOvercame:
         int step = log.getBody()['step'];
         return GestureDetector(
-          onTap: () {
-            CreatePostArguments args = new CreatePostArguments();
-            args.log = log;
-            ApplicationRoutes.push(MaterialPageRoute(
-                builder: (context) => CreatePost(args: args,)));
-          },
-          child: RichText(
-              text: TextSpan(
-                  text: '・',
-                  style: _style,
-                  children: [
-                    TextSpan(
-                        text: 'スモールステップを達成しました。($step/${Habit.getStepCount()})',
-                        style: TextStyle(
-                            decoration: TextDecoration.underline
-                        )
-                    )
-                  ]
-              )
-          )
-        );
+            onTap: () {
+              CreatePostArguments args = new CreatePostArguments();
+              args.log = log;
+              ApplicationRoutes.push(MaterialPageRoute(
+                  builder: (context) => CreatePost(
+                        args: args,
+                      )));
+            },
+            child: RichText(
+                text: TextSpan(text: '・', style: _style, children: [
+              TextSpan(
+                  text: 'スモールステップを達成しました。($step/${Habit.getStepCount()})',
+                  style: TextStyle(decoration: TextDecoration.underline))
+            ])));
         break;
       case HabitLogStateName.did:
         final Map<CategoryName, String> didText = {
@@ -753,25 +733,16 @@ class LogCard extends StatelessWidget {
         };
         String text = didText[log.category.name];
         return GestureDetector(
-          onTap: () {
-            ApplicationRoutes.push(MaterialPageRoute(
-                builder: (context) => DidConfirmation(log: log)));
-          },
-          child: RichText(
-              text: TextSpan(
-                  text: '・',
-                  style: _style,
-                  children: [
-                    TextSpan(
-                        text: text,
-                        style: TextStyle(
-                            decoration: TextDecoration.underline
-                        )
-                    )
-                  ]
-              )
-          )
-        );
+            onTap: () {
+              ApplicationRoutes.push(MaterialPageRoute(
+                  builder: (context) => DidConfirmation(log: log)));
+            },
+            child: RichText(
+                text: TextSpan(text: '・', style: _style, children: [
+              TextSpan(
+                  text: text,
+                  style: TextStyle(decoration: TextDecoration.underline))
+            ])));
         break;
       case HabitLogStateName.wannaDo:
         final Map<CategoryName, String> wannaDoText = {
@@ -782,27 +753,20 @@ class LogCard extends StatelessWidget {
         };
         String text = wannaDoText[log.category.name];
         return GestureDetector(
-          onTap: () {
-            CreatePostArguments args = new CreatePostArguments();
-            args.log = log;
-            ApplicationRoutes.push(MaterialPageRoute(
-                builder: (context) => CreatePost(args: args,)));
-          },
-          child: RichText(
-              text: TextSpan(
-                  text: '・',
-                  style: _style,
-                  children: [
-                    TextSpan(
-                        text: text,
-                        style: TextStyle(
-                            decoration: TextDecoration.underline
-                        )
-                    )
-                  ]
-              )
-          )
-        );
+            onTap: () {
+              CreatePostArguments args = new CreatePostArguments();
+              args.log = log;
+              ApplicationRoutes.push(MaterialPageRoute(
+                  builder: (context) => CreatePost(
+                        args: args,
+                      )));
+            },
+            child: RichText(
+                text: TextSpan(text: '・', style: _style, children: [
+              TextSpan(
+                  text: text,
+                  style: TextStyle(decoration: TextDecoration.underline))
+            ])));
         break;
       case HabitLogStateName.inactivate:
         return Text(

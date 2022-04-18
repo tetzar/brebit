@@ -1,7 +1,8 @@
-import '../../../../model/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../model/user.dart';
 
 final tabProvider =
     StateNotifierProvider.family.autoDispose((ref, index) => TabProvider(0));
@@ -30,8 +31,7 @@ class ProfileTabBar extends SliverPersistentHeaderDelegate {
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     if (user.habitCategories.length == 0) {
       return _NotStartedProfileTabBarContent(
-          tabController: tabController,
-          user: user);
+          tabController: tabController, user: user);
     }
     return _ProfileTabBarContent(
       tabController: tabController,
@@ -109,22 +109,18 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                           changeTab(ShowingTab.posts);
                         },
                         child: Center(
-                          child: Text(
-                            'ポスト',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w400,
-                                color: _showingTab == ShowingTab.posts
-                                    ? Theme.of(context)
-                                    .textTheme
-                                    .bodyText1
-                                    .color
-                                    : Theme.of(context)
-                                    .textTheme
-                                    .subtitle1
-                                    .color),
-                          )
-                        )),
+                            child: Text(
+                          'ポスト',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: _showingTab == ShowingTab.posts
+                                  ? Theme.of(context).textTheme.bodyText1.color
+                                  : Theme.of(context)
+                                      .textTheme
+                                      .subtitle1
+                                      .color),
+                        ))),
                   ),
                   Expanded(
                     child: InkWell(
@@ -139,13 +135,13 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                 fontWeight: FontWeight.w400,
                                 color: _showingTab == ShowingTab.friend
                                     ? Theme.of(context)
-                                    .textTheme
-                                    .bodyText1
-                                    .color
+                                        .textTheme
+                                        .bodyText1
+                                        .color
                                     : Theme.of(context)
-                                    .textTheme
-                                    .subtitle1
-                                    .color),
+                                        .textTheme
+                                        .subtitle1
+                                        .color),
                           ),
                         )),
                   ),
@@ -242,7 +238,6 @@ class TabBarLinePainter extends CustomPainter {
   }
 }
 
-
 enum NotStartedShowingTab { posts, friend }
 
 class _NotStartedProfileTabBarContent extends StatefulHookWidget {
@@ -255,10 +250,12 @@ class _NotStartedProfileTabBarContent extends StatefulHookWidget {
   });
 
   @override
-  __NotStartedProfileTabBarContentState createState() => __NotStartedProfileTabBarContentState();
+  __NotStartedProfileTabBarContentState createState() =>
+      __NotStartedProfileTabBarContentState();
 }
 
-class __NotStartedProfileTabBarContentState extends State<_NotStartedProfileTabBarContent> {
+class __NotStartedProfileTabBarContentState
+    extends State<_NotStartedProfileTabBarContent> {
   NotStartedShowingTab _showingTab;
 
   @override
@@ -305,15 +302,16 @@ class __NotStartedProfileTabBarContentState extends State<_NotStartedProfileTabB
                                 style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
-                                    color: _showingTab == NotStartedShowingTab.posts
+                                    color: _showingTab ==
+                                            NotStartedShowingTab.posts
                                         ? Theme.of(context)
-                                        .textTheme
-                                        .bodyText1
-                                        .color
+                                            .textTheme
+                                            .bodyText1
+                                            .color
                                         : Theme.of(context)
-                                        .textTheme
-                                        .subtitle1
-                                        .color),
+                                            .textTheme
+                                            .subtitle1
+                                            .color),
                               )
                             ],
                           ),
@@ -332,15 +330,16 @@ class __NotStartedProfileTabBarContentState extends State<_NotStartedProfileTabB
                                 style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
-                                    color: _showingTab == NotStartedShowingTab.friend
+                                    color: _showingTab ==
+                                            NotStartedShowingTab.friend
                                         ? Theme.of(context)
-                                        .textTheme
-                                        .bodyText1
-                                        .color
+                                            .textTheme
+                                            .bodyText1
+                                            .color
                                         : Theme.of(context)
-                                        .textTheme
-                                        .subtitle1
-                                        .color),
+                                            .textTheme
+                                            .subtitle1
+                                            .color),
                               )
                             ],
                           ),
@@ -354,8 +353,8 @@ class __NotStartedProfileTabBarContentState extends State<_NotStartedProfileTabB
               height: 14,
               child: CustomPaint(
                 size: Size(double.infinity, 6),
-                painter:
-                NotStartedTabBarLinePainter(position: position, context: context),
+                painter: NotStartedTabBarLinePainter(
+                    position: position, context: context),
               ),
             )
           ],

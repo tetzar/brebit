@@ -1,5 +1,12 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../provider/auth.dart';
 import '../../../provider/home.dart';
 import '../../../provider/posts.dart';
@@ -9,13 +16,6 @@ import '../home/navigation.dart';
 import '../timeline/posts.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'widgets/setting-tile.dart';
 
 class AccountSettingProviderState {
@@ -174,8 +174,7 @@ class AccountSettings extends HookWidget {
   }
 
   Future<void> linkGoogle(BuildContext ctx) async {
-    List<CredentialProviders> credential =
-        AuthProvider.getProviders();
+    List<CredentialProviders> credential = AuthProvider.getProviders();
     bool googleSignedIn = credential.contains(CredentialProviders.google);
     if (googleSignedIn) {
       if (credential.length == 1) {
@@ -224,8 +223,7 @@ class AccountSettings extends HookWidget {
                       AuthProvider.getProviderIdFromCredentialProvider(
                           CredentialProviders.google));
                   await GoogleSignIn().signOut();
-                  bool googleSignedIn = AuthProvider
-                      .getProviders()
+                  bool googleSignedIn = AuthProvider.getProviders()
                       .contains(CredentialProviders.google);
                   ctx
                       .read(accountSettingProvider)
@@ -266,8 +264,7 @@ class AccountSettings extends HookWidget {
                   await _firebaseAuth.currentUser
                       .linkWithCredential(googleCredential);
 
-                  bool googleSignedIn = AuthProvider
-                      .getProviders()
+                  bool googleSignedIn = AuthProvider.getProviders()
                       .contains(CredentialProviders.google);
                   ctx
                       .read(accountSettingProvider)
@@ -278,8 +275,7 @@ class AccountSettings extends HookWidget {
   }
 
   Future<void> linkApple(BuildContext ctx) async {
-    List<CredentialProviders> credential =
-        AuthProvider.getProviders();
+    List<CredentialProviders> credential = AuthProvider.getProviders();
     bool appleSignedIn = credential.contains(CredentialProviders.apple);
     if (appleSignedIn) {
       if (credential.length == 1) {

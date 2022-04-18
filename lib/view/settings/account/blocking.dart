@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../model/partner.dart';
 import '../../../../model/user.dart';
 import '../../../../provider/auth.dart';
@@ -5,9 +9,6 @@ import '../../home/navigation.dart';
 import '../../profile/others-profile.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/user-card.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class Blocking extends StatelessWidget {
   @override
@@ -20,15 +21,15 @@ class Blocking extends StatelessWidget {
 }
 
 class BlockingList extends HookWidget {
-
   void redirectToProfile(BuildContext ctx, AuthUser user) {
     if (ctx.read(authProvider.state).user.id == user.id) {
       Home.pushNamed('/profile');
     } else {
-      Home.push(MaterialPageRoute(
-          builder: (context) => OtherProfile(user: user)));
+      Home.push(
+          MaterialPageRoute(builder: (context) => OtherProfile(user: user)));
     }
   }
+
   @override
   Widget build(BuildContext context) {
     useProvider(authProvider.state);
@@ -39,9 +40,9 @@ class BlockingList extends HookWidget {
         itemCount: partners.length,
         itemBuilder: (context, index) {
           return InkWell(
-            onTap: () {
-              redirectToProfile(context, partners[index].user);
-            },
+              onTap: () {
+                redirectToProfile(context, partners[index].user);
+              },
               child: UserCard(user: partners[index].user, isFriend: false));
         },
       ),

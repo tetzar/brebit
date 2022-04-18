@@ -1,13 +1,18 @@
+import 'dart:async';
+
+import 'package:brebit/view/general/loading.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
+import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
-import '../../../../network/habit.dart';
 import '../../../../route/route.dart';
-import 'widgets.dart';
-import '../select-strategy.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import '../select-strategy.dart';
+import 'widgets.dart';
+
 class SweetsInformation extends StatefulWidget {
   @override
   _SweetsInformationState createState() => _SweetsInformationState();
@@ -35,54 +40,57 @@ class _SweetsInformationState extends State<SweetsInformation> {
         showDialog(
             context: context,
             builder: (context) => MyDialog(
-                title: SizedBox(height: 0,),
-                body: Text('戻りますか？',
+                title: SizedBox(
+                  height: 0,
+                ),
+                body: Text(
+                  '戻りますか？',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Theme.of(context).disabledColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17
-                ),),
+                      color: Theme.of(context).disabledColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17),
+                ),
                 actionText: '戻る',
                 action: () {
                   Navigator.pop(context);
                   ApplicationRoutes.popUntil('/startHabit');
-                })
-        );
+                }));
         return false;
       },
       child: Scaffold(
         appBar: getMyAppBar(
-          context: context,
-          backButton: AppBarBackButton.arrow,
-          background: AppBarBackground.gray,
-          titleText: 'お菓子を控える',
-          onBack: () {
-            if (data['target-amount'] == 0) {
-              if (!data.containsKey('amount')) {
-                ApplicationRoutes.pop();
-                return;
+            context: context,
+            backButton: AppBarBackButton.arrow,
+            background: AppBarBackground.gray,
+            titleText: 'お菓子を控える',
+            onBack: () {
+              if (data['target-amount'] == 0) {
+                if (!data.containsKey('amount')) {
+                  ApplicationRoutes.pop();
+                  return;
+                }
               }
-            }
-            showDialog(
-                context: context,
-                builder: (context) => MyDialog(
-                    title: SizedBox(height: 0,),
-                    body: Text('戻りますか？',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 17
-                      ),),
-                    actionText: '戻る',
-                    action: () {
-                      Navigator.pop(context);
-                      ApplicationRoutes.popUntil('/startHabit');
-                    })
-            );
-          }
-        ),
+              showDialog(
+                  context: context,
+                  builder: (context) => MyDialog(
+                      title: SizedBox(
+                        height: 0,
+                      ),
+                      body: Text(
+                        '戻りますか？',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Theme.of(context).disabledColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 17),
+                      ),
+                      actionText: '戻る',
+                      action: () {
+                        Navigator.pop(context);
+                        ApplicationRoutes.popUntil('/startHabit');
+                      }));
+            }),
         body: MyBottomFixedButton(
           enable: savable(),
           onTapped: () async {
@@ -129,8 +137,7 @@ class _SweetsInformationState extends State<SweetsInformation> {
                         InformationItem(
                           appbarTitle: 'これまで',
                           formatter: InformationFormatter.unit(
-                              InformationFormatter.make('amount'),
-                              'kcal/日以内'),
+                              InformationFormatter.make('amount'), 'kcal/日以内'),
                           title: 'これまで',
                           units: [
                             FormInformationItemUnit(
@@ -139,7 +146,8 @@ class _SweetsInformationState extends State<SweetsInformation> {
                                 unit: 'kcal',
                                 name: 'amount',
                                 title: '1日あたりの摂取量'),
-                          ],),
+                          ],
+                        ),
                       ],
                       onChange: (newValue) {
                         newValue.forEach((key, value) {
@@ -177,13 +185,20 @@ class _SweetsInformationState extends State<SweetsInformation> {
       Map<String, double> _data = <String, double>{};
       _data['limit'] = data['target-amount'].toDouble();
       _data['average'] = data['amount'].toDouble();
-      Map<String, dynamic> result =
-      await HabitApi.saveInformation(_category, _data);
-      SelectStrategyParams params = new SelectStrategyParams(
-          recommendStrategies: result['strategies']['recommend'],
-          habit: result['habit'],
-          otherStrategies: result['strategies']['others']);
-      ApplicationRoutes.pushNamed('/strategy/select', params);
+      MyLoading.startLoading();
+      try {
+        Map<String, dynamic> result =
+            await HabitApi.saveInformation(_category, _data);
+        SelectStrategyParams params = new SelectStrategyParams(
+            recommendStrategies: result['strategies']['recommend'],
+            habit: result['habit'],
+            otherStrategies: result['strategies']['others']);
+        await MyLoading.dismiss();
+        ApplicationRoutes.pushNamed('/strategy/select', params);
+      } catch (e) {
+        await MyLoading.dismiss();
+        MyErrorDialog.show(e);
+      }
     }
   }
 }

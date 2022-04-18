@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:brebit/view/general/loading.dart';
+import 'package:brebit/view/widgets/dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../api/analysis.dart';
 import '../../../../model/analysis.dart';
 import '../../../../model/habit.dart';
-import '../../../../network/analysis.dart';
 import '../../../../provider/auth.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
 import '../../widgets/bottom-sheet.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class AnalysisCard extends StatefulWidget {
   final Analysis analysis;
@@ -160,10 +163,16 @@ class _AnalysisCardState extends State<AnalysisCard> {
     List<BottomSheetItem> items = <BottomSheetItem>[
       BottomSheetItem(
           onTap: () async {
-            Habit habit = await AnalysisApi.removeAnalysis(
-                context.read(homeProvider).getHabit(), analysis);
-            context.read(homeProvider).setHabit(habit);
-            ApplicationRoutes.pop();
+            MyLoading.startLoading();
+            try {
+              Habit habit = await AnalysisApi.removeAnalysis(
+                  context.read(homeProvider).getHabit(), analysis);
+              context.read(homeProvider).setHabit(habit);
+              ApplicationRoutes.pop();
+            } catch (e) {
+              MyErrorDialog.show(e);
+            }
+            MyLoading.dismiss();
           },
           child: Text(
             '分析項目を削除',

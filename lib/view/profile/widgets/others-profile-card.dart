@@ -1,13 +1,14 @@
-import '../../../../model/category.dart';
-import '../../../../model/partner.dart';
-import '../../../../model/user.dart';
-import '../../../../provider/auth.dart';
-import '../../../../provider/profile.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../model/category.dart';
+import '../../../../model/partner.dart';
+import '../../../../model/user.dart';
+import '../../../../provider/auth.dart';
+import '../../../../provider/profile.dart';
 
 final Map<CategoryName, String> _categoryName = {
   CategoryName.cigarette: 'たばこ',

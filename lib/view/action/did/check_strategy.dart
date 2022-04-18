@@ -1,17 +1,19 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../api/habit.dart';
 import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
-import '../../../../network/habit.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
 import '../../general/loading.dart';
 import '../../widgets/app-bar.dart';
-import '../../widgets/back-button.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/strategy-card.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class CheckedValue {
   List<int> checked = <int>[];

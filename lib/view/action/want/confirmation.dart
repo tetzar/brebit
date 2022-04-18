@@ -1,6 +1,6 @@
 import '../../../../model/habit.dart';
 import '../../../../model/habit_log.dart';
-import '../../../../network/habit.dart';
+import '../../../../api/habit.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';

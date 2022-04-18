@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -13,11 +12,7 @@ class TabProvider extends StateNotifier<double> {
   }
 }
 
-enum ShowingTab {
-  progress,
-  analytics,
-  pileUp
-}
+enum ShowingTab { progress, analytics, pileUp }
 
 class SearchTabBarContent extends StatefulHookWidget {
   final TabController tabController;
@@ -80,10 +75,13 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                     fontWeight: FontWeight.w400,
                                     color: _showingTab == ShowingTab.progress
                                         ? Theme.of(context)
-                                        .textTheme
-                                        .bodyText1
-                                        .color
-                                        : Theme.of(context).textTheme.subtitle1.color),
+                                            .textTheme
+                                            .bodyText1
+                                            .color
+                                        : Theme.of(context)
+                                            .textTheme
+                                            .subtitle1
+                                            .color),
                               )
                             ],
                           ),
@@ -104,10 +102,13 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                     fontWeight: FontWeight.w400,
                                     color: _showingTab == ShowingTab.analytics
                                         ? Theme.of(context)
-                                        .textTheme
-                                        .bodyText1
-                                        .color
-                                        : Theme.of(context).textTheme.subtitle1.color),
+                                            .textTheme
+                                            .bodyText1
+                                            .color
+                                        : Theme.of(context)
+                                            .textTheme
+                                            .subtitle1
+                                            .color),
                               ),
                             ],
                           ),
@@ -128,10 +129,13 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                     fontWeight: FontWeight.w400,
                                     color: _showingTab == ShowingTab.pileUp
                                         ? Theme.of(context)
-                                        .textTheme
-                                        .bodyText1
-                                        .color
-                                        : Theme.of(context).textTheme.subtitle1.color),
+                                            .textTheme
+                                            .bodyText1
+                                            .color
+                                        : Theme.of(context)
+                                            .textTheme
+                                            .subtitle1
+                                            .color),
                               ),
                             ],
                           ),
@@ -146,7 +150,7 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
               child: CustomPaint(
                 size: Size(double.infinity, 6),
                 painter:
-                TabBarLinePainter(position: position, context: context),
+                    TabBarLinePainter(position: position, context: context),
               ),
             )
           ],

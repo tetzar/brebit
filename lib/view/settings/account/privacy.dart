@@ -1,13 +1,16 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../provider/auth.dart';
 import '../../../../route/route.dart';
 import '../../general/loading.dart';
 import '../../home/navigation.dart';
-import '../widgets/setting-tile.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../widgets/setting-tile.dart';
 
 class PrivacySettings extends StatelessWidget {
   @override

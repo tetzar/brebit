@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:brebit/library/data-set.dart';
 import 'package:brebit/model/user.dart';
-import 'package:brebit/network/api.dart';
+import 'package:brebit/api/api.dart';
 import 'package:flutter/material.dart';
 import 'package:time_machine/time_machine.dart';
 

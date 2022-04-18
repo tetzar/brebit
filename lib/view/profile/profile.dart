@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:developer' as dv;
 import 'dart:math';
 
 import 'package:brebit/view/widgets/app-bar.dart';
+import 'package:brebit/view/widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -162,7 +164,11 @@ class _PostListViewState extends State<PostListView> {
     if (!ctx.read(authProvider).noMoreContent && !nowLoading) {
       print("start reload");
       nowLoading = true;
-      await ctx.read(authProvider).reloadOlderTimeLine();
+      try {
+        await ctx.read(authProvider).reloadOlderTimeLine();
+      } catch (e) {
+        dv.log('debug', error: e);
+      }
       nowLoading = false;
       setState(() {});
     }
@@ -251,10 +257,14 @@ class _PostListViewState extends State<PostListView> {
           context: context,
           text: '投稿を破棄',
           onSelect: () async {
-            ApplicationRoutes.pop(context);
-            bool deleted = await context.read(authProvider).deletePost(post);
-            if (deleted) {
-              await removePostFromAllProvider(post, context);
+            try {
+              ApplicationRoutes.pop(context);
+              bool deleted = await context.read(authProvider).deletePost(post);
+              if (deleted) {
+                await removePostFromAllProvider(post, context);
+              }
+            } catch (e) {
+              MyErrorDialog.show(e);
             }
           }),
       CancelBottomSheetItem(
@@ -283,7 +293,11 @@ class _FriendListViewState extends State<FriendListView> {
     List<Partner> _partners = _authProviderState.user.getAcceptedPartners();
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read(authProvider).reloadProfile();
+        try {
+          await context.read(authProvider).reloadProfile();
+        } catch (e) {
+          dv.log('debug', error: e);
+        }
         if (mounted) {
           setState(() {});
         }

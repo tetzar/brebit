@@ -1,6 +1,6 @@
 import '../../model/comment.dart';
 import '../../model/post.dart';
-import '../../network/post.dart';
+import '../../api/post.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final postProvider = StateNotifierProvider.family<PostProvider, int>(

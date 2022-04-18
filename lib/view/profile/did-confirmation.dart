@@ -1,5 +1,9 @@
 // ApplicationRoute /did/confirmation
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../model/habit_log.dart';
@@ -11,13 +15,10 @@ import '../../../route/route.dart';
 import '../action/widgets/tags.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/strategy-card.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class DidConfirmation extends StatelessWidget {
-
   final HabitLog log;
+
   DidConfirmation({@required this.log});
 
   @override
@@ -34,6 +35,7 @@ class DidConfirmation extends StatelessWidget {
 
 class DidConfirmationBody extends StatefulWidget {
   final HabitLog log;
+
   DidConfirmationBody({@required this.log});
 
   @override
@@ -85,15 +87,11 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
     Trigger trigger = body['trigger'];
     List<Tag> tags = trigger.tags;
     tags.forEach((tag) {
-      tagCards.add(
-        SimpleTagCard(onCancel: null, name: '#' +  tag.name)
-      );
+      tagCards.add(SimpleTagCard(onCancel: null, name: '#' + tag.name));
     });
     List<StrategyCard> strategyCards = <StrategyCard>[];
-    trigger.body['strategies'].forEach((strategy){
-      strategyCards.add(
-        StrategyCard(strategy: strategy)
-      );
+    trigger.body['strategies'].forEach((strategy) {
+      strategyCards.add(StrategyCard(strategy: strategy));
     });
     return Container(
         height: double.infinity,
@@ -109,26 +107,24 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                   fontSize: 28,
                   color: Theme.of(context).textTheme.bodyText1.color),
             ),
-            Padding(padding: EdgeInsets.only(top: 4), child: Text(
-              dateTimeFormatted,
-              style: TextStyle(
-                  color: Theme.of(context).disabledColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400
+            Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                dateTimeFormatted,
+                style: TextStyle(
+                    color: Theme.of(context).disabledColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400),
               ),
-            ),),
+            ),
             Container(
-              margin: EdgeInsets.only(
-                  top: 8
-              ),
+              margin: EdgeInsets.only(top: 8),
               child: Tags(
                 tags: tagCards,
               ),
             ),
             Container(
-              margin: EdgeInsets.only(
-                  top: 24
-              ),
+              margin: EdgeInsets.only(top: 24),
               child: Row(
                 children: [
                   Expanded(
@@ -139,8 +135,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
-                            color: Theme.of(context).textTheme.bodyText1.color
-                        ),
+                            color: Theme.of(context).textTheme.bodyText1.color),
                       ),
                     ),
                   ),
@@ -152,8 +147,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyText1.color
-                        ),
+                            color: Theme.of(context).textTheme.bodyText1.color),
                       ),
                     ),
                   )
@@ -161,9 +155,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
               ),
             ),
             Container(
-              margin: EdgeInsets.only(
-                  top: 16
-              ),
+              margin: EdgeInsets.only(top: 16),
               child: Row(
                 children: [
                   Expanded(
@@ -174,8 +166,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
-                            color: Theme.of(context).textTheme.bodyText1.color
-                        ),
+                            color: Theme.of(context).textTheme.bodyText1.color),
                       ),
                     ),
                   ),
@@ -187,61 +178,65 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyText1.color
-                        ),
+                            color: Theme.of(context).textTheme.bodyText1.color),
                       ),
                     ),
                   )
                 ],
               ),
             ),
-            body['amount'] != null ? Container(
-              margin: EdgeInsets.only(
-                  top: 16
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${amountName[_habit.category.name]}：',
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            color: Theme.of(context).textTheme.bodyText1.color
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: RichText(
-                        text: TextSpan(
-                            text: body['amount'].toString(),
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context).textTheme.bodyText1.color
+            body['amount'] != null
+                ? Container(
+                    margin: EdgeInsets.only(top: 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '${amountName[_habit.category.name]}：',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyText1
+                                      .color),
                             ),
-                            children: [
-                              TextSpan(
-                                text: unit[_habit.category.name],
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).disabledColor
-                                ),
-                              )
-                            ]
+                          ),
                         ),
-                      ),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: RichText(
+                              text: TextSpan(
+                                  text: body['amount'].toString(),
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyText1
+                                          .color),
+                                  children: [
+                                    TextSpan(
+                                      text: unit[_habit.category.name],
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              Theme.of(context).disabledColor),
+                                    )
+                                  ]),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  )
+                : SizedBox(
+                    height: 0,
                   ),
-                ],
-              ),
-            ) : SizedBox(height: 0,),
             Column(
               children: strategyCards,
             )

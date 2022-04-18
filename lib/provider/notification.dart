@@ -5,7 +5,7 @@ import '../../library/cache.dart';
 import '../../library/messaging.dart';
 import '../../model/notification.dart';
 import '../../model/user.dart';
-import '../../network/notification.dart';
+import '../../api/notification.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 

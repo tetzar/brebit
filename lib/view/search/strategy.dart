@@ -1,6 +1,13 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../api/strategy.dart';
 import '../../../model/habit.dart';
 import '../../../model/strategy.dart';
-import '../../../network/strategy.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
@@ -8,12 +15,6 @@ import '../strategy/create.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
 import '../widgets/strategy-card.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-import 'dart:math';
-
 import 'search.dart';
 
 class StrategyResult extends HookWidget {

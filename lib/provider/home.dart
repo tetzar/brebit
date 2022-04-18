@@ -4,8 +4,8 @@ import '../../model/category.dart';
 import '../../model/habit.dart';
 import '../../model/strategy.dart';
 import '../../model/user.dart';
-import '../../network/habit.dart';
-import '../../network/strategy.dart';
+import '../../api/habit.dart';
+import '../../api/strategy.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class HomeProviderState {

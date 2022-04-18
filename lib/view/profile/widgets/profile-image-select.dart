@@ -1,4 +1,10 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../model/image.dart' as ImageModel;
 import '../../../../model/user.dart';
@@ -9,10 +15,6 @@ import '../../general/loading.dart';
 import '../../widgets/back-button.dart';
 import '../../widgets/bottom-sheet.dart';
 import '../../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ProfileImageSelect extends StatefulHookWidget {
   @override
@@ -42,7 +44,7 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
           title: Text('プロフィール画像'),
           centerTitle: true,
           leading: MyBackButtonX(
-            onPressed:  () {
+            onPressed: () {
               if (_hasChanged) {
                 showCancelDialog(context);
               } else {
@@ -197,8 +199,8 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
         },
       )
     ];
-    bool imageDeletable = context.read(authProvider.state).user.hasImage() ||
-    imageFile != null;
+    bool imageDeletable =
+        context.read(authProvider.state).user.hasImage() || imageFile != null;
     if (imageDeletable) {
       _items.add(CautionBottomSheetItem(
           context: context,

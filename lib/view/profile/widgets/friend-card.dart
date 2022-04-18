@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../../model/user.dart';
 import '../../../../provider/auth.dart';
 import '../../home/navigation.dart';
 import '../others-profile.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class FriendCard extends StatelessWidget {
   final AuthUser user;
@@ -15,11 +16,8 @@ class FriendCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (context.read(authProvider.state).user.id != user.id) {
-          Home.push(
-              MaterialPageRoute(
-                  builder: (context) => OtherProfile(user: user)
-              )
-          );
+          Home.push(MaterialPageRoute(
+              builder: (context) => OtherProfile(user: user)));
         } else {
           Home.pushNamed('/profile');
         }
@@ -59,31 +57,37 @@ class FriendCard extends StatelessWidget {
                         Text(
                           user.name,
                           style: TextStyle(
-                              color: Theme.of(context).textTheme.bodyText1.color,
+                              color:
+                                  Theme.of(context).textTheme.bodyText1.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 15),
                         ),
-                        context.read(authProvider.state).user.isFriend(user) ?
-                        Container(
-                          padding: EdgeInsets.only(
-                            left: 8,
-                          ),
-                          height: 17,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(8)),
-                              color: Theme.of(context).accentColor,
-                            ),
-                            child: Text(
-                              'フレンド',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w400,
-                                  color: Theme.of(context).primaryColor),
-                            ),
-                          ),
-                        ): SizedBox(height: 0, width: 0,)
+                        context.read(authProvider.state).user.isFriend(user)
+                            ? Container(
+                                padding: EdgeInsets.only(
+                                  left: 8,
+                                ),
+                                height: 17,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(8)),
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                  child: Text(
+                                    'フレンド',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w400,
+                                        color: Theme.of(context).primaryColor),
+                                  ),
+                                ),
+                              )
+                            : SizedBox(
+                                height: 0,
+                                width: 0,
+                              )
                       ],
                     ),
                     //---------------------------------

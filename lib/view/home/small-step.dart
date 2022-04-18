@@ -1,12 +1,13 @@
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/habit.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SmallStep extends StatelessWidget {
   @override
@@ -54,10 +55,7 @@ class SmallStepContent extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyText1
-                        .copyWith(
-                        fontSize: 20,
-                      fontWeight: FontWeight.w700
-                    ),
+                        .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
@@ -108,82 +106,69 @@ class SmallStepContent extends StatelessWidget {
               ),
             ),
             Container(
-              margin: EdgeInsets.symmetric(vertical: 16),
-              padding: EdgeInsets.symmetric(vertical: 24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(8)
-              ),
-              alignment: Alignment.center,
-              child: RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  text: 'あと',
-                  style: Theme.of(context).textTheme.bodyText1.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400
-                  ),
-                  children: [
-                    TextSpan(
-                      text: _remainingDays.toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700
-                      )
-                    ),
-                    TextSpan(
-                      text: '日で次のスモールステップです。\nこの調子で頑張りましょう！'
-                    ),
-                  ]
-                ),
-              )
-            ),
+                margin: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 24),
+                decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(8)),
+                alignment: Alignment.center,
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                      text: 'あと',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText1
+                          .copyWith(fontSize: 13, fontWeight: FontWeight.w400),
+                      children: [
+                        TextSpan(
+                            text: _remainingDays.toString(),
+                            style: TextStyle(fontWeight: FontWeight.w700)),
+                        TextSpan(text: '日で次のスモールステップです。\nこの調子で頑張りましょう！'),
+                      ]),
+                )),
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(8)
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 24
-              ),
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(8)),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'スモールステップと日数',
-                    style: Theme.of(context).textTheme.bodyText1.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText1
+                        .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
-                  SizedBox(height: 16,),
+                  SizedBox(
+                    height: 16,
+                  ),
                   RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      text: 'ステップが上がると\nより多くの日数が必要になります',
-                      style: Theme.of(context).textTheme.subtitle1,
-                      children: [
-                        TextSpan(
-                          text: '\nさらに詳しく',
-                          recognizer: TapGestureRecognizer()..onTap = () {
-                            ApplicationRoutes.pushNamed(
-                              '/explanation/small-step'
-                            );
-                          },
-                          style: TextStyle(
-                            color: Theme.of(context).accentColor,
-                            decoration: TextDecoration.underline
-                          )
-                        )
-                      ]
-                    )
-                  ),
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                          text: 'ステップが上がると\nより多くの日数が必要になります',
+                          style: Theme.of(context).textTheme.subtitle1,
+                          children: [
+                            TextSpan(
+                                text: '\nさらに詳しく',
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    ApplicationRoutes.pushNamed(
+                                        '/explanation/small-step');
+                                  },
+                                style: TextStyle(
+                                    color: Theme.of(context).accentColor,
+                                    decoration: TextDecoration.underline))
+                          ])),
                   Container(
                     margin: EdgeInsets.only(top: 16),
                     width: double.infinity,
                     child: SvgPicture.asset(
-                        _nowStep + 1 < 9 ? 'assets/steps/step${_nowStep + 1}.svg' :
-                            'assets/steps/step8plus.svg',
+                      _nowStep + 1 < 9
+                          ? 'assets/steps/step${_nowStep + 1}.svg'
+                          : 'assets/steps/step8plus.svg',
                       fit: BoxFit.contain,
                     ),
                   )

@@ -1,5 +1,5 @@
 import '../../model/user.dart';
-import '../../network/partner.dart';
+import '../../api/partner.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final partnerProvider =

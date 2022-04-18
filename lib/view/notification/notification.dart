@@ -1,25 +1,28 @@
-import '../../../model/comment.dart';
-import '../../../model/partner.dart';
-import '../../../model/post.dart';
-import '../../../model/favorite.dart';
-import '../../../model/notification.dart';
-import '../../../provider/auth.dart';
-import '../../../provider/notification.dart';
-import '../../../provider/posts.dart';
-import '../general/loading.dart';
-import '../home/navigation.dart';
-import 'friend-request.dart';
-import 'notification-information.dart';
-import '../profile/others-profile.dart';
-import '../timeline/post.dart';
-import '../timeline/posts.dart';
-import '../widgets/app-bar.dart';
-import '../widgets/dialog.dart';
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:time_machine/time_machine.dart';
+
+import '../../../model/comment.dart';
+import '../../../model/favorite.dart';
+import '../../../model/notification.dart';
+import '../../../model/partner.dart';
+import '../../../model/post.dart';
+import '../../../provider/auth.dart';
+import '../../../provider/notification.dart';
+import '../../../provider/posts.dart';
+import '../general/loading.dart';
+import '../home/navigation.dart';
+import '../profile/others-profile.dart';
+import '../timeline/post.dart';
+import '../timeline/posts.dart';
+import '../widgets/app-bar.dart';
+import '../widgets/dialog.dart';
+import 'friend-request.dart';
+import 'notification-information.dart';
 
 class NotificationPage extends StatefulWidget {
   @override
@@ -131,12 +134,14 @@ class PartnerRequestTile extends HookWidget {
 
 class NotificationList extends HookWidget {
   @override
-
   Widget build(BuildContext context) {
     useProvider(notificationProvider.state);
     List<UserNotification> notifications =
         context.read(notificationProvider.state).notifications;
-    print(notifications.where((element) => element.readAt == null).toList().length);
+    print(notifications
+        .where((element) => element.readAt == null)
+        .toList()
+        .length);
     if (notifications.length == 0) {
       return Container(
         margin: EdgeInsets.only(top: 64),
@@ -193,9 +198,13 @@ class NotificationList extends HookWidget {
     return Container(
         child: RefreshIndicator(
       onRefresh: () async {
-        context
-            .read(notificationProvider)
-            .refreshNotification(await context.read(authProvider).getUser());
+        try {
+          context
+              .read(notificationProvider)
+              .refreshNotification(await context.read(authProvider).getUser());
+        } catch (e) {
+          MyErrorDialog.show(e);
+        }
       },
       child: SingleChildScrollView(
         child: Column(
@@ -556,16 +565,11 @@ class NotificationTile extends StatelessWidget {
         image = Image.asset('assets/images/brebit_team.png');
         title = Text(
           notificationBody['title'],
-          style: Theme.of(context).textTheme.bodyText1.copyWith(
-            fontSize: 15
-          ),
+          style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
         );
         onTap = () {
-          Home.push(
-              MaterialPageRoute(builder: (context) => InformationNotification(
-                notification
-              ))
-          );
+          Home.push(MaterialPageRoute(
+              builder: (context) => InformationNotification(notification)));
         };
         break;
     }
@@ -652,7 +656,9 @@ class NotificationTile extends StatelessWidget {
             .read(timelineProvider(friendProviderName))
             .deletePost(post);
         if (deleteSuccess ?? false) {
-          context.read(timelineProvider(challengeProviderName)).removePost(post);
+          context
+              .read(timelineProvider(challengeProviderName))
+              .removePost(post);
         } else {
           await context
               .read(timelineProvider(friendProviderName))

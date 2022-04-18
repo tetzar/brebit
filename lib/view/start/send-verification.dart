@@ -1,18 +1,20 @@
+import 'dart:async';
 import 'dart:math';
 
-import '../../../library/cache.dart';
 import 'package:brebit/main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../library/cache.dart';
 import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../home/navigation.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SendVerificationCodeScreen extends StatelessWidget {
   final String nickName;

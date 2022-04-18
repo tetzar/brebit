@@ -1,14 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
-import '../../../library/exceptions.dart';
 import 'package:brebit/main.dart';
-import '../../../network/auth.dart';
-import '../../../provider/auth.dart';
-import '../../../route/route.dart';
-import '../general/loading.dart';
-import '../widgets/app-bar.dart';
-import '../widgets/dialog.dart';
-import '../widgets/text-field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -18,6 +11,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../api/auth.dart';
+import '../../../library/exceptions.dart';
+import '../../../provider/auth.dart';
+import '../../../route/route.dart';
+import '../general/loading.dart';
+import '../widgets/app-bar.dart';
+import '../widgets/dialog.dart';
+import '../widgets/text-field.dart';
 import 'name-form.dart';
 
 class Login extends StatelessWidget {
@@ -408,22 +409,22 @@ class LoginFormState extends State<LoginForm> {
 
   Future<void> signInWithGoogle(BuildContext context) async {
     MyLoading.startLoading();
-    final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
-
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    // Create a new credential
-    final GoogleAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Once signed in, return the UserCredential
-    UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithCredential(credential);
     try {
+      final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential
+      final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Once signed in, return the UserCredential
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
       await context.read(authProvider).loginWithFirebase(userCredential.user);
       await MyApp.initialize(context);
       while (Navigator.canPop(context)) {
@@ -434,7 +435,7 @@ class LoginFormState extends State<LoginForm> {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch (e) {
-      MyErrorDialog.show(e);
+      MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
     MyLoading.dismiss();
   }

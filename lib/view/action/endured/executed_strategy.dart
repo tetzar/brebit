@@ -1,57 +1,52 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../api/habit.dart';
 import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
-import '../../../../network/habit.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
-import '../did/check_strategy.dart';
 import '../../general/loading.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/strategy-card.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../did/check_strategy.dart';
 
 CheckedValue checkedValue;
 
-final buttonTextProvider = StateNotifierProvider.autoDispose(
-    (ref) => ButtonTextProvider('')
-);
+final buttonTextProvider =
+    StateNotifierProvider.autoDispose((ref) => ButtonTextProvider(''));
 
 class ButtonTextProvider extends StateNotifier<String> {
   ButtonTextProvider(String state) : super(state);
-  
+
   void notify() {
     state = '';
   }
-  
 }
 
 class CheckStrategyEndured extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     checkedValue = new CheckedValue();
     Habit habit = context.read(homeProvider.state).habit;
     List<Widget> strategyCards = <Widget>[];
     habit.strategies.forEach((strategy) {
-      strategyCards.add(
-          StrategyCard(
-            strategy: strategy,
-            onSelect: () {
-              return strategyCheck(strategy, context);
-            },
-            initialSelected: false,
-          )
-      );
+      strategyCards.add(StrategyCard(
+        strategy: strategy,
+        onSelect: () {
+          return strategyCheck(strategy, context);
+        },
+        initialSelected: false,
+      ));
     });
 
     return Scaffold(
-      appBar: getMyAppBar(
-        context: context,
-        titleText: ''
-      ),
+      appBar: getMyAppBar(context: context, titleText: ''),
       body: MyHookFlexibleLabelBottomFixedButton(
         labelChange: () {
           if (checkedValue.checked.length > 0) {

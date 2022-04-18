@@ -1,17 +1,18 @@
 import 'dart:async';
+import 'dart:developer' as dv;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../api/partner.dart';
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../model/habit_log.dart';
 import '../../../model/partner.dart';
 import '../../../model/post.dart';
 import '../../../model/user.dart';
-import '../../../network/partner.dart';
 import '../../../provider/auth.dart';
 import '../../../provider/posts.dart';
 import '../../../provider/profile.dart';
@@ -652,9 +653,11 @@ class _ProfileContentState extends State<ProfileContent>
               body: Column(
                 children: [
                   StreamBuilder<double>(
-                    stream: _scrollStream.stream,
+                      stream: _scrollStream.stream,
                       builder: (context, snapshot) {
-                      return SizedBox(height: snapshot.data?? 0,);
+                        return SizedBox(
+                          height: snapshot.data ?? 0,
+                        );
                       }),
                   Expanded(child: tabBarView),
                 ],
@@ -934,9 +937,13 @@ class _PostListViewState extends State<PostListView> {
               400 &&
           !nowLoading) {
         nowLoading = true;
-        await ctx.read(profileProvider(widget.user.id)).reloadOlderTimeLine();
-        nowLoading = false;
-        setState(() {});
+        try {
+          await ctx.read(profileProvider(widget.user.id)).reloadOlderTimeLine();
+          nowLoading = false;
+          setState(() {});
+        } catch (e) {
+          dv.log('debug', error: e);
+        }
       }
     }
   }
@@ -959,7 +966,11 @@ class _PostListViewState extends State<PostListView> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read(profileProvider(widget.user.id)).reloadTimeLine();
+        try {
+          await context.read(profileProvider(widget.user.id)).reloadTimeLine();
+        } catch (e) {
+          dv.log('debug', error: e);
+        }
         if (mounted) {
           setState(() {
             _posts =
@@ -1073,7 +1084,11 @@ class _FriendListViewState extends State<FriendListView> {
     useProvider(profileProvider(widget.user.id).state);
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read(profileProvider(widget.user.id)).getProfile();
+        try {
+          await context.read(profileProvider(widget.user.id)).getProfile();
+        } catch (e) {
+          dv.log('debug', error: e);
+        }
         if (mounted) {
           setState(() {
             _partners = context

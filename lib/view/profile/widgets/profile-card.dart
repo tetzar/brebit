@@ -1,12 +1,13 @@
-import '../../../../model/category.dart';
-import '../../../../model/user.dart';
-import '../../../../provider/auth.dart';
-import '../../../../route/route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../model/category.dart';
+import '../../../../model/user.dart';
+import '../../../../provider/auth.dart';
+import '../../../../route/route.dart';
 
 final Map<CategoryName, String> _categoryName = {
   CategoryName.cigarette: 'たばこ',
@@ -26,7 +27,9 @@ final Map<CategoryName, String> _imagePath = {
 
 class ProfileCard extends StatefulHookWidget {
   final GlobalKey containerKey;
+
   ProfileCard({@required this.containerKey});
+
   @override
   _ProfileCardState createState() => _ProfileCardState();
 }
@@ -81,9 +84,7 @@ class _ProfileCardState extends State<ProfileCard> {
                       },
                       child: Center(
                         child: CircleAvatar(
-                          child: ClipOval(
-                            child: user.getImageWidget()
-                          ),
+                          child: ClipOval(child: user.getImageWidget()),
                           radius: 40,
                           // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
                           backgroundColor: Colors.transparent,
