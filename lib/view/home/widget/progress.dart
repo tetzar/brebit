@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../provider/home.dart';
-import 'achievd-dialog.dart';
+import 'achieved-dialog.dart';
 
 class ProgressCircle extends StatefulWidget {
+  final Function onAimDateUpdated;
+  ProgressCircle({@required this.onAimDateUpdated});
+
   @override
   _ProgressCircleState createState() => _ProgressCircleState();
 }
@@ -113,7 +116,7 @@ class _ProgressCircleState extends State<ProgressCircle> {
   }
 
   void achieved(BuildContext context) {
-    AchievedDialog.show(context);
+    AchievedDialog.show(context, widget.onAimDateUpdated);
   }
 }
 

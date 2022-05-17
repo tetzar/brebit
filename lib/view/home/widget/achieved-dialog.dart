@@ -12,7 +12,7 @@ import '../../../../provider/home.dart';
 class AchievedDialog {
   static bool isShowing = false;
 
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(BuildContext context, Function onAimDateUpdated) async {
     if (isShowing) {
       return;
     }
@@ -78,6 +78,7 @@ class AchievedDialog {
                                     .read(homeProvider)
                                     .updateAimDate(next);
                                 Navigator.pop(context);
+                                onAimDateUpdated();
                               } catch (e) {
                                 MyErrorDialog.show(e);
                               }
