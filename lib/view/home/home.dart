@@ -1,5 +1,6 @@
 // package:brebit/view/register.dart
 
+import 'package:brebit/provider/confetti.dart';
 import 'package:brebit/view/home/navigation.dart';
 import 'package:brebit/view/home/widget/confetti.dart';
 import 'package:flutter/cupertino.dart';
@@ -38,7 +39,7 @@ class _HomeContentState extends State<HomeContent>
       }
     });
     _tabController.index = context.read(tabProvider.state).round();
-    confetti = Confetti();
+    confetti =  Confetti();
     super.initState();
   }
 
@@ -109,40 +110,31 @@ class _HomeContentState extends State<HomeContent>
 
     return Container(
       width: MediaQuery.of(context).size.width,
-      child: Stack(
-        children: [
-          Container(
-            color: Theme.of(context).backgroundColor,
-            child: Column(
-              children: [
-                HomeTabBarContent(tabController: _tabController),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      Progress(
-                        onAimDateUpdated: onAimDateUpdated,
-                      ),
-                      AnalysisScreen(),
-                      HomeActivity(),
-                    ],
+      child: Container(
+        color: Theme.of(context).backgroundColor,
+        child: Column(
+          children: [
+            HomeTabBarContent(tabController: _tabController),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Progress(
+                    onAimDateUpdated: onAimDateUpdated,
                   ),
-                ),
-              ],
+                  AnalysisScreen(),
+                  HomeActivity(),
+                ],
+              ),
             ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: confetti.getWidget(),
-            ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void onAimDateUpdated() {
-    this.confetti.play();
+  void onAimDateUpdated(BuildContext context) {
+    context.read(confettiProvider).play();
   }
 }
 
@@ -168,7 +160,7 @@ class Progress extends StatelessWidget {
                 child: Column(
                   children: [
                     ProgressCircle(
-                      onAimDateUpdated: onAimDateUpdated,
+                       onAimDateUpdated:onAimDateUpdated
                     ),
                     InkWell(
                       onTap: () {

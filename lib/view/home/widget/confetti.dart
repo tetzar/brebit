@@ -16,7 +16,7 @@ class Confetti {
     );
   }
 
-  static const DURATION_SECONDS = 3;
+  static const DURATION_SECONDS = 1;
 
   Widget getWidget() {
     return _confettiWidget;
@@ -41,47 +41,20 @@ class _FrontConfettiWidgetState extends State<FrontConfettiWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width:double.infinity,
+      width: double.infinity,
       height: double.infinity,
       color: Colors.transparent,
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  height: 100,
-                  child: ConfettiWidget(
-                    confettiController: widget.controller,
-                    shouldLoop: false,
-                    blastDirection: (-pi * 3 / 8),
-                    gravity: 0.1,
-                    maxBlastForce: 100.0,
-                    numberOfParticles: 15,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  height: 100,
-                  child: ConfettiWidget(
-                    confettiController: widget.controller,
-                    shouldLoop: false,
-                    blastDirection: (-5 * pi / 8),
-                    gravity: 0.1,
-                    maxBlastForce: 100.0,
-                    numberOfParticles: 15,
-                  ),
-                ),
-              )
-            ],
-          )
-        ],
-      ),
+      alignment: Alignment.topCenter,
+      child: ConfettiWidget(
+        confettiController: widget.controller,
+        emissionFrequency: 0.2,
+        shouldLoop: false,
+        blastDirectionality: BlastDirectionality.explosive,
+        gravity: 0.2,
+        maxBlastForce: 50.0,
+        numberOfParticles: 10,),
     );
   }
 }
+
+

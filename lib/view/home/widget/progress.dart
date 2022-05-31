@@ -9,7 +9,7 @@ import '../../../../provider/home.dart';
 import 'achieved-dialog.dart';
 
 class ProgressCircle extends StatefulWidget {
-  final Function onAimDateUpdated;
+  final Function(BuildContext) onAimDateUpdated;
   ProgressCircle({@required this.onAimDateUpdated});
 
   @override
