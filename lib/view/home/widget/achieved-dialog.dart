@@ -74,9 +74,9 @@ class AchievedDialog {
                           child: InkWell(
                             onTap: () async {
                               try {
-                                // await context
-                                //     .read(homeProvider)
-                                //     .updateAimDate(next);
+                                await context
+                                    .read(homeProvider)
+                                    .updateAimDate(next);
                                 Navigator.pop(context);
                                 onAimDateUpdated(context);
                               } catch (e) {
