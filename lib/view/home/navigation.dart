@@ -1,3 +1,5 @@
+import 'package:brebit/provider/confetti.dart';
+import 'package:brebit/view/home/widget/confetti.dart';
 import 'package:brebit/view/widgets/app-bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -121,6 +123,7 @@ class _HomeNavigationState extends State<HomeNavigation>
   User firebaseUser;
   AnimationController _animationController;
   Animation<double> _curve;
+  Confetti confetti;
 
   @override
   void initState() {
@@ -141,6 +144,8 @@ class _HomeNavigationState extends State<HomeNavigation>
     if (widget.actionCode == HomeActionCodes.verifyComplete) {
       _animationController.forward();
     }
+    confetti = Confetti();
+    context.read(confettiProvider).setConfetti(confetti);
   }
 
   @override
@@ -172,11 +177,20 @@ class _HomeNavigationState extends State<HomeNavigation>
                     })
               ],
             )
-          : Scaffold(
-              body: HomeNavigator(),
-              bottomNavigationBar: HomeBottomNavigationBar(
-                onTapped: _onItemTapped,
-              )),
+          : Stack(
+            children: [
+              Scaffold(
+                  body: HomeNavigator(),
+                  bottomNavigationBar: HomeBottomNavigationBar(
+                    onTapped: _onItemTapped,
+                  )),
+              IgnorePointer(
+                child: SafeArea(
+                  child: confetti.getWidget()
+                ),
+              )
+            ],
+          ),
     );
   }
 

@@ -12,7 +12,7 @@ import '../../../../provider/home.dart';
 class AchievedDialog {
   static bool isShowing = false;
 
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(BuildContext context, Function(BuildContext) onAimDateUpdated) async {
     if (isShowing) {
       return;
     }
@@ -74,10 +74,11 @@ class AchievedDialog {
                           child: InkWell(
                             onTap: () async {
                               try {
-                                await context
-                                    .read(homeProvider)
-                                    .updateAimDate(next);
+                                // await context
+                                //     .read(homeProvider)
+                                //     .updateAimDate(next);
                                 Navigator.pop(context);
+                                onAimDateUpdated(context);
                               } catch (e) {
                                 MyErrorDialog.show(e);
                               }
