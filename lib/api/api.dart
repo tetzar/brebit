@@ -13,9 +13,6 @@ import 'auth.dart';
 class Network {
   // for emulator (Android)
   static final String _url = 'http://10.0.2.2:80';
-
-  static const int TIME_OUT_SECONDS = 30;
-
   // for emulator (iOS)
   // static final String _url = 'http://localhost:80';
   // マイハウス
@@ -24,6 +21,8 @@ class Network {
   // static final String _url = 'http://192.168.247.216:4655';
 
   static String get url => _url;
+
+  static const int TIME_OUT_SECONDS = 30;
 
   //if you are using android studio emulator, change localhost to 10.0.2.2
   static var token;
