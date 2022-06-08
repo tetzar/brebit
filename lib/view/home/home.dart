@@ -1,6 +1,8 @@
 // package:brebit/view/register.dart
 
+import 'package:brebit/provider/confetti.dart';
 import 'package:brebit/view/home/navigation.dart';
+import 'package:brebit/view/home/widget/confetti.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -23,6 +25,7 @@ class HomeContent extends StatefulHookWidget {
 class _HomeContentState extends State<HomeContent>
     with SingleTickerProviderStateMixin {
   TabController _tabController;
+  Confetti confetti;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _HomeContentState extends State<HomeContent>
       }
     });
     _tabController.index = context.read(tabProvider.state).round();
+    confetti =  Confetti();
     super.initState();
   }
 
@@ -106,27 +110,39 @@ class _HomeContentState extends State<HomeContent>
 
     return Container(
       width: MediaQuery.of(context).size.width,
-      color: Theme.of(context).backgroundColor,
-      child: Column(
-        children: [
-          HomeTabBarContent(tabController: _tabController),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                Progress(),
-                AnalysisScreen(),
-                HomeActivity(),
-              ],
+      child: Container(
+        color: Theme.of(context).backgroundColor,
+        child: Column(
+          children: [
+            HomeTabBarContent(tabController: _tabController),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Progress(
+                    onAimDateUpdated: onAimDateUpdated,
+                  ),
+                  AnalysisScreen(),
+                  HomeActivity(),
+                ],
+              ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void onAimDateUpdated(BuildContext context) {
+    context.read(confettiProvider).play();
   }
 }
 
 class Progress extends StatelessWidget {
+  final Function onAimDateUpdated;
+
+  Progress({@required this.onAimDateUpdated});
+
   @override
   Widget build(BuildContext context) {
     int nowStep = getNowStep(context);
@@ -143,7 +159,9 @@ class Progress extends StatelessWidget {
                 color: Theme.of(context).primaryColor,
                 child: Column(
                   children: [
-                    ProgressCircle(),
+                    ProgressCircle(
+                       onAimDateUpdated:onAimDateUpdated
+                    ),
                     InkWell(
                       onTap: () {
                         ApplicationRoutes.pushNamed('/home/small-step');
