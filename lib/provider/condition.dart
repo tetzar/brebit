@@ -89,16 +89,14 @@ class CircumstanceSuggestionProvider extends StateNotifier<List<Tag>> {
   }
 
   Future<void> getSuggestions(String text) async {
-    List<Tag> suggestions = await HabitApi.getConditionSuggestions(text);
+    Map<String, dynamic> result = await HabitApi.getConditionSuggestions(text);
+    List<Tag> suggestions = result['tags'];
+    Tag inputTag = result['hit'];
     if (text.length == 0) {
       recommendations = suggestions;
     }
-    if (text.length > 0 && suggestions.indexWhere((tag) => tag.name == text) < 0) {
-      suggestions.add(
-        Tag(
-          name: text
-        )
-      );
+    if (inputTag != null) {
+      suggestions.insert(0, inputTag);
     }
     this.state = suggestions;
   }

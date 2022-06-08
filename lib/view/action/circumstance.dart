@@ -117,12 +117,16 @@ class _SearchFormState extends State<SearchForm> {
   @override
   Widget build(BuildContext context) {
     useProvider(circumstanceSuggestionProvider.state);
+    useProvider(conditionProvider.state);
     List<Tag> tags;
     if (_textEditingController.text.length > 0) {
-      tags = context.read(circumstanceSuggestionProvider.state);
+      tags = context.read(circumstanceSuggestionProvider.state).sublist(0);
     } else {
-      tags = context.read(circumstanceSuggestionProvider).recommendations;
+      tags = context.read(circumstanceSuggestionProvider).recommendations.sublist(0);
     }
+    tags.removeWhere((tag) =>
+    context.read(conditionProvider).isSet(tag.name)
+    );
     return Container(
       margin: EdgeInsets.only(top: 16),
       child: Column(

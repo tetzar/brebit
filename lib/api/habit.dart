@@ -83,12 +83,25 @@ class HabitApi {
     return Habit.fromJson(jsonDecode(response.body)['habit']);
   }
 
-  static Future<List<Tag>> getConditionSuggestions(String text) async {
+  static Future< Map<String, dynamic>> getConditionSuggestions(String text) async {
     Map<String, String> data = {'text': '_' + text};
     http.Response response = await Network.getData(
         Network.routeNormalize(getRoutes['getConditionSuggestions'], data));
     Network.hasErrorMessage(response, 'getConditionSuggestions@HabitApi');
-    return TagFromJson(jsonDecode(response.body)['tags']);
+    Map<String, dynamic> body = jsonDecode(response.body);
+    List<Tag> recommendedTags = TagFromJson(body['tags']);
+    Tag inputTag;
+    if (body['hit'] != null) {
+      inputTag = Tag.fromJson(body['hit']);
+    } else if (text.isNotEmpty) {
+      inputTag = Tag(
+        name: text
+      );
+    }
+    return {
+      'tags' : recommendedTags,
+      'hit': inputTag
+    };
   }
 
   static Future<Habit> suppressedWant(

@@ -12,9 +12,9 @@ import 'auth.dart';
 
 class Network {
   // for emulator (Android)
-  // static final String _url = 'http://10.0.2.2:80';
+  static final String _url = 'http://10.0.2.2:80';
   // for emulator (iOS)
-  static final String _url = 'http://localhost:80';
+  // static final String _url = 'http://localhost:80';
   // マイハウス
   // static final String _url = 'http://192.168.3.40:80';
   // イマジナリーハウス
