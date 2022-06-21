@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_aws_s3_client/flutter_aws_s3_client.dart';
+import 'package:flutter_svg/svg.dart';
 
 class AwsS3Manager {
   static const String SECRET_KEY = "a/ToFJyS0nv49Kn+gOZx7cznpXy7nogXSRhmPkfO";
@@ -17,6 +18,16 @@ class AwsS3Manager {
       bucketId: BUCKET_ID,
       region: REGION);
   static Future<Uint8List> getImage(imageUrl) async {
+    try {
+      final response = await client.getObject(imageUrl);
+      return Uint8List.fromList(response.bodyBytes);
+    } catch (e) {
+      print(e);
+      return null;
+    }
+  }
+
+  static Future<Uint8List> getSvgBytes(imageUrl) async {
     try {
       final response = await client.getObject(imageUrl);
       return Uint8List.fromList(response.bodyBytes);
@@ -39,6 +50,20 @@ class S3Image {
     return this.image;
   }
 }
+
+
+class S3SvgImage {
+  String url;
+  Uint8List bytes;
+  S3SvgImage(this.url);
+  Future<Uint8List> getImage() async {
+    if (bytes == null) {
+      this.bytes = await AwsS3Manager.getSvgBytes(url);
+    }
+    return this.bytes;
+  }
+}
+
 
 NetworkImage image;
 

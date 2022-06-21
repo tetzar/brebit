@@ -93,24 +93,26 @@ class _AnalysisCardState extends State<AnalysisCard> {
               children: [
                 Container(
                     margin: EdgeInsets.symmetric(horizontal: 18),
-                    child: widget.analysis.getImageUrl() != null
-                        ? SvgPicture.network(
-                            widget.analysis.getImageUrl(),
-                            semanticsLabel: 'A shark?!',
-                            height: 20,
+                    child: FutureBuilder(
+                      future: widget.analysis.getImage(),
+                      builder: (context, snapshot) {
+                        return (snapshot.connectionState == ConnectionState.done && snapshot.hasData) ? SvgPicture.memory(
+                          snapshot.data,
+                          semanticsLabel: 'A shark?!',
+                          height: 20,
+                          width: 20,
+                          color: Theme.of(context).textTheme.subtitle1.color,
+                          placeholderBuilder: (BuildContext context) => Container(
+                            color: Colors.transparent,
                             width: 20,
-                            color: Theme.of(context).textTheme.subtitle1.color,
-                            placeholderBuilder: (BuildContext context) =>
-                                Container(
-                              color: Colors.transparent,
-                              width: 20,
-                              height: 20,
-                            ),
-                          )
-                        : SizedBox(
                             height: 20,
-                            width: 20,
-                          )),
+                          ),
+                        ) : SizedBox(
+                          height: 20,
+                          width: 20,
+                        );
+                      },
+                    )),
                 Expanded(
                   child: Text(
                     widget.analysis.name,
