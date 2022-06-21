@@ -11,8 +11,9 @@ import '../../model/user.dart';
 import 'auth.dart';
 
 class Network {
+  static final String _url = 'https://aqueous-retreat-83552.herokuapp.com';
   // for emulator (Android)
-  static final String _url = 'http://10.0.2.2:80';
+  // static final String _url = 'http://10.0.2.2:80';
   // for emulator (iOS)
   // static final String _url = 'http://localhost:80';
   // マイハウス

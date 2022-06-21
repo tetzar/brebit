@@ -44,7 +44,7 @@ class PostProvider extends StateNotifier<PostProviderState> {
 
   Future<void> reload() async {
     Post post = await PostApi.getPost(this.state.post.id);
-    state.post = post;
+    state.post.updatePost(post);
     this.state = state;
   }
 }

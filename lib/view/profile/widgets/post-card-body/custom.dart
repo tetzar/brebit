@@ -1,5 +1,5 @@
+import 'package:brebit/utils/aws.dart';
 import 'package:brebit/view/timeline/widget/photo-viewer.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -8,9 +8,9 @@ import '../../../timeline/widget/log-card.dart';
 
 class CustomBody extends StatelessWidget {
   final Map<String, dynamic> body;
-  final List<String> imageUrls;
+  final List<S3Image> images;
 
-  CustomBody({@required this.body, this.imageUrls});
+  CustomBody({@required this.body, this.images});
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +34,9 @@ class CustomBody extends StatelessWidget {
         ),
       ));
     }
-    if (imageUrls.length > 0) {
+    if (images.length > 0) {
       children.add(
-        ImageGrid(imageUrls: imageUrls),
+        ImageGrid(images: images),
       );
     }
     return Container(
@@ -47,15 +47,29 @@ class CustomBody extends StatelessWidget {
 }
 
 class ImageGrid extends StatefulWidget {
-  final List<String> imageUrls;
+  final List<S3Image> images;
 
-  ImageGrid({@required this.imageUrls});
+  ImageGrid({@required this.images});
 
   @override
   _ImageGridState createState() => _ImageGridState();
 }
 
 class _ImageGridState extends State<ImageGrid> {
+  List<S3Image> images;
+
+  @override
+  void initState() {
+    images = widget.images;
+    super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageGrid oldWidget) {
+    images = widget.images;
+    super.didUpdateWidget(oldWidget);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -68,9 +82,9 @@ class _ImageGridState extends State<ImageGrid> {
   }
 
   Widget getGrid() {
-    switch (widget.imageUrls.length) {
+    switch (images.length) {
       case 1:
-        return getTile(widget.imageUrls[0],
+        return getTile(images[0],
             roundTopRight: true,
             roundTopLeft: true,
             roundBottomLeft: true,
@@ -83,7 +97,7 @@ class _ImageGridState extends State<ImageGrid> {
               child: Container(
                 height: double.infinity,
                 padding: EdgeInsets.only(right: 2),
-                child: getTile(widget.imageUrls[0],
+                child: getTile(images[0],
                     roundBottomLeft: true, roundTopLeft: true),
               ),
             ),
@@ -91,7 +105,7 @@ class _ImageGridState extends State<ImageGrid> {
               child: Container(
                 height: double.infinity,
                 padding: EdgeInsets.only(left: 2),
-                child: getTile(widget.imageUrls[1],
+                child: getTile(images[1],
                     roundTopRight: true, roundBottomRight: true),
               ),
             )
@@ -105,7 +119,7 @@ class _ImageGridState extends State<ImageGrid> {
               child: Container(
                 height: double.infinity,
                 padding: EdgeInsets.only(right: 2),
-                child: getTile(widget.imageUrls[0],
+                child: getTile(images[0],
                     roundTopLeft: true, roundBottomLeft: true),
               ),
             ),
@@ -119,14 +133,13 @@ class _ImageGridState extends State<ImageGrid> {
                       padding: EdgeInsets.only(bottom: 2),
                       height: 80,
                       width: double.infinity,
-                      child: getTile(widget.imageUrls[1], roundTopRight: true),
+                      child: getTile(images[1], roundTopRight: true),
                     ),
                     Container(
                       padding: EdgeInsets.only(top: 2),
                       height: 80,
                       width: double.infinity,
-                      child:
-                          getTile(widget.imageUrls[2], roundBottomRight: true),
+                      child: getTile(images[2], roundBottomRight: true),
                     ),
                   ],
                 ),
@@ -149,15 +162,14 @@ class _ImageGridState extends State<ImageGrid> {
                       padding: EdgeInsets.only(right: 2),
                       height: double.infinity,
                       width: double.infinity,
-                      child: getTile(widget.imageUrls[0], roundTopLeft: true),
+                      child: getTile(images[0], roundTopLeft: true),
                     )),
                     Expanded(
                       child: Container(
                         padding: EdgeInsets.only(left: 2),
                         height: double.infinity,
                         width: double.infinity,
-                        child:
-                            getTile(widget.imageUrls[1], roundTopRight: true),
+                        child: getTile(images[1], roundTopRight: true),
                       ),
                     ),
                   ],
@@ -175,8 +187,7 @@ class _ImageGridState extends State<ImageGrid> {
                         padding: EdgeInsets.only(right: 2),
                         height: double.infinity,
                         width: double.infinity,
-                        child:
-                            getTile(widget.imageUrls[2], roundBottomLeft: true),
+                        child: getTile(images[2], roundBottomLeft: true),
                       ),
                     ),
                     Expanded(
@@ -184,8 +195,7 @@ class _ImageGridState extends State<ImageGrid> {
                       padding: EdgeInsets.only(left: 2),
                       height: 80,
                       width: double.infinity,
-                      child:
-                          getTile(widget.imageUrls[3], roundBottomRight: true),
+                      child: getTile(images[3], roundBottomRight: true),
                     )),
                   ],
                 ),
@@ -198,7 +208,7 @@ class _ImageGridState extends State<ImageGrid> {
   }
 
   Widget getTile(
-    String imageUrl, {
+    S3Image image, {
     bool roundTopRight = false,
     bool roundTopLeft = false,
     bool roundBottomLeft = false,
@@ -206,44 +216,53 @@ class _ImageGridState extends State<ImageGrid> {
   }) {
     return GestureDetector(
       onTap: () {
-        open(context, imageUrl);
+        open(context, image);
       },
-      child: Hero(
-        tag: imageUrl,
-        child: CachedNetworkImage(
-          fit: BoxFit.cover,
-          imageUrl: imageUrl,
-          placeholder: (context, url) => Container(
-            color: Theme.of(context).backgroundColor,
-          ),
-          imageBuilder: (BuildContext context, ImageProvider imageProvider) {
-            return Container(
-                width: double.infinity,
-                height: 78,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    bottomRight: Radius.circular(roundBottomRight ? 8 : 0),
-                    bottomLeft: Radius.circular(roundBottomLeft ? 8 : 0),
-                    topRight: Radius.circular(roundTopRight ? 8 : 0),
-                    topLeft: Radius.circular(roundTopLeft ? 8 : 0),
-                  ),
-                  image:
-                      DecorationImage(image: imageProvider, fit: BoxFit.cover),
-                ));
-          },
-        ),
+      child: FutureBuilder(
+        future: image.getImage(),
+        builder: (context, snapshot) {
+          Widget child = (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.hasData)
+              ? Hero(
+                  tag: image.url,
+                  child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          bottomRight:
+                              Radius.circular(roundBottomRight ? 8 : 0),
+                          bottomLeft: Radius.circular(roundBottomLeft ? 8 : 0),
+                          topRight: Radius.circular(roundTopRight ? 8 : 0),
+                          topLeft: Radius.circular(roundTopLeft ? 8 : 0),
+                        ),
+                        image: DecorationImage(
+                            image: MemoryImage(snapshot.data),
+                            fit: BoxFit.cover),
+                      )),
+                )
+              : Hero(
+                  tag: image.url,
+                  child: Container(
+                    color: Theme.of(context).backgroundColor,
+                  ));
+          return AnimatedSwitcher(
+            duration: Duration(milliseconds: 500),
+            child: child,
+          );
+        },
       ),
     );
   }
 
-  void open(BuildContext ctx, String tag) {
+  void open(BuildContext ctx, S3Image image) {
     ApplicationRoutes.materialKey.currentState.push(FadeInRoute(
       widget: GalleryPhotoViewWrapper(
-        galleryItems: this.widget.imageUrls,
+        images: images,
         backgroundDecoration: const BoxDecoration(
           color: Colors.black,
         ),
-        tag: tag,
+        tag: image.url,
         scrollDirection: Axis.horizontal,
       ),
       opaque: false,

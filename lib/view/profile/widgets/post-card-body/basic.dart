@@ -14,7 +14,7 @@ class PostBody extends StatelessWidget {
     Widget bodyWidget;
     switch (body['type']) {
       case 'custom':
-        bodyWidget = CustomBody(body: body, imageUrls: post.getImageUrls());
+        bodyWidget = CustomBody(body: body, images: post.images);
         break;
       default:
         bodyWidget = Container(

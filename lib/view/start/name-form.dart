@@ -182,7 +182,7 @@ class _NameInputFormState extends State<NameInputForm> {
         await MyLoading.dismiss();
         Navigator.of(context).pushReplacementNamed("/home");
       } catch (e) {
-        await MyLoading.startLoading();
+        await MyLoading.dismiss();
         MyErrorDialog.show(e);
       }
     }

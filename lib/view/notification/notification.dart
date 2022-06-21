@@ -353,8 +353,8 @@ class NotificationTile extends StatelessWidget {
             if (postBody['content'] != null) {
               String text;
               if (postBody['content'].isEmpty) {
-                if (post.imageUrls.length > 0) {
-                  text = '${post.imageUrls.length}枚の写真';
+                if (post.images.length > 0) {
+                  text = '${post.images.length}枚の写真';
                 }
               } else {
                 text = postBody['content'];
