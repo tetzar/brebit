@@ -35,20 +35,25 @@ class AnalysisCard extends StatelessWidget {
             margin: EdgeInsets.symmetric(
               horizontal: 18
             ),
-            child: analysis.getImageUrl() != null ? SvgPicture.network(
-              analysis.getImageUrl(),
-              semanticsLabel: 'A shark?!',
-              height: 20,
-              width: 20,
-              color: Theme.of(context).textTheme.subtitle1.color,
-              placeholderBuilder: (BuildContext context) => Container(
-                  color: Colors.transparent,
-                width: 20,
-                height: 20,
-              ),
-            ) : SizedBox(
-              height: 20,
-              width: 20,
+            child: FutureBuilder(
+              future: analysis.getImage(),
+              builder: (context, snapshot) {
+                return (snapshot.connectionState == ConnectionState.done && snapshot.hasData) ? SvgPicture.memory(
+                  snapshot.data,
+                  semanticsLabel: 'A shark?!',
+                  height: 20,
+                  width: 20,
+                  color: Theme.of(context).textTheme.subtitle1.color,
+                  placeholderBuilder: (BuildContext context) => Container(
+                    color: Colors.transparent,
+                    width: 20,
+                    height: 20,
+                  ),
+                ) : SizedBox(
+                  height: 20,
+                  width: 20,
+                );
+              },
             )
           ),
           Expanded(

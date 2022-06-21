@@ -1,11 +1,12 @@
+import 'package:brebit/utils/aws.dart';
+
 import '../../library/data-set.dart';
 import '../../library/resolver.dart';
+import '../api/post.dart';
 import 'comment.dart';
 import 'favorite.dart';
 import 'model.dart';
 import 'user.dart';
-import '../api/api.dart';
-import '../api/post.dart';
 
 // ignore: non_constant_identifier_names
 List<Post> PostFromJson(List<dynamic> jsonList) =>
@@ -22,7 +23,7 @@ class Post extends Model {
   AuthUser user;
   Map<String, dynamic> body;
   List<Comment> comments;
-  List<String> imageUrls;
+  List<S3Image> images;
   List<Favorite> favorites;
   int favoriteCount;
   int public;
@@ -36,7 +37,7 @@ class Post extends Model {
     this.comments,
     this.body,
     this.public,
-    this.imageUrls,
+    this.images,
     this.hide,
     this.favoriteCount,
     this.createdAt,
@@ -66,7 +67,7 @@ class Post extends Model {
         public: json["public"],
         hide: json["hide"],
         favoriteCount: json['favorite_count'],
-        imageUrls: json['image_urls'].cast<String>(),
+        images: urlToS3Image(json['image_urls'].cast<String>()),
         createdAt: DateTime.parse(json["created_at"]),
         updatedAt: DateTime.parse(json["updated_at"]),
       );
@@ -80,7 +81,7 @@ class Post extends Model {
         public: json["public"],
         hide: json["hide"],
         favoriteCount: json['favorite_count'],
-        imageUrls: json['image_urls'].cast<String>(),
+        images: urlToS3Image(json['image_urls'].cast<String>()),
         createdAt: DateTime.parse(json["created_at"]).toLocal(),
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
       );
@@ -99,12 +100,17 @@ class Post extends Model {
         "hide": hide,
         "comments": CommentToJson(comments),
         'favorite_count': favoriteCount,
-        "image_urls": imageUrls,
+        "image_urls": s3ImageToUrls(),
       };
 
   Map<String, dynamic> getBody() {
     Map<String, dynamic> body = this.body;
     return Resolver.getBody(body);
+  }
+
+  List<String> s3ImageToUrls() {
+    if (images == null) return [];
+    return images.map((image) => image.url).toList();
   }
 
   //---------------------------------
@@ -137,7 +143,16 @@ class Post extends Model {
     return true;
   }
 
-Future<bool> deleteComment(Comment comment) async {
+  static List<S3Image> urlToS3Image(List<String> urls) {
+    if (urls == null) return [];
+    List<S3Image> images = [];
+    for (String url in urls) {
+      images.add(S3Image(url));
+    }
+    return images;
+  }
+
+  Future<bool> deleteComment(Comment comment) async {
     bool res = await PostApi.deleteComment(comment.id);
     if (res) removeComment(comment);
     return res;
@@ -147,13 +162,6 @@ Future<bool> deleteComment(Comment comment) async {
     this.comments.removeWhere((cmt) {
       return cmt.id == comment.id;
     });
-  }
-
-  List<String> getImageUrls() {
-    if (this.imageUrls == null) {
-      return <String>[];
-    }
-    return this.imageUrls.map((url) => Network.url + url).toList();
   }
 
   //---------------------------------
@@ -296,5 +304,13 @@ Future<bool> deleteComment(Comment comment) async {
       }
     }
     return merged;
+  }
+
+  void updatePost(Post post) {
+    this.comments = post.comments;
+    this.favoriteCount = post.favoriteCount;
+    this.public = post.public;
+    this.user = post.user;
+    this.favorites = post.favorites;
   }
 }

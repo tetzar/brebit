@@ -1,23 +1,24 @@
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:brebit/utils/aws.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 class GalleryPhotoViewWrapper extends StatefulWidget {
-  final List<String> galleryItems;
+  final List<S3Image> images;
   final BoxDecoration backgroundDecoration;
   final String tag;
   final Axis scrollDirection;
   final PageController pageController;
 
   GalleryPhotoViewWrapper(
-      {@required this.galleryItems,
+      {@required this.images,
       @required this.backgroundDecoration,
       @required this.tag,
       @required this.scrollDirection})
-      : pageController = new PageController(initialPage: galleryItems.indexWhere((element) => element == tag));
+      : pageController = new PageController(
+            initialPage: images.indexWhere((element) => element.url == tag));
 
   @override
   _GalleryPhotoViewWrapperState createState() =>
@@ -25,7 +26,6 @@ class GalleryPhotoViewWrapper extends StatefulWidget {
 }
 
 class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
-
   Offset beginningDragPosition = Offset.zero;
   Offset currentDragPosition = Offset.zero;
   PhotoViewScaleState scaleState = PhotoViewScaleState.initial;
@@ -37,7 +37,7 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
   @override
   void initState() {
     widget.pageController.addListener(() {
-      double page  = widget.pageController.page;
+      double page = widget.pageController.page;
       isHorizontalScrolling = ((page - page.round().toDouble()).abs() > 0.001);
     });
     super.initState();
@@ -91,7 +91,7 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
           child: PhotoViewGallery.builder(
             scrollPhysics: const BouncingScrollPhysics(),
             builder: _buildItem,
-            itemCount: widget.galleryItems.length,
+            itemCount: widget.images.length,
             backgroundDecoration: BoxDecoration(color: Colors.transparent),
             pageController: widget.pageController,
             scrollDirection: widget.scrollDirection,
@@ -159,16 +159,13 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
   }
 
   PhotoViewGalleryPageOptions _buildItem(BuildContext context, int index) {
-    final String url = widget.galleryItems[index];
+    final S3Image image = widget.images[index];
     return PhotoViewGalleryPageOptions(
-      imageProvider: CachedNetworkImageProvider(
-        url,
-      ),
+      imageProvider: S3ImageProvider(image),
       initialScale: PhotoViewComputedScale.contained,
       // minScale: PhotoViewComputedScale.contained * (0.5 + index / 10),
       // maxScale: PhotoViewComputedScale.covered * 4.1,
-      heroAttributes:
-          PhotoViewHeroAttributes(tag: widget.galleryItems[index]),
+      heroAttributes: PhotoViewHeroAttributes(tag: image.url),
     );
   }
 }

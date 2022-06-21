@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:brebit/library/data-set.dart';
 import 'package:brebit/model/user.dart';
 import 'package:brebit/api/api.dart';
+import 'package:brebit/utils/aws.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:time_machine/time_machine.dart';
 
 import 'category.dart';
@@ -44,7 +47,7 @@ class Analysis extends Model {
   String name;
   List<dynamic> calculateMethod;
   List<CategoryParameter> params;
-  String imageUrl;
+  S3SvgImage image;
   DateTime createdAt;
   DateTime updatedAt;
 
@@ -54,7 +57,7 @@ class Analysis extends Model {
     @required this.name,
     @required this.calculateMethod,
     this.params,
-    @required this.imageUrl,
+    @required this.image,
     @required this.createdAt,
     @required this.updatedAt,
   });
@@ -73,7 +76,7 @@ class Analysis extends Model {
           ? CategoryParameterFromJson(json['params'])
           : null,
       calculateMethod: json['method'],
-      imageUrl: json['image_url'],
+      image: urlToS3Svg(json['image_url']),
       createdAt: DateTime.parse(json["created_at"]).toLocal(),
       updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
     );
@@ -85,18 +88,29 @@ class Analysis extends Model {
         "method": this.calculateMethod,
         "params": CategoryParameterToJson(this.params),
         'name': this.name,
-        'image_url': this.imageUrl,
+        'image_url': s3SvgToUrl(),
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
       };
 
-  String getImageUrl() {
-    if (this.imageUrl != null) {
-      return Network.url + this.imageUrl;
-    } else {
-      return null;
+
+  static S3SvgImage urlToS3Svg(String url) {
+    int index = images.indexWhere((img) => img.url == url);
+    if (index < 0) {
+      images.add(S3SvgImage(url));
     }
+    return images.firstWhere((img) => img.url == url);
   }
+
+  String s3SvgToUrl() {
+    return image.url;
+  }
+
+  Future<Uint8List> getImage() async {
+    return await image.getImage();
+  }
+
+  static List<S3SvgImage> images = [];
 
   List<List<String>> getData(AuthUser user, Habit habit) {
     List<List<String>> result = <List<String>>[];
