@@ -2,7 +2,7 @@
 
 **An awesome HABIT-BREAKING APPLICATION.**
 
-## Usage
+## Usage (ローカルDB ver.)
 
 ### 0. 準備
 
@@ -24,6 +24,14 @@ flutter pub get
 ```bash
 flutter run
 ```
+
+## Usage (本番DB ver.)
+
+WIP
+
+## DBの仕様や運用など
+
+WIP
 
 ## iOS Tips
 
