@@ -31,8 +31,8 @@ WIP
 
 ## DBの仕様や運用など
 
-Firebase <--認証情報--> BrebitApp <-データ-> Heroku
-                           ↑                 |
+Firebase <--認証情報--> BrebitApp <-データ-> Heroku  
+                           ↑                 |  
                              ---　 画像 <----  
 
 ## iOS Tips
