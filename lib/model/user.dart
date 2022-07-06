@@ -1,16 +1,17 @@
 // package:brebit/model/AuthUser
 
-import '../../library/data-set.dart';
-import 'category.dart';
-import 'post.dart';
-import 'model.dart';
-import 'partner.dart';
-import '../api/api.dart';
-import '../api/auth.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:brebit/utils/aws.dart';
+import 'package:brebit/view/general/profile-image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import '../../library/data-set.dart';
+import '../api/auth.dart';
+import 'category.dart';
+import 'model.dart';
+import 'partner.dart';
+import 'post.dart';
 
 // ignore: non_constant_identifier_names
 List<AuthUser> AuthUserFromJson(List<dynamic> decodedList) =>
@@ -43,7 +44,7 @@ class AuthUser extends Model {
   DateTime createdAt;
   DateTime updatedAt;
   DateTime softDeletedAt;
-  String imageUrl;
+  S3Image image;
   int postCount;
   List<Post> posts = [];
   List<Partner> partners = [];
@@ -58,7 +59,7 @@ class AuthUser extends Model {
     this.bio,
     this.customId,
     this.admin,
-    this.imageUrl,
+    this.image,
     this.createdAt,
     this.updatedAt,
     this.softDeletedAt,
@@ -85,7 +86,7 @@ class AuthUser extends Model {
         customId: json["custom_id"],
         admin: json["admin"],
         name: json['name'],
-        imageUrl: json['image_url'],
+        image: S3Image(json['image_url']),
         habitCategories: CategoryFromJson(json['habit_categories'] ?? []),
         suspendingHabitCategories:
             CategoryFromJson(json['suspending_habit_categories'] ?? []),
@@ -108,7 +109,7 @@ class AuthUser extends Model {
         customId: json["custom_id"],
         admin: json["admin"],
         name: json['name'],
-        imageUrl: json['image_url'],
+        image: S3Image(json['image_url']),
         habitCategories: Category.findAll(json['habit_category_ids'] ?? []),
         suspendingHabitCategories:
             Category.findAll(json['suspending_habit_category_ids'] ?? []),
@@ -140,7 +141,7 @@ class AuthUser extends Model {
         "soft_deleted_at": updatedAt.toIso8601String(),
         "id": id,
         "bio": bio,
-        'image_url': imageUrl,
+        'image_url': image.url,
         "custom_id": customId,
         "admin": admin,
         "name": name,
@@ -178,12 +179,12 @@ class AuthUser extends Model {
     }
   }
 
-  void setProfileImageUrl(String url) {
-    this.imageUrl = url;
+  Future<void> setProfileImageUrl(String url) async{
+    await this.image.updateImage(url);
   }
 
   String getImageUrl() {
-    return this.imageUrl ?? '';
+    return this.image.url ?? '';
   }
 
   bool hasImage() {
@@ -197,13 +198,7 @@ class AuthUser extends Model {
         fit: BoxFit.cover,
       );
     }
-    return CachedNetworkImage(
-      placeholder: (context, url) => Container(
-        color: Colors.black12,
-      ),
-      imageUrl: Network.url + this.imageUrl,
-      fit: BoxFit.cover,
-    );
+    return ProfileImageWithS3(this.image);
   }
 
   bool isHidden() {
