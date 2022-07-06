@@ -284,7 +284,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
       String imageUrl = await ProfileApi.saveProfileImage(imageFile);
       if (imageUrl != null) {
         AuthUser user = state.user;
-        user.setProfileImageUrl(imageUrl);
+        await user.setProfileImageUrl(imageUrl);
         state = new AuthProviderState(user: user);
       }
     } catch (e) {
