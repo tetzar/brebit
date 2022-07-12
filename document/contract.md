@@ -18,6 +18,7 @@
 
 - Apple Developer Program: 折半
 - AWS: 折半
+- heroku: 折半
 - 広告など今後全ての収益の分配: 未定
     - とりあえず打ち上げのお金が貯まったくらいで考える
     - まずは Apple Developer Program と AWS の支払いを補填する
