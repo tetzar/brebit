@@ -300,12 +300,12 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
   }
 }
 
-class MyBottomFixedButton extends StatelessWidget {
+class MyBottomFixedButton extends StatefulWidget {
+
   final Widget child;
   final bool enable;
   final Function onTapped;
   final String label;
-
   static final buttonHeight = 64.0;
 
   MyBottomFixedButton({
@@ -316,30 +316,53 @@ class MyBottomFixedButton extends StatelessWidget {
   });
 
   @override
+  State<MyBottomFixedButton> createState() => _MyBottomFixedButtonState();
+}
+
+class _MyBottomFixedButtonState extends State<MyBottomFixedButton> {
+
+  StreamSubscription<bool> keyboardSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    var keyboardVisibilityController = KeyboardVisibilityController();
+    keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    keyboardSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         SingleChildScrollView(
             child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            child,
-            SizedBox(
-              height: buttonHeight,
-            )
-          ],
-        )),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                widget.child,
+                SizedBox(
+                  height: MyBottomFixedButton.buttonHeight,
+                )
+              ],
+            )),
         Align(
           alignment: Alignment.bottomCenter,
           child: InkWell(
-            onTap: enable ? onTapped : null,
+            onTap: widget.enable ? widget.onTapped : null,
             child: Container(
-              height: buttonHeight,
+              height: MyBottomFixedButton.buttonHeight + MediaQuery.of(context).viewPadding.bottom,
               width: MediaQuery.of(context).size.width,
               alignment: Alignment.center,
-              color: enable ? Theme.of(context).accentColor : Theme.of(context).disabledColor,
+              color: widget.enable ? Theme.of(context).accentColor : Theme.of(context).disabledColor,
               child: Text(
-                label,
+                widget.label,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).buttonTheme.colorScheme.primary),
               ),
             ),
