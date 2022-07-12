@@ -3,10 +3,14 @@
 ## 使用するサービス/設備
 
 - heroku (無料)
+  - ClearDB
+  - 無料枠は5MBまで
+  - 超えたら9$の1GBプランに変更する必要あり
+  - [料金体系](https://elements.heroku.com/addons/cleardb)
 - AWS (従量課金)
+  - S3 Standard の Asia Pacific
   - 0.025$/GB
   - 保存する際の通信に対して発生
-  - S3 Standard の Asia Pacific
   - [料金体系](https://aws.amazon.com/jp/s3/pricing/)
 - Apple Developer Program (有料)
 
