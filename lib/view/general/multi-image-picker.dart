@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -364,12 +365,15 @@ class _ImageTilesState extends State<ImageTiles> {
   bool nowLoading;
   bool noMoreContent;
   int loaded;
+  int tapCount;
   ScrollController _scrollController;
   List<AssetEntity> assets;
+  StreamController<int> imageSelectedStream;
 
   @override
   void initState() {
     loaded = 0;
+    tapCount = 0;
     _scrollController = new ScrollController();
     nowLoading = false;
     assets = widget.assets;
@@ -383,7 +387,14 @@ class _ImageTilesState extends State<ImageTiles> {
         reloadOlder();
       }
     });
+    imageSelectedStream = StreamController.broadcast();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    imageSelectedStream.close();
+    super.dispose();
   }
 
   @override
@@ -395,7 +406,9 @@ class _ImageTilesState extends State<ImageTiles> {
           indexCallback: getIndex,
           onSelect: (AssetEntity asset) {
             return onSelect(asset, context);
-          }));
+          },
+        imageSelectedStream: imageSelectedStream,
+      ));
     }
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -435,11 +448,14 @@ class _ImageTilesState extends State<ImageTiles> {
 
   Future<int> onSelect(AssetEntity asset, BuildContext context) async {
     File file = await ImageManager.assetEntityToFile(asset);
+    tapCount++;
     if (context.read(imageAssetProvider).isSetImage(file)) {
       unsetImage(context, file);
+      imageSelectedStream.sink.add(tapCount);
       return -1;
     } else {
       if (await setImage(context, asset)) return await getIndex(context, asset);
+      imageSelectedStream.sink.add(tapCount);
       return -1;
     }
   }
@@ -473,11 +489,13 @@ class AssetPickerTile extends StatefulWidget {
   final AssetSelectCallback onSelect;
   final IndexCallback indexCallback;
   final AssetEntity asset;
+  final StreamController imageSelectedStream;
 
   AssetPickerTile(
       {@required this.asset,
       @required this.onSelect,
-      @required this.indexCallback});
+      @required this.indexCallback,
+      @required this.imageSelectedStream});
 
   @override
   _AssetPickerTileState createState() => _AssetPickerTileState();
@@ -501,6 +519,15 @@ class _AssetPickerTileState extends State<AssetPickerTile> {
     widget.indexCallback(context, widget.asset).then((index){
       setState(() {
         _index = index;
+      });
+    });
+    widget.imageSelectedStream.stream.listen((_) {
+      widget.indexCallback(context, widget.asset).then((index){
+        if (index != _index) {
+          setState(() {
+            _index = index;
+          });
+        }
       });
     });
     super.initState();
