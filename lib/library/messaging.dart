@@ -14,11 +14,11 @@ import 'cache.dart';
 import 'notification.dart';
 
 class MyFirebaseMessaging {
-  static FlutterLocalNotificationsPlugin plugin;
+  static late FlutterLocalNotificationsPlugin plugin;
 
   static bool _hasInitialized = false;
 
-  static StreamController<FcmNotification> notificationStream;
+  static late StreamController<FcmNotification> notificationStream;
 
   static Future<void> init() async {
     NotificationSettings settings =
@@ -34,10 +34,12 @@ class MyFirebaseMessaging {
       WidgetsFlutterBinding.ensureInitialized();
       _hasInitialized = true;
     }
-    User firebaseUser = FirebaseAuth.instance.currentUser;
-    String fcmToken = await LocalManager.getFCMToken(firebaseUser.uid);
-    if (fcmToken == null) {
-      await setToken();
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      String? fcmToken = await LocalManager.getFCMToken(firebaseUser.uid);
+      if (fcmToken == null) {
+        await setToken();
+      }
     }
   }
 
@@ -46,8 +48,10 @@ class MyFirebaseMessaging {
   }
 
   static Future<void> setToken() async {
-    String token = await FirebaseMessaging.instance.getToken();
-    await saveTokenToDatabase(token);
+    String? token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      await saveTokenToDatabase(token);
+    }
     FirebaseMessaging.instance.onTokenRefresh.listen(saveTokenToDatabase);
   }
 

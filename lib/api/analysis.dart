@@ -18,7 +18,7 @@ class AnalysisApi {
     'removeAnalysis': '/analysis/remove/{habitId}/{analysisId}',
   };
 
-  static Future<Habit> addAnalysis(Habit habit, Analysis analysis) async {
+  static Future<Habit?> addAnalysis(Habit habit, Analysis analysis) async {
     Map<String, dynamic> data = {
       'analysis_id': analysis.id,
       'habit_id': habit.id
@@ -43,13 +43,13 @@ class AnalysisApi {
     }
   }
 
-  static Future<Habit> removeAnalysis(Habit habit, Analysis analysis) async {
+  static Future<Habit?> removeAnalysis(Habit habit, Analysis analysis) async {
     Map<String, String> data = {
       'analysisId': analysis.id.toString(),
       'habitId': habit.id.toString()
     };
     http.Response response = await Network.deleteData(
-      Network.routeNormalizeDelete(deleteRoutes['removeAnalysis'], data)
+      Network.routeNormalizeDelete(deleteRoutes['removeAnalysis']!, data)
     );
     if (response.statusCode == 201) {
       Map<String, dynamic> body = jsonDecode(response.body);

@@ -72,7 +72,7 @@ class AuthApi {
     };
     http.Response response = await Network.getWithoutToken(
       Network.routeNormalize(
-        getRoutes['getEmail'],
+        getRoutes['getEmail']!,
         data
       )
     );
@@ -121,7 +121,7 @@ class AuthApi {
   static Future<int> deletePost(Post post) async {
     Map<String, String> data = {'postId': post.id.toString()};
     http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['deletePost'], data));
+        Network.routeNormalizeDelete(deleteRoutes['deletePost']!, data));
     Network.hasErrorMessage(response, 'deletePost@AuthApi');
     return jsonDecode(response.body)['post_count'];
   }

@@ -23,7 +23,7 @@ class SearchApi {
       };
       http.Response response = await Network.getData(
         Network.routeNormalize(
-          getRoutes['searchResult'],
+          getRoutes['searchResult']!,
           data
         )
       );

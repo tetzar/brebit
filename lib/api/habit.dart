@@ -30,13 +30,13 @@ class HabitApi {
   };
 
   static Future<Map<String, dynamic>> getHomeData(
-      {String analysisVersion}) async {
+      {String? analysisVersion}) async {
     if (analysisVersion == null) {
       analysisVersion = '0';
     }
     Map<String, String> data = {'analysis-version': analysisVersion};
     final http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getHomeData'], data));
+        Network.routeNormalize(getRoutes['getHomeData']!, data));
     Network.hasErrorMessage(response, 'getHomeDate@HabitApi');
     Map<String, dynamic> body = jsonDecode(response.body);
     return <String, dynamic>{
@@ -86,11 +86,11 @@ class HabitApi {
   static Future< Map<String, dynamic>> getConditionSuggestions(String text) async {
     Map<String, String> data = {'text': '_' + text};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getConditionSuggestions'], data));
+        Network.routeNormalize(getRoutes['getConditionSuggestions']!, data));
     Network.hasErrorMessage(response, 'getConditionSuggestions@HabitApi');
     Map<String, dynamic> body = jsonDecode(response.body);
     List<Tag> recommendedTags = TagFromJson(body['tags']);
-    Tag inputTag;
+    Tag? inputTag;
     if (body['hit'] != null) {
       inputTag = Tag.fromJson(body['hit']);
     } else if (text.isNotEmpty) {
@@ -232,7 +232,7 @@ class HabitApi {
     return Habit.fromJson(jsonDecode(response.body));
   }
 
-  static Future<Map<String, dynamic>> suspend(CategoryName categoryName) async {
+  static Future<Map<String, dynamic>?> suspend(CategoryName categoryName) async {
     Category _category = Category.findFromCategoryName(categoryName);
     if (_category == null) {
       return null;
@@ -249,7 +249,7 @@ class HabitApi {
     return result;
   }
 
-  static Future<Map<String, dynamic>> restart(CategoryName categoryName) async {
+  static Future<Map<String, dynamic>?> restart(CategoryName categoryName) async {
     Category _category = Category.findFromCategoryName(categoryName);
     if (_category == null) {
       return null;

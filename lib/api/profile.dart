@@ -28,10 +28,10 @@ class ProfileApi {
     'logsInAMonth': '/profile/habit/logs/{habitId}/{month}',
   };
 
-  static Future<Map<String, dynamic>> getProfile(AuthUser user) async {
+  static Future<Map<String, dynamic>?> getProfile(AuthUser user) async {
     Map<String, String> data = {'userId': user.id.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getProfile'], data));
+        Network.routeNormalize(getRoutes['getProfile']!, data));
     if (response.statusCode == 200) {
       Map<String, dynamic> body = jsonDecode(response.body);
       if (body.containsKey('message')) {
@@ -43,7 +43,7 @@ class ProfileApi {
       List<HabitLog> _logs = HabitLogFromJson(body['logs']);
       List<Post> _posts = Post.sortByCreatedAt(PostFromJson(body['posts']));
       List<Partner> _partners = PartnerFromJson(body['partners']);
-      Partner _partner =
+      Partner? _partner =
           body['partner'] != null ? Partner.fromJson(body['partner']) : null;
       Map<String, dynamic> result = <String, dynamic>{
         'habit': _habit,
@@ -59,19 +59,19 @@ class ProfileApi {
     }
   }
 
-  static Future<List<Post>> getProfilePosts(AuthUser user,
-      [DateTime t, bool older = false]) async {
+  static Future<List<Post>?> getProfilePosts(AuthUser user,
+      [DateTime? t, bool older = false]) async {
     String route;
     Map<String, String> data;
     if (t == null) {
-      route = getRoutes['getProfilePosts'];
+      route = getRoutes['getProfilePosts']!;
       data = {'userId': user.id.toString()};
     } else {
       if (!older) {
-        route = getRoutes['reloadProfilePosts'];
+        route = getRoutes['reloadProfilePosts']!;
         data = {'userId': user.id.toString(), 'dateTime': t.toString()};
       } else {
-        route = getRoutes['reloadOlderProfilePosts'];
+        route = getRoutes['reloadOlderProfilePosts']!;
         data = {'userId': user.id.toString(), 'dateTime': t.toString()};
       }
     }
@@ -97,7 +97,7 @@ class ProfileApi {
     }
   }
 
-  static Future<String> saveProfileImage(File imageFile) async {
+  static Future<String?> saveProfileImage(File imageFile) async {
     List<File> fileList = [imageFile];
     http.Response response = await Network.postDataWithImage(
         {}, fileList, postRoutes['profileImageSave']);
@@ -116,7 +116,7 @@ class ProfileApi {
   static Future<bool> customIdAvailable(String text) async {
     Map<String, String> data = {'id': text};
     http.Response response = await Network.getWithoutToken(
-        Network.routeNormalize(getRoutes['customIdAvailable'], data));
+        Network.routeNormalize(getRoutes['customIdAvailable']!, data));
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['available'];
     } else {
@@ -127,7 +127,7 @@ class ProfileApi {
   }
 
   static Future<AuthUser> saveProfile(Map<String, dynamic> data,
-      {File imageFile}) async {
+      {File? imageFile}) async {
     http.Response response;
     Map<String, String> stringData = <String, String>{
       'data': jsonEncode(data)
@@ -147,10 +147,10 @@ class ProfileApi {
     }
   }
 
-  static Future<Map<String, dynamic>> getHabitLogs(AuthUser user) async {
+  static Future<Map<String, dynamic>?> getHabitLogs(AuthUser user) async {
     Map<String, String> data = <String, String>{'userId': user.id.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getHabitLogs'], data));
+        Network.routeNormalize(getRoutes['getHabitLogs']!, data));
     if (response.statusCode == 200) {
       Map<String, dynamic> body = jsonDecode(response.body);
       if (body.containsKey('message')) {
@@ -169,14 +169,14 @@ class ProfileApi {
     }
   }
 
-  static Future<List<HabitLog>> getLogsInAMonth(
+  static Future<List<HabitLog>?> getLogsInAMonth(
       Habit habit, DateTime month) async {
     Map<String, String> data = {
       'habitId': habit.id.toString(),
       'month': month.toString()
     };
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['logsInAMonth'], data));
+        Network.routeNormalize(getRoutes['logsInAMonth']!, data));
     if (response.statusCode == 200) {
       Map<String, dynamic> body = jsonDecode(response.body);
       if (body.containsKey('message')) {

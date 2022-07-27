@@ -60,7 +60,7 @@ dependencies:
 
   flutter_multiselect: ^0.5.1
 
-  notification_permissions: ^0.4.8
+  notification_permissions: 0.6.1
   app_settings: ^4.1.0
 
   flutter_hooks: ^0.14.0

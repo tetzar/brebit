@@ -23,15 +23,15 @@ class NotificationApi {
     'deleteNotification': '/notification/delete/{notificationId}',
   };
 
-  static Future<List<UserNotification>> getNotifications(
-      [DateTime latestPostCreatedAt]) async {
+  static Future<List<UserNotification>?> getNotifications(
+      [DateTime? latestPostCreatedAt]) async {
     Map<String, String> data = {
       'latest': latestPostCreatedAt == null
           ? '_'
           : latestPostCreatedAt.toIso8601String()
     };
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getNotifications'], data));
+        Network.routeNormalize(getRoutes['getNotifications']!, data));
     if (response.statusCode == 200) {
       try {
         Map<String, dynamic> body = jsonDecode(response.body);
@@ -52,7 +52,7 @@ class NotificationApi {
     }
   }
 
-  static Future<List<UserNotification>> getUnreadNotifications() async {
+  static Future<List<UserNotification>?> getUnreadNotifications() async {
     http.Response response = await Network.getData(getRoutes['getUnreadNotifications']);
     if (response.statusCode == 200) {
       try {
@@ -90,7 +90,7 @@ class NotificationApi {
   static Future<void> deleteNotification(String notificationId) async {
     Map<String, String> data = {'notificationId': notificationId};
     final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['deleteNotification'], data));
+        Network.routeNormalizeDelete(deleteRoutes['deleteNotification']!, data));
     if (response.statusCode != 200) {
       print(response.body);
       throw Exception(
@@ -98,7 +98,7 @@ class NotificationApi {
     }
   }
 
-  static Future<List<UserNotification>> markAsRead(
+  static Future<List<UserNotification>?> markAsRead(
       List<UserNotification> notifications) async {
     List<String> _notificationIds = <String>[];
     for (UserNotification _notification in notifications) {
@@ -125,11 +125,11 @@ class NotificationApi {
     }
   }
 
-  static Future<String> getInformationNotificationBody(
+  static Future<String?> getInformationNotificationBody(
       int informationId) async {
     Map<String, String> data = {'informationId': informationId.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getInformationBody'], data));
+        Network.routeNormalize(getRoutes['getInformationBody']!, data));
     if (response.statusCode == 200) {
       Map<String, dynamic> body = jsonDecode(response.body);
       if (body.containsKey('message')) {

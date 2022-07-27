@@ -25,9 +25,9 @@ class PartnerApi {
     'breakOffWithPartner': '/partner/break/{partnerId}',
   };
 
-  static Future<List<Partner>> getPartners(AuthUser user) async {
+  static Future<List<Partner>?> getPartners(AuthUser user) async {
     final http.Response response = await Network.getData(Network.routeNormalize(
-        getRoutes['getPartners'], {'userId': user.id.toString()}));
+        getRoutes['getPartners']!, {'userId': user.id.toString()}));
     if (response.statusCode == 200) {
       return PartnerFromJson(jsonDecode(response.body));
     } else if (response.statusCode == 404) {
@@ -57,7 +57,7 @@ class PartnerApi {
   static Future<void> cancelPartnerRequest(Partner partner) async {
     Map<String, String> data = {'partnerId': partner.id.toString()};
     http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['cancelPartner'], data));
+        Network.routeNormalizeDelete(deleteRoutes['cancelPartner']!, data));
     if (response.statusCode != 200) {
       print(response.body);
       throw Exception(
@@ -86,7 +86,7 @@ class PartnerApi {
     Map<String, String> data = {'partnerId': partner.id.toString()};
     http.Response response = await Network.deleteData(
         Network.routeNormalizeDelete(
-            deleteRoutes['breakOffWithPartner'], data));
+            deleteRoutes['breakOffWithPartner']!, data));
     if (response.statusCode != 200) {
       print(response.body);
       throw Exception(
@@ -129,10 +129,10 @@ class PartnerApi {
   }
 
   static Future<List<AuthUser>> getPartnerSuggestions(
-      [String condition]) async {
+      [String? condition]) async {
     if (condition == null) {
       http.Response response = await Network.getData(Network.routeNormalize(
-          getRoutes['partnerSuggestions'], new Map<String, String>()));
+          getRoutes['partnerSuggestions']!, new Map<String, String>()));
       if (response.statusCode == 200) {
         return AuthUserFromJson(jsonDecode(response.body));
       } else {
@@ -143,7 +143,7 @@ class PartnerApi {
     } else {
       Map<String, String> data = {'condition': condition};
       http.Response response = await Network.getData(
-          Network.routeNormalize(getRoutes['partnerSearch'], data));
+          Network.routeNormalize(getRoutes['partnerSearch']!, data));
       if (response.statusCode == 200) {
         return AuthUserFromJson(jsonDecode(response.body));
       } else {

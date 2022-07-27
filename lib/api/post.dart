@@ -32,21 +32,21 @@ class PostApi {
   };
 
   static Future<String> getTimeLine(AuthUser user,
-      [String condition, DateTime t, bool older = false]) async {
+      [String? condition, DateTime? t, bool older = false]) async {
     String route;
     if (t == null) {
-      route = Network.routeNormalize(getRoutes['getTimeLine'], {
+      route = Network.routeNormalize(getRoutes['getTimeLine']!, {
         'userId': user.id.toString(),
         'condition': condition == null ? '_' : condition,
       });
     } else if (older) {
-      route = Network.routeNormalize(getRoutes['reloadTimeLineOlder'], {
+      route = Network.routeNormalize(getRoutes['reloadTimeLineOlder']!, {
         'userId': user.id.toString(),
         'dateTime': t.toString(),
         'condition': condition == null ? '_' : condition,
       });
     } else {
-      route = Network.routeNormalize(getRoutes['reloadTimeLine'], {
+      route = Network.routeNormalize(getRoutes['reloadTimeLine']!, {
         'userId': user.id.toString(),
         'dateTime': t.toString(),
         'condition': condition == null ? '_' : condition,
@@ -67,7 +67,7 @@ class PostApi {
   static Future<bool> deletePost(Post post) async {
     Map<String, String> data = {'postId': post.id.toString()};
     final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['deletePost'], data));
+        Network.routeNormalizeDelete(deleteRoutes['deletePost']!, data));
     if (response.statusCode == 200) {
       return true;
     } else if (response.statusCode == 404) {
@@ -79,7 +79,7 @@ class PostApi {
     }
   }
 
-  static Future<Post> savePost(String inputText, List<File> images, [HabitLog log]) async {
+  static Future<Post> savePost(String inputText, List<File> images, [HabitLog? log]) async {
 
     Map<String, String> data = {
       'text': inputText,
@@ -101,13 +101,13 @@ class PostApi {
     }
   }
 
-  static Future<Post> getPost(int postId) async {
+  static Future<Post?> getPost(int postId) async {
     Map<String, String> data = {
       'postId': postId.toString()
     };
     http.Response response = await Network.getData(
       Network.routeNormalize(
-        getRoutes['getPost'],
+        getRoutes['getPost']!,
         data
       )
     );
@@ -139,12 +139,12 @@ class PostApi {
   static Future<bool> deleteComment(int commentId) async {
     Map<String, String> data = {'commentId': commentId.toString()};
     final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['deleteComment'], data));
+        Network.routeNormalizeDelete(deleteRoutes['deleteComment']!, data));
     Network.hasErrorMessage(response, "network/post@deleteComment");
     return true;
   }
 
-  static Future<int> likeToComment(int commentId) async {
+  static Future<int?> likeToComment(int commentId) async {
     Map<String, dynamic> data = {
       'comment_id': commentId,
     };
@@ -157,12 +157,12 @@ class PostApi {
     return null;
   }
 
-  static Future<int> unlikeFromComment(int commentId) async {
+  static Future<int?> unlikeFromComment(int commentId) async {
     Map<String, String> data = {
       'commentId': commentId.toString(),
     };
     final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['unlikeFromComment'], data));
+        Network.routeNormalizeDelete(deleteRoutes['unlikeFromComment']!, data));
     Network.hasErrorMessage(response, "network/post@unlikeFromComment");
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['favorite_count'];
@@ -170,7 +170,7 @@ class PostApi {
     return null;
   }
 
-  static Future<int> likeToPost(int postId) async {
+  static Future<int?> likeToPost(int postId) async {
     Map<String, dynamic> data = {
       'post_id': postId,
     };
@@ -184,12 +184,12 @@ class PostApi {
     return null;
   }
 
-  static Future<int> unlikeFromPost(int postId) async {
+  static Future<int?> unlikeFromPost(int postId) async {
     Map<String, String> data = {
       'postId': postId.toString(),
     };
     final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['unlikeFromPost'], data));
+        Network.routeNormalizeDelete(deleteRoutes['unlikeFromPost']!, data));
     Network.hasErrorMessage(response, "network/post@unlikeFromPost");
     if (response.statusCode == 200) {
       return jsonDecode(response.body)['favorite_count'];

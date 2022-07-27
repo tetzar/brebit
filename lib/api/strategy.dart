@@ -29,10 +29,10 @@ class StrategyApi {
     'removeStrategy': '/strategy/remove/{habitId}/{strategyIds}',
   };
 
-  static Future<Map<String, List<Strategy>>> getRecommendStrategies(
+  static Future<Map<String, List<Strategy>?>> getRecommendStrategies(
       Category category) async {
     final http.Response response = await Network.getData(Network.routeNormalize(
-        getRoutes['getRecommendStrategies'],
+        getRoutes['getRecommendStrategies']!,
         {'categoryId': category.id.toString()}));
     if (response.statusCode == 200) {
       Map received = jsonDecode(response.body);
@@ -80,7 +80,7 @@ class StrategyApi {
     }
   }
 
-  static Future<Habit> storeStrategy(
+  static Future<Habit?> storeStrategy(
       Habit habit, Map<String, dynamic> data) async {
     Map<String, dynamic> sendData = {};
     sendData['habit_id'] = habit.id;
@@ -90,7 +90,7 @@ class StrategyApi {
       postRoutes['storeStrategy'],
     );
     if (response.statusCode == 200) {
-      Map responseData = jsonDecode(response.body);
+      Map<String, dynamic> responseData = jsonDecode(response.body);
       return Habit.fromJson(responseData);
     } else if (response.statusCode == 404) {
       print('habit not found');
@@ -174,7 +174,7 @@ class StrategyApi {
       'strategyIds': strategyIdsFormatted
     };
     http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['removeStrategy'], data));
+        Network.routeNormalizeDelete(deleteRoutes['removeStrategy']!, data));
     if (response.statusCode == 201) {
       return Habit.fromJson(jsonDecode(response.body));
     } else {

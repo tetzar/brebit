@@ -28,7 +28,7 @@ enum _Key {
 
 class
 LocalManager {
-  static SharedPreferences _prefs;
+  static SharedPreferences? _prefs;
 
   static final Map<_Key, String> _keyList = <_Key, String>{
     _Key.posts: 'posts/{userId}/{name}',
@@ -46,28 +46,25 @@ LocalManager {
     _Key.analysisLanguage: 'analysis-language/{userId}',
   };
 
-  static String _getKey(_Key key, [Map<String, String> data]) {
-    if (_keyList.containsKey(key)) {
-      String _key = _keyList[key];
-      if (data != null) {
-        data.forEach((k, v) {
-          _key = _key.replaceAll('{$k}', v);
-        });
-      }
-      return _key;
+  static String _getKey(_Key key, [Map<String, String>? data]) {
+    String _key = _keyList[key]!;
+    if (data != null) {
+      data.forEach((k, v) {
+        _key = _key.replaceAll('{$k}', v);
+      });
     }
-    return null;
+    return _key;
   }
 
   static Future<SharedPreferences> get preferences async {
     if (_prefs == null) {
       _prefs = await SharedPreferences.getInstance();
     }
-    return _prefs;
+    return _prefs!;
   }
 
   static Future<void> _storeExpires(String key,
-      [Duration storeDuration]) async {
+      [Duration? storeDuration]) async {
     var prefs = await preferences;
     if (storeDuration != null ? storeDuration.isNegative : false) {
       return;
@@ -83,12 +80,12 @@ LocalManager {
     if (!prefs.containsKey(_key)) {
       return false;
     }
-    String iso6801Time = prefs.getString(key + '/expires-at');
+    String iso6801Time = prefs.getString(key + '/expires-at')!;
     return DateTime.now().isAfter(DateTime.parse(iso6801Time).toLocal());
   }
 
   static Future<void> _set(String key, dynamic value,
-      {Duration storeDuration, bool expires = true}) async {
+      {Duration? storeDuration, bool expires = true}) async {
     assert(value is int ||
         value is double ||
         value is String ||
@@ -148,7 +145,7 @@ LocalManager {
   //---------------------------------
   static Future<String> getToken(String firebaseUid) async {
     String key = _getKey(_Key.token, {'firebaseUid': firebaseUid});
-    List<String> tokenData = await _get(key);
+    List<String>? tokenData = await _get(key);
     if (tokenData != null) {
       String token = tokenData[0];
       DateTime expireAt = DateTime.parse(tokenData[1]);
@@ -178,9 +175,9 @@ LocalManager {
   //  fcm token
   //---------------------------------
 
-  static Future<String> getFCMToken(String firebaseUid) async {
+  static Future<String?> getFCMToken(String firebaseUid) async {
     String key = _getKey(_Key.FCMToken, {'firebaseUid': firebaseUid});
-    String token = await _get(key);
+    String? token = await _get(key);
     return token;
   }
 
@@ -206,7 +203,7 @@ LocalManager {
 
   static Future<bool> getHasStarted() async {
     String _key = _getKey(_Key.started);
-    bool started = await _get(_key);
+    bool? started = await _get(_key);
     return started ?? false;
   }
 
@@ -230,10 +227,10 @@ LocalManager {
     await _set(_key, jsonEncode(data), storeDuration: Duration(minutes: -1));
   }
 
-  static Future<Map<String, String>> getRegisterInformation(User firebaseUser) async {
+  static Future<Map<String, String>?> getRegisterInformation(User firebaseUser) async {
     String _key = _getKey(_Key.register, {'firebaseUid': firebaseUser.uid});
     print(_key);
-    String encoded = await _get(_key);
+    String? encoded = await _get(_key);
     if (encoded == null) {
       return null;
     }
@@ -253,7 +250,7 @@ LocalManager {
 
   static Future<void> setPosts(AuthUser user, List<Post> posts, String name) async {
     final String _key = _getKey(_Key.posts, {'userId': user.id.toString() ,'name': name});
-    List<String> encodedList = await _get(_key);
+    List<String>? encodedList = await _get(_key);
     List<Map> _decodedList = encodedList != null
         ? encodedList.map((encoded) => jsonDecode(encoded)).toList().cast<Map>()
         : <Map>[];
@@ -274,7 +271,7 @@ LocalManager {
 
   static Future<List<Post>> getPosts(AuthUser user, String name) async {
     String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       if (encodedPosts.length == 0) {
         return [];
@@ -290,7 +287,7 @@ LocalManager {
 
   static Future<void> setPost(AuthUser user, Post post, String name) async {
     String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       int index = encodedPosts.indexWhere((encoded) {
         Map decoded = jsonDecode(encoded);
@@ -309,7 +306,7 @@ LocalManager {
 
   static Future<void> updatePost(AuthUser user, Post post, String name) async {
     String key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(key);
+    List<String>? encodedPosts = await _get(key);
     if (encodedPosts != null) {
       int index = encodedPosts.indexWhere((encoded){
         return jsonDecode(encoded)['id'] == post.id;
@@ -328,7 +325,7 @@ LocalManager {
 
   static Future deletePost(AuthUser user, Post post, String name) async {
     String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       int index = encodedPosts.indexWhere((encoded) {
         Map decoded = jsonDecode(encoded);
@@ -352,9 +349,9 @@ LocalManager {
     await _set(key, encodedJson);
   }
 
-  static Future<Habit> getHabit(AuthUser user) async {
+  static Future<Habit?> getHabit(AuthUser user) async {
     String key = _getKey(_Key.habit, {'userId': user.id.toString()});
-    String encodedHabit = await _get(key);
+    String? encodedHabit = await _get(key);
     return encodedHabit != null
         ? Habit.fromJson(jsonDecode(encodedHabit))
         : null;
@@ -370,18 +367,14 @@ LocalManager {
   //---------------------------------
 
   static Future<List<Post>> getProfilePosts(AuthUser user) async {
-    try {
-      String key =
-          _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-      List<String> encodedPosts = await _get(key);
-      if (encodedPosts != null) {
-        return encodedPosts
-            .map((encoded) => Post.fromJson(jsonDecode(encoded))).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      throw (e);
+    String key =
+    _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
+    List<String>? encodedPosts = await _get(key);
+    if (encodedPosts != null) {
+      return encodedPosts
+          .map((encoded) => Post.fromJson(jsonDecode(encoded))).toList();
+    } else {
+      return [];
     }
   }
 
@@ -400,7 +393,7 @@ LocalManager {
   static Future<void> updateProfilePost(AuthUser user, Post post) async {
     String key =
     _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-    List<String> _encodedPosts = await _get(key);
+    List<String>? _encodedPosts = await _get(key);
     if (_encodedPosts != null) {
       int index = _encodedPosts.indexWhere((_encodedPost) {
         Map decoded = jsonDecode(_encodedPost);
@@ -416,7 +409,7 @@ LocalManager {
   static Future<void> deleteProfilePost(AuthUser user, Post post) async {
     String key =
     _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-    List<String> _encodedPosts = await _get(key);
+    List<String>? _encodedPosts = await _get(key);
     if (_encodedPosts != null) {
       int index = _encodedPosts.indexWhere((_encodedPost) {
         Map decoded = jsonDecode(_encodedPost);
@@ -459,9 +452,9 @@ LocalManager {
             .toList());
   }
 
-  static Future<List<UserNotification>> getNotifications(AuthUser user) async {
+  static Future<List<UserNotification>?> getNotifications(AuthUser user) async {
     String key = _getKey(_Key.notifications, {'userId': user.id.toString()});
-    List<String> encodedNotifications = await _get(key);
+    List<String>? encodedNotifications = await _get(key);
     if (encodedNotifications != null) {
       List<UserNotification> notifications = encodedNotifications
           .map((notificationJson) =>
@@ -493,10 +486,10 @@ LocalManager {
 
 //  settings
 
-  static Future<Map<String, bool>> getNotificationSetting() async {
+  static Future<Map<String, bool>?> getNotificationSetting() async {
     String key =
         _getKey(_Key.notificationSetting, {});
-    String allowed = await _get(key);
+    String? allowed = await _get(key);
     if (allowed == null) {
       return null;
     }
@@ -542,7 +535,7 @@ LocalManager {
   static Future<void> setDraft(AuthUser user, Draft draft) async {
     String key =
     _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    List<String>? encodedDrafts = await _get(key);
     if (encodedDrafts != null) {
       int index = encodedDrafts.indexWhere((data) {
         Map<String, dynamic> dataMap = jsonDecode(data);
@@ -562,7 +555,7 @@ LocalManager {
   static Future<List<Draft>> getDrafts(AuthUser user) async {
     String key =
     _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    List<String>? encodedDrafts = await _get(key);
     List<Draft> drafts = <Draft>[];
     if (encodedDrafts == null) {
       return drafts;
@@ -576,7 +569,7 @@ LocalManager {
   static Future<void> removeDraft(AuthUser user, Draft draft) async {
     String key =
     _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    List<String>? encodedDrafts = await _get(key);
     if (encodedDrafts != null) {
       encodedDrafts.removeWhere((d) {
         Map<String, dynamic> decoded = jsonDecode(d);
@@ -595,7 +588,7 @@ LocalManager {
     await _set(key, v);
   }
 
-  static Future<String> getAnalysisVersion() async {
+  static Future<String?> getAnalysisVersion() async {
     String key = _getKey(_Key.analysisLanguage);
     return await _get(key);
   }
