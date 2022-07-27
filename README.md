@@ -49,6 +49,7 @@ Brebit App <-- データ, 画像 --> Heroku
 - `flutter doctor`, `flutter buid ios`で様子を見る
 - とりあえず`open ~/Applications/JetBrains\ Toolbox/Android\ Studio.app`する。ターミナルから開くだけとかいう嘘みたいな方法だが**本当に効果がある**
 - `flutter clean`, `rm -rf ~/Library/Developer/Xcode/DerivedData/`でキャッシュ削除
+- `~/.pub-cache` を消して `pub get`
 
 ### Cocoapods
 
