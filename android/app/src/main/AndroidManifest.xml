@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="dev.brebit">
    <application
-        android:label="brebit"
+        android:label="Brebit"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
