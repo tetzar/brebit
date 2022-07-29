@@ -55,3 +55,5 @@ brebitjp@gmail.com
 ## 電話番号
 
 ## プライバシーポリシー
+
+https://harxxki.github.io/brebit-privacy-policy/index.html
