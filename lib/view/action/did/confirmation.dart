@@ -110,7 +110,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
       },
       enable: true,
       child: Container(
-        height: double.infinity,
+        // height: double.infinity,
           color: Theme.of(context).primaryColor,
           padding: EdgeInsets.only(top: 16, left: 24, right: 24),
           child: Column(

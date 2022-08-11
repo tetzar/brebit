@@ -83,7 +83,7 @@ class CheckStrategyDid extends StatelessWidget {
         },
         child: Container(
           color: Theme.of(context).primaryColor,
-          height: double.infinity,
+          // height: double.infinity,
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
