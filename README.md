@@ -33,15 +33,18 @@ WIP
 
 ```
 Firebase
-   ↑
+   ▲
+   │
 認証情報
-   ↓
-Brebit App <-- データ, 画像 --> Heroku
- ↑     |                         |
-画像 画像リクエスト                  画像
- |_   _|                         |
-   | ↓                           |
-  A W S  ←------------------------
+   │
+   ▼
+Brebit App ◄─── Data, Image ───► Heroku (as data storage)
+     ▲ │                          │
+     │ │                          │
+Image│ │Request              Image│
+     │ │                          │
+     │ ▼                          │
+AWS (as image storage) ◄──────────┘
 ```
 
 ## iOS Tips
