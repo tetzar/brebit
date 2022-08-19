@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,15 +10,16 @@ import '../general/loading.dart';
 import '../widgets/dialog.dart';
 
 class UploadImageArguments {
-  UploadImageArguments({@required this.imageFile});
+  UploadImageArguments({required this.imageFile});
 
   File imageFile;
 }
 
-class UploadImage extends StatelessWidget {
+class UploadImage extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    UploadImageArguments args = ModalRoute.of(context).settings.arguments;
+  Widget build(BuildContext context, WidgetRef ref) {
+    UploadImageArguments? args = (ModalRoute.of(context)?.settings.arguments) as UploadImageArguments?;
+    if (args == null) return ErrorToHomeWidget();
     return Scaffold(
       body: Container(
         child: Center(
@@ -38,8 +40,8 @@ class UploadImage extends StatelessWidget {
                   onPressed: () async {
                     try {
                       MyLoading.startLoading();
-                      await context
-                          .read(authProvider)
+                      await ref
+                          .read(authProvider.notifier)
                           .saveProfileImage(args.imageFile);
                       await MyLoading.dismiss();
                       ApplicationRoutes.pop();

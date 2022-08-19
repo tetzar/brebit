@@ -1,18 +1,17 @@
 import '../../library/data-set.dart';
+import '../api/notification.dart';
 import 'comment.dart';
-import 'partner.dart';
-import 'post.dart';
 import 'favorite.dart';
 import 'model.dart';
-import '../api/notification.dart';
+import 'partner.dart';
+import 'post.dart';
 
-// ignore: non_constant_identifier_names
-List<UserNotification> UserNotificationFromJson(List<dynamic> decodedList) =>
-    List<UserNotification>.from(
-        decodedList.cast<Map>().map((x) => UserNotification.fromJson(x)));
+List<UserNotification> userNotificationFromJson(List<dynamic> decodedList) =>
+    List<UserNotification>.from(decodedList
+        .cast<Map<String, dynamic>>()
+        .map((x) => UserNotification.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> UserNotificationToJson(List<UserNotification> data) =>
+List<Map> userNotificationToJson(List<UserNotification> data) =>
     new List<Map>.from(data.map((x) => x.toJson()));
 
 enum UserNotificationType {
@@ -31,14 +30,14 @@ class UserNotification extends Model {
   Map<String, dynamic> data;
   DateTime createdAt;
   DateTime updatedAt;
-  DateTime readAt;
+  DateTime? readAt;
 
   UserNotification({
-    this.id,
-    this.type,
-    this.data,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.type,
+    required this.data,
+    required this.createdAt,
+    required this.updatedAt,
     this.readAt,
   });
 
@@ -61,7 +60,7 @@ class UserNotification extends Model {
   Map<String, dynamic> toJson() => {
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
-        "read_at": readAt != null ? readAt.toIso8601String() : null,
+        "read_at": readAt?.toIso8601String(),
         "id": id,
         "type": type,
         "data": data,
@@ -85,31 +84,23 @@ class UserNotification extends Model {
     switch (splitType.last) {
       case 'LikedNotification':
         return UserNotificationType.liked;
-        break;
       case 'CommentNotification':
         return UserNotificationType.commented;
-        break;
       case 'PartnerRequestNotification':
         return UserNotificationType.partnerRequested;
-        break;
       case 'PartnerAcceptedNotification':
         return UserNotificationType.partnerAccepted;
-        break;
-      case 'InformationNotification':
-        return UserNotificationType.information;
-        break;
       default:
-        return null;
-        break;
+        return UserNotificationType.information;
     }
   }
 
   Map<String, dynamic> getBody() {
-    UserNotificationType _type = this.getType();
+    UserNotificationType? _type = this.getType();
     Map<String, dynamic> result = <String, dynamic>{};
     switch (_type) {
       case UserNotificationType.liked:
-        List<Favorite> favorites = FavoriteFromJson(data['favorites']);
+        List<Favorite> favorites = favoriteFromJson(data['favorites']);
         result['favorites'] = favorites;
         if (!data.containsKey('favorite_count')) {
           result['favorite_count'] = favorites.length;
@@ -144,12 +135,9 @@ class UserNotification extends Model {
         Partner partner = Partner.fromJson(data['partner']);
         result['partner'] = partner;
         break;
-      case UserNotificationType.information:
+      default:
         result['title'] = data['title'];
         result['information_id'] = data['information_id'];
-        break;
-      default:
-        return null;
         break;
     }
     return result;

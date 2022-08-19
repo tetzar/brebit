@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -21,16 +20,16 @@ final inputFormProvider = StateNotifierProvider.autoDispose(
     (ref) => InputFormProvider(new InputFormProviderState()));
 
 class InputFormProviderState {
-  List<Strategy> strategies;
-  List<AuthUser> users;
-  List<Analysis> analyses;
+  List<Strategy>? strategies;
+  List<AuthUser>? users;
+  List<Analysis>? analyses;
 
   InputFormProviderState({this.analyses, this.users, this.strategies});
 
   InputFormProviderState copyWith(
-      {List<Analysis> analyses,
-      List<AuthUser> users,
-      List<Strategy> strategies}) {
+      {List<Analysis>? analyses,
+      List<AuthUser>? users,
+      List<Strategy>? strategies}) {
     return new InputFormProviderState(
       analyses: analyses == null ? this.analyses : analyses,
       strategies: strategies == null ? this.strategies : strategies,
@@ -42,9 +41,15 @@ class InputFormProviderState {
 class InputFormProvider extends StateNotifier<InputFormProviderState> {
   InputFormProvider(InputFormProviderState state) : super(state);
 
-  InputFormProviderState recommendation;
+  InputFormProviderState? recommendation;
 
   String word = '';
+
+  List<AuthUser>? get users => state.users;
+
+  List<Analysis>? get analyses => state.analyses;
+
+  List<Strategy>? get strategies => state.strategies;
 
   Future<void> getSearchResult(String text) async {
     if (text.length == 0) {
@@ -79,17 +84,21 @@ class InputFormProvider extends StateNotifier<InputFormProviderState> {
   }
 
   void removeStrategy(Strategy strategy) {
-    List<Strategy> _strategies = state.strategies;
-    _strategies.removeWhere((existingStrategy) {
-      return existingStrategy.id == strategy.id;
-    });
-    List<Strategy> _recommendationStrategies = recommendation.strategies;
-    _recommendationStrategies.removeWhere((existingStrategy) {
-      return existingStrategy.id == strategy.id;
-    });
-    recommendation =
-        recommendation.copyWith(strategies: _recommendationStrategies);
-    state = state.copyWith(strategies: _strategies);
+    List<Strategy>? _strategies = state.strategies;
+    if (_strategies != null) {
+      _strategies.removeWhere((existingStrategy) {
+        return existingStrategy.id == strategy.id;
+      });
+      state = state.copyWith(strategies: _strategies);
+    }
+    List<Strategy>? _recommendationStrategies = recommendation?.strategies;
+    if (_recommendationStrategies != null) {
+      _recommendationStrategies.removeWhere((existingStrategy) {
+        return existingStrategy.id == strategy.id;
+      });
+      recommendation =
+          recommendation?.copyWith(strategies: _recommendationStrategies);
+    }
   }
 
   void setWord(String word) {
@@ -97,16 +106,21 @@ class InputFormProvider extends StateNotifier<InputFormProviderState> {
   }
 
   void removeAnalysis(Analysis analysis) {
-    List<Analysis> _analyses = state.analyses;
-    _analyses.removeWhere((existingAnalysis) {
-      return existingAnalysis.id == analysis.id;
-    });
-    List<Analysis> _recommendationAnalyses = recommendation.analyses;
-    _recommendationAnalyses.removeWhere((existingAnalysis) {
-      return existingAnalysis.id == analysis.id;
-    });
-    recommendation = recommendation.copyWith(analyses: _recommendationAnalyses);
-    state = state.copyWith(analyses: _analyses);
+    List<Analysis>? _analyses = state.analyses;
+    if (_analyses != null) {
+      _analyses.removeWhere((existingAnalysis) {
+        return existingAnalysis.id == analysis.id;
+      });
+      state = state.copyWith(analyses: _analyses);
+    }
+    List<Analysis>? _recommendationAnalyses = recommendation?.analyses;
+    if (_recommendationAnalyses != null) {
+      _recommendationAnalyses.removeWhere((existingAnalysis) {
+        return existingAnalysis.id == analysis.id;
+      });
+      recommendation =
+          recommendation?.copyWith(analyses: _recommendationAnalyses);
+    }
   }
 }
 
@@ -115,6 +129,8 @@ final recentShowProvider =
 
 class RecentShowProvider extends StateNotifier<bool> {
   RecentShowProvider(bool state) : super(state);
+
+  bool get shown => state;
 
   void hide() {
     if (state) {
@@ -129,37 +145,35 @@ class RecentShowProvider extends StateNotifier<bool> {
   }
 }
 
-class Search extends StatefulWidget {
-  final String args;
+class Search extends ConsumerStatefulWidget {
+  final String? args;
 
-  Search({@required this.args});
+  Search({this.args});
 
   @override
   _SearchState createState() => _SearchState();
 }
 
-class _SearchState extends State<Search> {
-  Timer _timer;
+class _SearchState extends ConsumerState<Search> {
+  Timer? _timer;
   final GlobalKey<NavigatorState> _key = new GlobalKey<NavigatorState>();
   final TextEditingController _controller = new TextEditingController();
   FocusScopeNode node = new FocusScopeNode();
-  Future<List<String>> recentFuture;
-
-  BuildContext _ctx;
+  late Future<List<String>> recentFuture;
 
   @override
   void initState() {
-    context.read(inputFormProvider).getSearchResult('');
-    recentFuture = getRecent(context.read(authProvider.state).user);
+    ref.read(inputFormProvider.notifier).getSearchResult('');
+    recentFuture = getRecent(ref.read(authProvider.notifier).user);
     var keyboardVisibilityController = KeyboardVisibilityController();
     // Subscribe
     keyboardVisibilityController.onChange.listen((bool visible) {
       if (mounted) {
         if (!visible) {
-          hideRecent();
+          hideRecent(ref);
         } else {
           if (_controller.text.length == 0) {
-            showRecent();
+            showRecent(ref);
           }
         }
       }
@@ -167,17 +181,16 @@ class _SearchState extends State<Search> {
     super.initState();
   }
 
-  void showRecent() {
-    _ctx.read(recentShowProvider).show();
+  void showRecent(WidgetRef ref) {
+    ref.read(recentShowProvider.notifier).show();
   }
 
-  void hideRecent() {
-    _ctx.read(recentShowProvider).hide();
+  void hideRecent(WidgetRef ref) {
+    ref.read(recentShowProvider.notifier).hide();
   }
 
   @override
   Widget build(BuildContext context) {
-    _ctx = context;
     return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -193,11 +206,11 @@ class _SearchState extends State<Search> {
                   onFocusChange: (bool focused) {
                     if (focused) {
                       if (_controller.text.length == 0) {
-                        context.read(recentShowProvider).show();
+                        ref.read(recentShowProvider.notifier).show();
                         return;
                       }
                     }
-                    context.read(recentShowProvider).hide();
+                    ref.read(recentShowProvider.notifier).hide();
                   },
                   child: TextFormField(
                     key: _key,
@@ -215,22 +228,22 @@ class _SearchState extends State<Search> {
                       ),
                     ),
                     style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyText1.color,
+                      color: Theme.of(context).textTheme.bodyText1?.color,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                     onChanged: (String text) async {
                       if (text.length > 0) {
-                        context.read(recentShowProvider).hide();
+                        ref.read(recentShowProvider.notifier).hide();
                       } else {
-                        context.read(recentShowProvider).show();
+                        ref.read(recentShowProvider.notifier).show();
                       }
                       _timer?.cancel();
                       _timer = Timer(Duration(milliseconds: 300), () async {
-                        context.read(inputFormProvider).setWord(text);
+                        ref.read(inputFormProvider.notifier).setWord(text);
                         try {
-                          await context
-                              .read(inputFormProvider)
+                          await ref
+                              .read(inputFormProvider.notifier)
                               .getSearchResult(text);
                         } catch (e) {
                           log('debug', error: e);
@@ -242,7 +255,7 @@ class _SearchState extends State<Search> {
                       String text = _controller.text;
                       if (text.length > 0) {
                         await LocalManager.setRecentSearch(
-                            context.read(authProvider.state).user,
+                            ref.read(authProvider.notifier).user,
                             _controller.text);
                       }
                     },
@@ -263,7 +276,7 @@ class _SearchState extends State<Search> {
                   child: Text(
                     'キャンセル',
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.subtitle1.color,
+                        color: Theme.of(context).textTheme.subtitle1?.color,
                         fontWeight: FontWeight.w400,
                         fontSize: 10),
                   ),
@@ -279,48 +292,51 @@ class _SearchState extends State<Search> {
                   TextPosition(offset: _controller.text.length));
               node.unfocus();
               LocalManager.setRecentSearch(
-                  context.read(authProvider.state).user, text);
+                  ref.read(authProvider.notifier).user, text);
               try {
-                await context.read(inputFormProvider).getSearchResult(text);
+                await ref
+                    .read(inputFormProvider.notifier)
+                    .getSearchResult(text);
               } catch (e) {
                 log('debug', error: e);
               }
-              context.read(recentShowProvider).hide();
+              ref.read(recentShowProvider.notifier).hide();
             },
             recentSearchFuture:
-                getRecent(context.read(authProvider.state).user)));
+                getRecent(ref.read(authProvider.notifier).user)));
   }
 
-  Future<List<String>> getRecent(AuthUser user) async {
+  Future<List<String>> getRecent(AuthUser? user) async {
+    if (user == null) return [];
     return await LocalManager.getRecentSearch(user);
   }
 }
 
 typedef RecentTappedCallback = Future<void> Function(String text);
 
-class SearchFormBody extends StatefulWidget {
+class SearchFormBody extends ConsumerStatefulWidget {
   final Future<List<String>> recentSearchFuture;
   final RecentTappedCallback onRecentTapped;
-  final String initialTab;
+  final String? initialTab;
 
   SearchFormBody(
-      {@required this.recentSearchFuture,
-      @required this.onRecentTapped,
-      @required this.initialTab});
+      {required this.recentSearchFuture,
+      required this.onRecentTapped,
+      required this.initialTab});
 
   @override
   _SearchFormBodyState createState() =>
       _SearchFormBodyState(initialTab: initialTab);
 }
 
-class _SearchFormBodyState extends State<SearchFormBody>
+class _SearchFormBodyState extends ConsumerState<SearchFormBody>
     with SingleTickerProviderStateMixin {
-  TabController _tabController;
-  final String initialTab;
+  late TabController _tabController;
+  final String? initialTab;
 
-  _SearchFormBodyState({@required this.initialTab});
+  _SearchFormBodyState({this.initialTab});
 
-  int initialIndex;
+  int initialIndex = 0;
 
   @override
   void initState() {
@@ -339,10 +355,13 @@ class _SearchFormBodyState extends State<SearchFormBody>
     }
     _tabController =
         new TabController(length: 3, vsync: this, initialIndex: initialIndex);
-    _tabController.animation.addListener(() {
-      context.read(tabProvider).set(_tabController.animation.value);
+    _tabController.animation?.addListener(() {
+      Animation? animation = _tabController.animation;
+      if (animation != null) {
+        ref.read(tabProvider.notifier).set(animation.value);
+      }
     });
-    context.read(tabProvider).set(initialIndex.toDouble());
+    ref.read(tabProvider.notifier).set(initialIndex.toDouble());
     super.initState();
   }
 
@@ -369,9 +388,10 @@ class _SearchFormBodyState extends State<SearchFormBody>
             ],
           ),
         ),
-        HookBuilder(
-          builder: (BuildContext context) {
-            bool show = useProvider(recentShowProvider.state);
+        Consumer(
+          builder: (context, ref, child) {
+            ref.watch(recentShowProvider);
+            bool show = ref.read(recentShowProvider.notifier).shown;
             if (show) {
               return FutureBuilder(
                 future: widget.recentSearchFuture,
@@ -401,18 +421,18 @@ class _SearchFormBodyState extends State<SearchFormBody>
   }
 }
 
-class RecentSearch extends StatefulWidget {
+class RecentSearch extends ConsumerStatefulWidget {
   final List<String> list;
   final RecentTappedCallback onTap;
 
-  RecentSearch({@required this.onTap, @required this.list});
+  RecentSearch({required this.onTap, required this.list});
 
   @override
   _RecentSearchState createState() => _RecentSearchState();
 }
 
-class _RecentSearchState extends State<RecentSearch> {
-  List<String> list;
+class _RecentSearchState extends ConsumerState<RecentSearch> {
+  late List<String> list;
 
   @override
   void initState() {
@@ -435,7 +455,7 @@ class _RecentSearchState extends State<RecentSearch> {
           child: Text(
             word,
             style: TextStyle(
-                color: Theme.of(context).textTheme.bodyText1.color,
+                color: Theme.of(context).textTheme.bodyText1?.color,
                 fontSize: 15,
                 fontWeight: FontWeight.w400),
           ),
@@ -457,7 +477,7 @@ class _RecentSearchState extends State<RecentSearch> {
                   child: Text(
                     '最近の検索',
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyText1.color,
+                        color: Theme.of(context).textTheme.bodyText1?.color,
                         fontWeight: FontWeight.w700,
                         fontSize: 17),
                   ),
@@ -465,7 +485,7 @@ class _RecentSearchState extends State<RecentSearch> {
                 TextButton(
                   onPressed: () {
                     LocalManager.deleteRecentSearch(
-                        context.read(authProvider.state).user);
+                        ref.read(authProvider.notifier).user);
                     setState(() {
                       list = <String>[];
                     });
@@ -473,7 +493,7 @@ class _RecentSearchState extends State<RecentSearch> {
                   child: Text(
                     '検索履歴をクリア',
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.subtitle1.color,
+                        color: Theme.of(context).textTheme.subtitle1?.color,
                         fontSize: 10,
                         fontWeight: FontWeight.w400),
                   ),

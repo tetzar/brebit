@@ -1,5 +1,6 @@
-import 'back-button.dart';
 import 'package:flutter/material.dart';
+
+import 'back-button.dart';
 
 enum AppBarBackButton {
   x,
@@ -10,12 +11,12 @@ enum AppBarBackButton {
 enum AppBarBackground { white, gray }
 
 AppBar getMyAppBar(
-    {List<Widget> actions,
+    {List<Widget>? actions,
     String titleText = '',
     AppBarBackButton backButton = AppBarBackButton.arrow,
-    Function onBack,
+    void Function()? onBack,
     AppBarBackground background = AppBarBackground.white,
-    @required BuildContext context}) {
+    required BuildContext context}) {
   if (background == AppBarBackground.white) {
     if (backButton == AppBarBackButton.none) {
       return AppBar(
@@ -29,7 +30,9 @@ AppBar getMyAppBar(
         title: getMyAppBarTitle(titleText, context),
         centerTitle: true,
         leading: backButton == AppBarBackButton.arrow
-            ? MyBackButton(onPressed: onBack,)
+            ? MyBackButton(
+                onPressed: onBack,
+              )
             : MyBackButtonX(onPressed: onBack),
         actions: actions,
       );
@@ -57,10 +60,13 @@ AppBar getMyAppBar(
   }
 }
 
-Text getMyAppBarTitle (String titleString, BuildContext context) {
-  TextStyle style = Theme.of(context)
+Text getMyAppBarTitle(String titleString, BuildContext context) {
+  TextStyle? style = Theme.of(context)
       .textTheme
       .bodyText1
-      .copyWith(fontSize: 18, fontWeight: FontWeight.w700);
-  return Text(titleString, style: style,);
-  }
+      ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700);
+  return Text(
+    titleString,
+    style: style,
+  );
+}

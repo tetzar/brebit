@@ -1,13 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../../route/route.dart';
 import '../general/loading.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class PasswordReset extends StatelessWidget {
   @override
@@ -26,11 +26,11 @@ class PasswordInputForm extends StatefulWidget {
 }
 
 class _PasswordInputFormState extends State<PasswordInputForm> {
-  GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
-  FocusNode _focusNode;
-  String email;
-  String errorMessage;
-  bool savable;
+  late GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
+  late FocusNode _focusNode;
+  String email = '';
+  String errorMessage = '';
+  bool savable = false;
 
   bool isEmail(String text) {
     RegExp emailRegExp = new RegExp(
@@ -49,7 +49,7 @@ class _PasswordInputFormState extends State<PasswordInputForm> {
     _focusNode = new FocusNode();
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus) {
-        _formKey.currentState.validate();
+        _formKey.currentState?.validate();
       }
     });
     super.initState();
@@ -97,7 +97,7 @@ class _PasswordInputFormState extends State<PasswordInputForm> {
                     errorMessage = '';
                     return p;
                   }
-                  if (text.length == 0) {
+                  if (text == null || text.length == 0) {
                     return '入力してください';
                   }
                   return isEmail(text) ? null : '正しく入力してください';
@@ -111,7 +111,7 @@ class _PasswordInputFormState extends State<PasswordInputForm> {
                   }
                 },
                 onSaved: (text) {
-                  this.email = text;
+                  this.email = text ?? '';
                 },
               ),
             ),
@@ -122,8 +122,8 @@ class _PasswordInputFormState extends State<PasswordInputForm> {
   }
 
   Future<void> save() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if ((_formKey.currentState?.validate() ?? false)) {
+      _formKey.currentState?.save();
       try {
         MyLoading.startLoading();
         await _sendPasswordResetCode(email);
@@ -133,7 +133,7 @@ class _PasswordInputFormState extends State<PasswordInputForm> {
       } on FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found') {
           errorMessage = 'アカウントが存在しません';
-          _formKey.currentState.validate();
+          _formKey.currentState?.validate();
           await MyLoading.dismiss();
           return;
         }
@@ -188,7 +188,7 @@ class PasswordResetSend extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             SizedBox(
@@ -197,7 +197,7 @@ class PasswordResetSend extends StatelessWidget {
             Text(
               '“$email”宛に\nパスワードのリセットリンクを記載して\nメールを送信しました。',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 17),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 17),
               textAlign: TextAlign.center,
             ),
             SizedBox(
@@ -224,7 +224,7 @@ class PasswordResetSend extends StatelessWidget {
                     height: 34,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Text(
@@ -274,11 +274,11 @@ class PasswordResetFormContent extends StatefulWidget {
 }
 
 class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
-  String password;
-  String errorMessage;
-  FocusNode _focusNode;
-  GlobalKey<FormState> _formKey;
-  bool savable;
+  String password = '';
+  String errorMessage = '';
+  late FocusNode _focusNode;
+  late GlobalKey<FormState> _formKey;
+  bool savable = false;
 
   @override
   void initState() {
@@ -289,7 +289,7 @@ class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
     _focusNode = new FocusNode();
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus) {
-        _formKey.currentState.validate();
+        _formKey.currentState?.validate();
       }
     });
     super.initState();
@@ -321,7 +321,7 @@ class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
                     errorMessage = '';
                     return p;
                   }
-                  if (text.length == 0) {
+                  if (text == null || text.length == 0) {
                     return '入力してください';
                   }
                   return text.length > 5 ? null : '６文字以上入力してください';
@@ -340,7 +340,7 @@ class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
                   _focusNode.unfocus();
                 },
                 onSaved: (text) {
-                  this.password = text;
+                  this.password = text ?? '';
                 },
               ),
             )
@@ -353,7 +353,8 @@ class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
         _focusNode.unfocus();
         try {
           await save();
-          String url = widget.dynamicLink.link.queryParameters['continueUrl'];
+          String? url = widget.dynamicLink.link.queryParameters['continueUrl'];
+          if (url == null) throw Exception('Cannot fetch url');
           Uri _uri = Uri.parse(url);
           ApplicationRoutes.pushReplacementNamed('/login',
               arguments: _uri.queryParameters['email']);
@@ -367,9 +368,14 @@ class _PasswordResetFormContentState extends State<PasswordResetFormContent> {
 
   Future<void> save() async {
     MyLoading.startLoading();
-    String oobCode = widget.dynamicLink.link.queryParameters['oobCode'];
-    await FirebaseAuth.instance
-        .confirmPasswordReset(code: oobCode, newPassword: this.password);
+    try {
+      String? oobCode = widget.dynamicLink.link.queryParameters['oobCode'];
+      if (oobCode == null) throw Exception('oobCode is null');
+      await FirebaseAuth.instance
+          .confirmPasswordReset(code: oobCode, newPassword: this.password);
+    } catch (e) {
+      MyErrorDialog.show(e);
+    }
     MyLoading.dismiss();
   }
 }

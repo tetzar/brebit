@@ -21,20 +21,20 @@ import '../widgets/text-field.dart';
 import 'name-form.dart';
 
 class RegisterProviderState {
-  bool nickName;
-  bool email;
-  bool password;
-  bool userName;
+  bool? nickName;
+  bool? email;
+  bool? password;
+  bool? userName;
 }
 
 class RegisterProvider extends StateNotifier<RegisterProviderState> {
   RegisterProvider(RegisterProviderState state) : super(state);
 
   void set(
-      {bool emailValid,
-      bool nickNameValid,
-      bool userNameValid,
-      bool passwordValid}) {
+      {bool? emailValid,
+      bool? nickNameValid,
+      bool? userNameValid,
+      bool? passwordValid}) {
     RegisterProviderState newState = new RegisterProviderState();
     newState.email = emailValid ?? false;
     newState.nickName = nickNameValid ?? false;
@@ -121,8 +121,8 @@ class Registration extends StatelessWidget {
   }
 }
 
-class RegistrationForm extends StatefulWidget {
-  final Map<String, String> registrationInitialData;
+class RegistrationForm extends ConsumerStatefulWidget {
+  final Map<String, String>? registrationInitialData;
 
   RegistrationForm(this.registrationInitialData);
 
@@ -130,20 +130,20 @@ class RegistrationForm extends StatefulWidget {
   _RegistrationFormState createState() => _RegistrationFormState();
 }
 
-class _RegistrationFormState extends State<RegistrationForm> {
-  List<GlobalKey<FormState>> _keys;
-  Map<String, String> inputData;
+class _RegistrationFormState extends ConsumerState<RegistrationForm> {
+  late List<GlobalKey<FormState>> _keys;
+  late Map<String, String> inputData;
 
-  Map<String, String> initialData;
+  late Map<String, String> initialData;
 
-  FocusNode _nickNameFocusNode;
-  FocusNode _userNameFocusNode;
-  FocusNode _emailFocusNode;
-  FocusNode _passwordFocusNode;
+  late FocusNode _nickNameFocusNode;
+  late FocusNode _userNameFocusNode;
+  late FocusNode _emailFocusNode;
+  late FocusNode _passwordFocusNode;
 
-  bool emailInUse;
+  bool emailInUse = false;
 
-  bool firstBuild;
+  bool firstBuild = false;
 
   @override
   void initState() {
@@ -165,22 +165,22 @@ class _RegistrationFormState extends State<RegistrationForm> {
     _passwordFocusNode = new FocusNode();
     _nickNameFocusNode.addListener(() {
       if (!_nickNameFocusNode.hasFocus) {
-        _keys[0].currentState.validate();
+        _keys[0].currentState?.validate();
       }
     });
     _userNameFocusNode.addListener(() {
       if (!_userNameFocusNode.hasFocus) {
-        _keys[1].currentState.validate();
+        _keys[1].currentState?.validate();
       }
     });
     _emailFocusNode.addListener(() {
       if (!_emailFocusNode.hasFocus) {
-        _keys[2].currentState.validate();
+        _keys[2].currentState?.validate();
       }
     });
     _passwordFocusNode.addListener(() {
       if (!_passwordFocusNode.hasFocus) {
-        _keys[3].currentState.validate();
+        _keys[3].currentState?.validate();
       }
     });
     inputData = {
@@ -191,9 +191,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
     };
     emailInUse = false;
     if (widget.registrationInitialData != null) {
-      context.read(_registerProvider).set(
-            nickNameValid: initialData['nickName'].length > 0,
-            emailValid: isEmail(initialData['email']),
+      ref.read(_registerProvider.notifier).set(
+            nickNameValid: initialData['nickName']!.length > 0,
+            emailValid: isEmail(initialData['email']!),
           );
     }
     super.initState();
@@ -216,7 +216,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
         return emailInUse ? 'サインイン' : '新規登録';
       },
       enable: () {
-        return context.read(_registerProvider).savable();
+        return ref.read(_registerProvider.notifier).savable();
       },
       onTapped: () async {
         _userNameFocusNode.unfocus();
@@ -252,17 +252,17 @@ class _RegistrationFormState extends State<RegistrationForm> {
                         textInputAction: TextInputAction.next,
                         focusNode: _nickNameFocusNode,
                         label: 'ニックネーム',
-                        validate: (String text) {
-                          if (text.length == 0) {
+                        validate: (String? text) {
+                          if (text == null || text.length == 0) {
                             return '入力してください';
                           }
                           return null;
                         },
                         onSaved: (text) {
-                          inputData['nickName'] = text;
+                          inputData['nickName'] = text ?? '';
                         },
                         onChanged: (text) {
-                          context.read(_registerProvider).changedNickName(text);
+                          ref.read(_registerProvider.notifier).changedNickName(text);
                         },
                         hintText: 'やまだ　たろう',
                         initialValue: initialData['nickName']),
@@ -279,17 +279,16 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       },
                       textInputAction: TextInputAction.next,
                       focusNode: _userNameFocusNode,
-                      initialValue: initialData['userName'],
+                      initialValue: initialData['userName'] ?? '',
                       initialCheck: true,
                       onStateChange: (state) {
-                        context
-                            .read(_registerProvider)
+                        ref.read(_registerProvider.notifier)
                             .setUserName(state == CustomIdFieldState.allowed);
-                        _keys[1].currentState.validate();
+                        _keys[1].currentState?.validate();
                       },
                       onValidate: (_) {},
                       onSaved: (text) async {
-                        inputData['userName'] = text;
+                        inputData['userName'] = text ?? '';
                       },
                     ),
                   ),
@@ -311,20 +310,20 @@ class _RegistrationFormState extends State<RegistrationForm> {
                         textInputAction: TextInputAction.next,
                         focusNode: _emailFocusNode,
                         onChanged: (text) {
-                          bool built = context
-                              .read(_registerProvider)
+                          bool built = ref
+                              .read(_registerProvider.notifier)
                               .setEmail(isEmail(text));
                           if (!built && emailInUse) {
                             emailInUse = false;
-                            context.read(_registerProvider).build();
+                            ref.read(_registerProvider.notifier).build();
                           }
                           emailInUse = false;
                         },
-                        validate: (String text) {
+                        validate: (String? text) {
                           return isEmail(text) ? null : '正しく入力してください';
                         },
                         onSaved: (text) {
-                          inputData['email'] = text;
+                          inputData['email'] = text ?? '';
                         },
                         hintText: 'brebit@example.com',
                         initialValue: initialData['email']),
@@ -341,15 +340,15 @@ class _RegistrationFormState extends State<RegistrationForm> {
                         },
                         textInputAction: TextInputAction.done,
                         onChanged: (text) {
-                          context
-                              .read(_registerProvider)
+                          ref
+                              .read(_registerProvider.notifier)
                               .setPassword(text.length > 5);
                         },
                         onSaved: (text) {
-                          inputData['password'] = text;
+                          inputData['password'] = text ?? '';
                         },
                         validate: (text) {
-                          if (text.length < 6) {
+                          if (text == null || text.length < 6) {
                             return '6文字以上入力してください';
                           }
                           return null;
@@ -386,7 +385,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   style: Theme.of(context)
                       .textTheme
                       .subtitle1
-                      .copyWith(fontSize: 12),
+                      ?.copyWith(fontSize: 12),
                   children: <TextSpan>[
                     TextSpan(
                       text: 'アカウントをお持ちの方は',
@@ -398,7 +397,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             ApplicationRoutes.pushReplacementNamed('/login');
                           },
                         style: (TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           decoration: TextDecoration.underline,
                         ))),
                   ],
@@ -411,7 +410,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
     );
   }
 
-  bool isEmail(String text) {
+  bool isEmail(String? text) {
+    if (text == null) return false;
     RegExp emailRegExp = new RegExp(
       r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
       caseSensitive: false,
@@ -420,7 +420,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
     return emailRegExp.hasMatch(text);
   }
 
-  bool isUserName(String text) {
+  bool isUserName(String? text) {
+    if (text == null) return false;
     RegExp userNameRegExp = new RegExp(
       r"^@?[a-zA-Z0-9_]+$",
       caseSensitive: false,
@@ -432,22 +433,24 @@ class _RegistrationFormState extends State<RegistrationForm> {
   Future<void> submit(BuildContext ctx) async {
     bool valid = true;
     for (GlobalKey<FormState> _key in _keys) {
-      if (!_key.currentState.validate()) {
+      if (!(_key.currentState?.validate() ?? false)) {
         valid = false;
       }
     }
     if (valid) {
       for (GlobalKey<FormState> _key in _keys) {
-        _key.currentState.save();
+        _key.currentState?.save();
       }
       MyLoading.startLoading();
       try {
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-                email: inputData['email'], password: inputData['password']);
-        if (userCredential.user.emailVerified) {
+                email: inputData['email']!, password: inputData['password']!);
+        User? firebaseUser = userCredential.user;
+        if (firebaseUser == null) throw Exception('firebase user not found');
+        if (firebaseUser.emailVerified) {
           try {
-            await MyApp.initialize(ctx);
+            await MyApp.initialize(ref);
           } on UserNotFoundException {
             await MyLoading.dismiss();
             while (Navigator.canPop(context)) {
@@ -463,8 +466,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
             Navigator.pushReplacementNamed(context, '/title');
           }
         } else {
-          await LocalManager.setRegisterInformation(userCredential.user,
-              inputData['email'], inputData['userName'], inputData['nickName']);
+          await LocalManager.setRegisterInformation(firebaseUser,
+              inputData['email']!, inputData['userName']!, inputData['nickName']!);
           await MyLoading.dismiss();
           Navigator.pushReplacementNamed(context, '/email-verify',
               arguments: inputData['nickName']);
@@ -472,8 +475,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
           emailInUse = true;
-          ctx.read(_registerProvider).build();
-          _keys[2].currentState.validate();
+          ref.read(_registerProvider.notifier).build();
+          _keys[2].currentState?.validate();
         } else {
           print(e);
         }
@@ -488,7 +491,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
   Future<void> signInWithGoogle(BuildContext context) async {
     MyLoading.startLoading();
     try {
-      final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         return;
       }
@@ -497,7 +500,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
           await googleUser.authentication;
 
       // Create a new credential
-      final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
@@ -505,8 +508,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
       // Once signed in, return the UserCredential
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
-      await context.read(authProvider).loginWithFirebase(userCredential.user);
-      await MyApp.initialize(context);
+      User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) throw Exception('firebase not found');
+      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+      await MyApp.initialize(ref);
       await MyLoading.dismiss();
       while (Navigator.canPop(context)) {
         Navigator.pop(context);

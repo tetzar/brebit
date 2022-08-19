@@ -8,12 +8,16 @@ final strategySelectProvider = StateNotifierProvider(
 );
 
 class StrategySelectProviderState {
-  List<Strategy> selectedStrategies;
-  List<Strategy> createdStrategies;
-  List<Strategy> deletedStrategies;
+  late List<Strategy> selectedStrategies;
+  late List<Strategy> createdStrategies;
+  late List<Strategy> deletedStrategies;
 
-  StrategySelectProviderState({this.createdStrategies,
-    this.deletedStrategies, this.selectedStrategies});
+  StrategySelectProviderState({List<Strategy>? createdStrategies,
+    List<Strategy>? deletedStrategies, List<Strategy>? selectedStrategies}) {
+    this.selectedStrategies = selectedStrategies ?? [];
+    this.createdStrategies = createdStrategies ?? [];
+    this.deletedStrategies = deletedStrategies ?? [];
+  }
 
   StrategySelectProviderState copy() {
     return new StrategySelectProviderState(
@@ -29,59 +33,46 @@ class StrategySelectProvider
   StrategySelectProvider(StrategySelectProviderState state) : super(state);
 
   void setSelected(Strategy strategy) {
-    if (state.selectedStrategies == null) {
-      state.selectedStrategies = <Strategy>[];
-    }
-    state.selectedStrategies.add(strategy);
+    List<Strategy> selectedStrategies = state.selectedStrategies;
+    selectedStrategies.add(strategy);
     state = state.copy();
   }
 
   void unsetSelected(Strategy strategy) {
-    state.selectedStrategies.removeWhere((selectedStrategy) =>
+    List<Strategy> selectedStrategies = state.selectedStrategies;
+    selectedStrategies.removeWhere((selectedStrategy) =>
     selectedStrategy.id == strategy.id);
     state = state.copy();
   }
 
   List<Strategy> getSelected() {
-    if (state.selectedStrategies == null) {
-      return <Strategy>[];
-    }
     return state.selectedStrategies;
   }
 
   void setCreated(Strategy strategy) {
-    if (state.createdStrategies == null) {
-      state.createdStrategies = <Strategy>[];
-    }
-    state.createdStrategies.add(strategy);
+    List<Strategy> createdStrategies = state.createdStrategies;
+    createdStrategies.add(strategy);
     state = state.copy();
   }
 
   void unsetCreated(Strategy strategy) {
-    state.createdStrategies.removeWhere((selectedStrategy) =>
+    List<Strategy> createdStrategies = state.createdStrategies;
+    createdStrategies.removeWhere((selectedStrategy) =>
     selectedStrategy.id == strategy.id);
     state = state.copy();
   }
 
   List<Strategy> getCreated() {
-    if (state.createdStrategies == null) {
-      return <Strategy>[];
-    }
     return state.createdStrategies;
   }
 
   void setDeleted(Strategy strategy) {
-    if (state.deletedStrategies == null) {
-      state.deletedStrategies = <Strategy>[];
-    }
-    state.deletedStrategies.add(strategy);
+    List<Strategy> deletedStrategies = state.deletedStrategies;
+    deletedStrategies.add(strategy);
     state = state.copy();
   }
 
   List<Strategy> getDeleted() {
-    if (state.deletedStrategies == null) {
-      return <Strategy>[];
-    }
     return state.deletedStrategies;
   }
 
@@ -93,11 +84,9 @@ class StrategySelectProvider
 
   bool isSelected(Strategy strategy) {
     List<Strategy> strategies = this.getSelected();
-    strategies.forEach((selectedStrategy) {
-      if (selectedStrategy.id == strategy.id) {
-        return true;
-      }
-    });
+    for (Strategy selected in strategies) {
+      if (selected.id == strategy.id) return true;
+    }
     return false;
   }
 
@@ -105,8 +94,9 @@ class StrategySelectProvider
     List<Strategy> strategies = this.getCreated();
     int index = 1000;
     strategies.forEach((strategy) {
-      if (strategy.id < index) {
-        index = strategy.id;
+      int? strategyId = strategy.id;
+      if (strategyId != null && strategyId < index) {
+        index = strategyId;
       }
     });
     return index - 1;

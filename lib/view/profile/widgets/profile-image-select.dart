@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -16,25 +15,24 @@ import '../../widgets/back-button.dart';
 import '../../widgets/bottom-sheet.dart';
 import '../../widgets/dialog.dart';
 
-class ProfileImageSelect extends StatefulHookWidget {
+class ProfileImageSelect extends ConsumerStatefulWidget {
   @override
   _ProfileImageSelectState createState() => _ProfileImageSelectState();
 }
 
-class _ProfileImageSelectState extends State<ProfileImageSelect> {
-  File imageFile;
-  bool _hasChanged;
+class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
+  File? imageFile;
 
   @override
   void initState() {
-    _hasChanged = false;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    AuthProviderState _authProviderState = useProvider(authProvider.state);
-    AuthUser user = _authProviderState.user;
+    ref.watch(authProvider);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    File? imageFile = this.imageFile;
     return WillPopScope(
       onWillPop: () {
         return onWillPop(context);
@@ -45,7 +43,7 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
           centerTitle: true,
           leading: MyBackButtonX(
             onPressed: () {
-              if (_hasChanged) {
+              if (imageFile != null) {
                 showCancelDialog(context);
               } else {
                 ApplicationRoutes.pop();
@@ -55,10 +53,10 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
           actions: [
             IconButton(
                 icon: Icon(Icons.check,
-                    color: _hasChanged
-                        ? Theme.of(context).appBarTheme.iconTheme.color
+                    color: imageFile != null
+                        ? Theme.of(context).appBarTheme.iconTheme?.color
                         : Theme.of(context).disabledColor),
-                onPressed: _hasChanged
+                onPressed: imageFile != null
                     ? () async {
                         await saveImage(context);
                       }
@@ -79,14 +77,14 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
                   child: Container(
                     width: 200,
                     height: 200,
-                    child: _hasChanged
+                    child: imageFile != null
                         ? Image.file(
                             imageFile,
                             fit: BoxFit.cover,
                             width: 200,
                             height: 200,
                           )
-                        : user.getImageWidget(),
+                        : user?.getImageWidget() ?? AuthUser.getDefaultImage(),
                   ),
                 ),
                 radius: 100,
@@ -102,7 +100,7 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
                   child: Container(
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.all(Radius.circular(17)),
-                        color: Theme.of(context).accentColor),
+                        color: Theme.of(context).colorScheme.secondary),
                     alignment: Alignment.center,
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 24),
                     width: 96,
@@ -159,8 +157,11 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
   Future<void> saveImage(BuildContext context) async {
     try {
       MyLoading.startLoading();
-      imageFile = await ImageModel.Image.resizeImage(imageFile);
-      await context.read(authProvider).saveProfileImage(imageFile);
+      File? imageFile = this.imageFile;
+      if (imageFile != null) {
+        imageFile = await ImageModel.Image.resizeImage(imageFile);
+        await ref.read(authProvider.notifier).saveProfileImage(imageFile);
+      }
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -176,12 +177,11 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
           text: '画像を選ぶ',
           onSelect: () async {
             ApplicationRoutes.pop();
-            File file = await _selectImageFromGallery();
+            File? file = await _selectImageFromGallery();
             if (file != null) {
-              File croppedImage = await MyImageCropper.cropImage(context, file);
+              File? croppedImage = await MyImageCropper.cropImage(context, file);
               if (croppedImage == null) return;
               imageFile = croppedImage;
-              _hasChanged = true;
               setState(() {});
             }
           }),
@@ -190,17 +190,16 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
         text: '写真を撮る',
         onSelect: () async {
           ApplicationRoutes.pop();
-          File file = await _takePhoto();
+          File? file = await _takePhoto();
           if (file != null) {
             imageFile = await MyImageCropper.cropImage(context, file);
-            _hasChanged = true;
             setState(() {});
           }
         },
       )
     ];
     bool imageDeletable =
-        context.read(authProvider.state).user.hasImage() || imageFile != null;
+        ref.read(authProvider.notifier).user?.hasImage() ?? false || imageFile != null;
     if (imageDeletable) {
       _items.add(CautionBottomSheetItem(
           context: context,
@@ -208,7 +207,6 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
           onSelect: () {
             ApplicationRoutes.pop();
             imageFile = null;
-            _hasChanged = true;
             setState(() {});
           }));
     }
@@ -223,25 +221,22 @@ class _ProfileImageSelectState extends State<ProfileImageSelect> {
         context: ApplicationRoutes.materialKey.currentContext);
   }
 
-  Future<File> _takePhoto() async {
+  Future<File?> _takePhoto() async {
     final picker = ImagePicker();
     // bool cameraGranted = await Permission.camera.request() == PermissionStatus.granted;
     bool cameraGranted = true;
     if (cameraGranted) {
-      final pickedFile = await picker.getImage(source: ImageSource.camera);
+      final pickedFile = await picker.pickImage(source: ImageSource.camera);
       if (pickedFile != null) {
-        setState(() {
-          this._hasChanged = true;
-        });
         return File(pickedFile.path);
       }
     }
     return null;
   }
 
-  Future<File> _selectImageFromGallery() async {
+  Future<File?> _selectImageFromGallery() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       return File(pickedFile.path);
     } else {

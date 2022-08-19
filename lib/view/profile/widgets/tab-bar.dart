@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../provider/auth.dart';
@@ -9,6 +8,8 @@ final tabProvider = StateNotifierProvider.autoDispose((ref) => TabProvider(0));
 class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
 
+  double get position => state;
+
   void set(double s) {
     state = s;
   }
@@ -17,7 +18,7 @@ class TabProvider extends StateNotifier<double> {
 class ProfileTabBar extends SliverPersistentHeaderDelegate {
   final TabController tabController;
 
-  ProfileTabBar({@required this.tabController});
+  ProfileTabBar({required this.tabController});
 
   @override
   Widget build(
@@ -44,17 +45,17 @@ enum ShowingTab {
   friend,
 }
 
-class _ProfileTabBarContent extends StatefulHookWidget {
+class _ProfileTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
 
-  _ProfileTabBarContent({@required this.tabController});
+  _ProfileTabBarContent({required this.tabController});
 
   @override
   __ProfileTabBarContentState createState() => __ProfileTabBarContentState();
 }
 
-class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
-  ShowingTab _showingTab;
+class __ProfileTabBarContentState extends ConsumerState<_ProfileTabBarContent> {
+  late ShowingTab _showingTab;
 
   @override
   void initState() {
@@ -64,7 +65,8 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider.state);
+    ref.watch(tabProvider);
+    double position = ref.read(tabProvider.notifier).position;
     if (_showingTab == ShowingTab.posts) {
       if (position > 0.9) {
         _showingTab = ShowingTab.friend;
@@ -75,7 +77,7 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
       }
     }
 
-    useProvider(authProvider.state);
+    ref.watch(authProvider);
     return Container(
       color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
@@ -107,11 +109,11 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                     ? Theme.of(context)
                                         .textTheme
                                         .bodyText1
-                                        .color
+                                        ?.color
                                     : Theme.of(context)
                                         .textTheme
                                         .subtitle1
-                                        .color),
+                                        ?.color),
                           ),
                         )),
                   ),
@@ -130,11 +132,11 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                     ? Theme.of(context)
                                         .textTheme
                                         .bodyText1
-                                        .color
+                                        ?.color
                                     : Theme.of(context)
                                         .textTheme
                                         .subtitle1
-                                        .color),
+                                        ?.color),
                           ),
                         )),
                   )
@@ -172,7 +174,7 @@ class TabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  TabBarLinePainter({this.position, this.context});
+  TabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -182,7 +184,7 @@ class TabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;

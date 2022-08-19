@@ -1,10 +1,9 @@
 import 'dart:convert';
 
-import '../../library/data-set.dart';
-import '../../model/notification.dart';
-
 import 'package:http/http.dart' as http;
 
+import '../../library/data-set.dart';
+import '../../model/notification.dart';
 import 'api.dart';
 
 class NotificationApi {
@@ -24,78 +23,41 @@ class NotificationApi {
   };
 
   static Future<List<UserNotification>> getNotifications(
-      [DateTime latestPostCreatedAt]) async {
+      [DateTime? latestPostCreatedAt]) async {
     Map<String, String> data = {
       'latest': latestPostCreatedAt == null
           ? '_'
           : latestPostCreatedAt.toIso8601String()
     };
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getNotifications'], data));
-    if (response.statusCode == 200) {
-      try {
-        Map<String, dynamic> body = jsonDecode(response.body);
-        if (body.containsKey('message')) {
-          print(body['message']);
-          return null;
-        }
-        DataSet.dataSetConvert(body['data_set']);
-        return UserNotificationFromJson(body['notifications']);
-      } catch (e) {
-        print(e.toString());
-        return null;
-      }
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in NotificationApi@getNotifications');
-    }
+        Network.routeNormalize(getRoutes['getNotifications']!, data),
+        "getNotifications@NotificationApi");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    DataSet.dataSetConvert(body['data_set']);
+    return userNotificationFromJson(body['notifications']);
   }
 
   static Future<List<UserNotification>> getUnreadNotifications() async {
-    http.Response response = await Network.getData(getRoutes['getUnreadNotifications']);
-    if (response.statusCode == 200) {
-      try {
-        Map<String, dynamic> body = jsonDecode(response.body);
-        if (body.containsKey('message')) {
-          print(body['message']);
-          return null;
-        }
-        DataSet.dataSetConvert(body['data_set']);
-        return UserNotificationFromJson(body['notifications']);
-      } catch (e) {
-        print(e.toString());
-        return null;
-      }
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in NotificationApi@getNotifications');
-    }
+    http.Response response = await Network.getData(
+        getRoutes['getUnreadNotifications'],
+        'getUnreadNotifications@NotificationApi');
+    Map<String, dynamic> body = jsonDecode(response.body);
+    DataSet.dataSetConvert(body['data_set']);
+    return userNotificationFromJson(body['notifications']);
   }
 
   static Future<DateTime> readNotification(String notificationId) async {
     Map<String, dynamic> data = {'notification_id': notificationId};
-    http.Response response =
-        await Network.postData(data, postRoutes['readNotification']);
-    if (response.statusCode == 201) {
-      return DateTime.parse(jsonDecode(response.body)["read_at"]);
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in NotificationApi@readNotification');
-    }
+    http.Response response = await Network.postData(data,
+        postRoutes['readNotification'], 'readNotification@NotificationApi');
+    return DateTime.parse(jsonDecode(response.body)["read_at"]);
   }
 
   static Future<void> deleteNotification(String notificationId) async {
     Map<String, String> data = {'notificationId': notificationId};
-    final http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['deleteNotification'], data));
-    if (response.statusCode != 200) {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in NotificationApi@deleteNotification');
-    }
+    await Network.deleteData(
+        Network.routeNormalizeDelete(deleteRoutes['deleteNotification']!, data),
+        'deleteNotification@NotificationApi');
   }
 
   static Future<List<UserNotification>> markAsRead(
@@ -108,39 +70,20 @@ class NotificationApi {
       return <UserNotification>[];
     }
     Map<String, dynamic> data = {'notification_ids': _notificationIds};
-    http.Response response =
-        await Network.postData(data, postRoutes['markAsRead']);
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      DataSet.dataSetConvert(body['data_set']);
-      return UserNotificationFromJson(body['notifications']);
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in markAsRead@NotificationApi');
-    }
+    http.Response response = await Network.postData(
+        data, postRoutes['markAsRead'], "markAsRead@NotificationsApi");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    DataSet.dataSetConvert(body['data_set']);
+    return userNotificationFromJson(body['notifications']);
   }
 
-  static Future<String> getInformationNotificationBody(
+  static Future<String?> getInformationNotificationBody(
       int informationId) async {
     Map<String, String> data = {'informationId': informationId.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getInformationBody'], data));
-    if (response.statusCode == 200) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      return body['body'];
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in getInformationBody@NotificationApi');
-    }
+        Network.routeNormalize(getRoutes['getInformationBody']!, data),
+        'getInformationNotificationBody@NotificationApi');
+    Map<String, dynamic> body = jsonDecode(response.body);
+    return body['body'];
   }
 }

@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:brebit/api/auth.dart';
+import 'package:brebit/api/habit.dart';
+import 'package:brebit/api/profile.dart';
 import 'package:brebit/library/cache.dart';
 import 'package:brebit/library/messaging.dart';
 import 'package:brebit/model/category.dart';
@@ -9,20 +12,19 @@ import 'package:brebit/model/habit.dart';
 import 'package:brebit/model/partner.dart';
 import 'package:brebit/model/post.dart';
 import 'package:brebit/model/user.dart';
-import 'package:brebit/api/auth.dart';
-import 'package:brebit/api/habit.dart';
-import 'package:brebit/api/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final authProvider = StateNotifierProvider<AuthProvider>(
-        (ref) => AuthProvider(new AuthProviderState(user: null)));
+import '../library/exceptions.dart';
+
+final authProvider = StateNotifierProvider<AuthProvider, AuthProviderState>(
+    (ref) => AuthProvider(new AuthProviderState(user: null)));
 
 class AuthProviderState {
   AuthProviderState({this.user});
 
-  AuthUser user;
+  AuthUser? user;
 }
 
 class AuthProvider extends StateNotifier<AuthProviderState> {
@@ -30,9 +32,15 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     listening = false;
   }
 
-  bool listening;
+  late bool listening;
 
   bool noMoreContent = false;
+
+  AuthUser? get user => state.user;
+
+  void updateState({AuthUser? user}) {
+    this.state = AuthProviderState(user: user ?? this.state.user);
+  }
 
   void startNotificationListening() {
     if (listening) {
@@ -45,11 +53,10 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
         case 'PartnerAcceptedNotification':
           Partner _partner = Partner.fromJson(
               jsonDecode(receivedNotification.data['partner']));
-          if (this.state != null) {
-            if (this.state.user != null) {
-              this.state.user.addPartner(_partner);
-              this.state = state;
-            }
+          AuthUser? user = this.state.user;
+          if (user != null) {
+            user.addPartner(_partner);
+            updateState();
           }
       }
     });
@@ -60,10 +67,11 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //  register
   //---------------------------------
 
-  Future<void> registerWithFirebase(String nickName, String userName, User firebaseUser) async {
+  Future<void> registerWithFirebase(
+      String nickName, String userName, User firebaseUser) async {
     AuthUser user = await AuthApi.register(firebaseUser, nickName, userName);
     AuthUser.selfUser = user;
-    state = new AuthProviderState(user: user);
+    updateState(user: user);
     await LocalManager.deleteHabit(user);
     await LocalManager.deletePosts(user, nickName);
     await LocalManager.deleteNotifications(user);
@@ -75,16 +83,20 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   // ---------------------------------------------
 
   Future<AuthUser> login(String email, String password) async {
-    AuthUser user = await AuthApi.login(FirebaseAuth.instance.currentUser);
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      throw NotLoggedInException('firebase user is null');
+    }
+    AuthUser user = await AuthApi.login(firebaseUser);
     AuthUser.selfUser = user;
-    this.state.user = user;
+    updateState(user: user);
     return user;
   }
 
   Future<AuthUser> loginWithFirebase(User firebaseUser) async {
     AuthUser user = await AuthApi.login(firebaseUser);
     AuthUser.selfUser = user;
-    this.state.user = user;
+    updateState(user: user);
     return user;
   }
 
@@ -92,18 +104,19 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //  user
   //---------------------------------
 
-  void setUser(AuthUser updatedUser) {
-    this.state = new AuthProviderState(user: updatedUser);
-  }
-
   Future<AuthUser> getUser() async {
-    if (this.state.user != null) {
-      return this.state.user;
-    } else {
-      AuthUser user = await AuthApi.getUser();
-      this.state.user = user;
+    AuthUser? user = this.state.user;
+    if (user != null) {
       return user;
     }
+    user = await AuthApi.getUser();
+    updateState(user: user);
+    return user;
+  }
+
+
+  void setUser(AuthUser user) {
+    this.state.user = user;
   }
 
   //---------------------------------
@@ -140,13 +153,13 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //---------------------------------
 
   static Map<CredentialProviders, String> providerIds =
-  <CredentialProviders, String>{
+      <CredentialProviders, String>{
     CredentialProviders.google: 'google.com',
     CredentialProviders.apple: 'apple.com',
     CredentialProviders.password: 'password'
   };
 
-  static CredentialProviders getCredentialProviderFromId(String id) {
+  static CredentialProviders? getCredentialProviderFromId(String id) {
     int index = providerIds.values.toList().indexOf(id);
     if (index < 0) {
       return null;
@@ -155,19 +168,23 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     }
   }
 
-  static String getProviderIdFromCredentialProvider(
+  static String? getProviderIdFromCredentialProvider(
       CredentialProviders provider) {
     if (providerIds.containsKey(provider)) {
-      return providerIds[provider];
+      return providerIds[provider]!;
     }
     return null;
   }
 
   static List<CredentialProviders> getProviders() {
-    return FirebaseAuth.instance.currentUser.providerData
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      throw NotLoggedInException("firebase current user is null");
+    }
+    return firebaseUser.providerData
         .map((userInfo) {
           return AuthProvider.getCredentialProviderFromId(userInfo.providerId);
-    })
+        })
         .toList()
         .cast<CredentialProviders>();
   }
@@ -177,77 +194,79 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //---------------------------------
 
   Future<bool> getProfileTimeline() async {
-    try {
-      List<Post> posts = await LocalManager.getProfilePosts(state.user);
-      if (posts.length == 0) {
-        List<Post> resultPosts = await ProfileApi.getProfilePosts(state.user);
-        if (resultPosts.length < 10) {
-          noMoreContent = true;
-        }
-        if (resultPosts.length > 0) {
-          this.state.user.posts = resultPosts;
-          state = new AuthProviderState(user: state.user);
-          await LocalManager.setProfilePosts(this.state.user, resultPosts);
-        }
-        return true;
-      } else {
-        Post latestPost = posts.first;
-        this.state.user.posts = posts;
-        state = new AuthProviderState(user: state.user);
-        List<Post> newPosts =
-        await ProfileApi.getProfilePosts(state.user, latestPost.createdAt);
-        if (newPosts.length > 0) {
-          List<Post> resultPosts = new List.from(newPosts)
-            ..addAll(posts);
-          this.state.user.posts = resultPosts;
-          await LocalManager.setProfilePosts(this.state.user, resultPosts);
-          state = new AuthProviderState(user: state.user);
-        }
-        if (this.state.user.posts.length < 10) reloadOlderTimeLine();
-        return true;
+    AuthUser? user = state.user;
+    if (user == null) return false;
+    List<Post> posts = await LocalManager.getProfilePosts(user);
+    if (posts.length == 0) {
+      List<Post> resultPosts = await ProfileApi.getProfilePosts(user);
+      if (resultPosts.length < 10) {
+        noMoreContent = true;
       }
-    } catch (e) {
-      print(e.toString());
-      return false;
+      if (resultPosts.length > 0) {
+        user.posts = resultPosts;
+        state = new AuthProviderState(user: user);
+        await LocalManager.setProfilePosts(user, resultPosts);
+      }
+      return true;
     }
+    Post latestPost = posts.first;
+    user.posts = posts;
+    updateState();
+    List<Post> newPosts =
+        await ProfileApi.getProfilePosts(user, latestPost.createdAt);
+    if (newPosts.length > 0) {
+      List<Post> resultPosts = new List.from(newPosts)..addAll(posts);
+      user.posts = resultPosts;
+      await LocalManager.setProfilePosts(user, resultPosts);
+      state = new AuthProviderState(user: state.user);
+    }
+    if (user.posts.length < 10) reloadOlderTimeLine();
+    return true;
   }
 
   Future<void> reloadTimeLine() async {
-    if (state.user.posts != null &&
-        state.user.posts.length > 0) {
-        List<Post> newPosts = await ProfileApi.getProfilePosts(
-            state.user, state.user.posts.first.createdAt);
-        newPosts.addAll(state.user.posts);
-        AuthUser user = state.user;
-        user.posts = newPosts;
-        await LocalManager.setProfilePosts(this.state.user, newPosts);
-        state = new AuthProviderState(user: user);
-        return;
+    AuthUser? user = state.user;
+    if (user != null && user.posts.length > 0) {
+      List<Post> newPosts =
+          await ProfileApi.getProfilePosts(user, user.posts.first.createdAt);
+      newPosts.addAll(user.posts);
+      user.posts = newPosts;
+      await LocalManager.setProfilePosts(user, newPosts);
+      updateState();
+      return;
     }
     await this.getProfileTimeline();
   }
 
   Future<bool> reloadOlderTimeLine() async {
-    if (state.user.posts != null && state.user.posts.length > 0) {
+    AuthUser? user = state.user;
+    if (user == null) return false;
+    if (user.posts.length > 0) {
       List<Post> newPosts = await ProfileApi.getProfilePosts(
-          state.user, state.user.posts.last.createdAt, true);
+          user, user.posts.last.createdAt, true);
       if (newPosts.length == 0) {
         this.noMoreContent = true;
-        state = state;
+        updateState();
         return true;
       }
-      state.user.posts.addAll(newPosts);
-      await LocalManager.setProfilePosts(this.state.user, state.user.posts);
-      state = new AuthProviderState(user: state.user);
+      user.posts.addAll(newPosts);
+      await LocalManager.setProfilePosts(user, user.posts);
+      updateState();
     }
     return false;
   }
 
   Future<bool> deletePost(Post post) async {
-    Post _post = state.user.posts
-        .firstWhere((_post) => _post.id == post.id, orElse: () => null);
+    AuthUser? user = state.user;
+    if (user == null) return false;
+    Post? _post;
+    try {
+      _post = user.posts.firstWhere((_post) => _post.id == post.id);
+    } on StateError {
+      _post = null;
+    }
     if (_post != null) {
-      bool success = await state.user.deletePost(post);
+      bool success = await user.deletePost(post);
       if (success) {
         removePost(post);
         return true;
@@ -257,9 +276,10 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   }
 
   void removePost(Post post) {
-    if (this.state != null && this.state.user != null) {
-      this.state.user.removePost(post);
-      state = state;
+    AuthUser? user = state.user;
+    if (user != null) {
+      user.removePost(post);
+      updateState();
     }
   }
 
@@ -268,45 +288,39 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //---------------------------------
 
   Future<void> saveName(String newName) async {
-    try {
-      AuthUser user = await ProfileApi.saveProfile(
-          {'name': newName, 'custom_id': null, 'bio': null});
-      user.postCount = state.user.postCount;
-      state = new AuthProviderState(user: user);
-    } catch (e) {
-      print(e.toString());
-      throw e;
-    }
+    AuthUser user = await ProfileApi.saveProfile(
+        {'name': newName, 'custom_id': null, 'bio': null});
+    AuthUser? currentUser = state.user;
+    if (currentUser == null) return;
+    user.postCount = currentUser.postCount;
+    state = new AuthProviderState(user: user);
   }
 
   Future<void> saveProfileImage(File imageFile) async {
-    try {
-      String imageUrl = await ProfileApi.saveProfileImage(imageFile);
-      if (imageUrl != null) {
-        AuthUser user = state.user;
-        await user.setProfileImageUrl(imageUrl);
-        state = new AuthProviderState(user: user);
-      }
-    } catch (e) {
-      throw e;
-    }
+    String imageUrl = await ProfileApi.saveProfileImage(imageFile);
+    AuthUser? user = state.user;
+    if (user == null) return;
+    await user.setProfileImageUrl(imageUrl);
+    updateState();
   }
 
-  Future<void> saveProfile(String nickName, String bio, File imageFile,
-      bool deleted) async {
+  Future<void> saveProfile(
+      String nickName, String bio, File? imageFile, bool deleted) async {
     AuthUser user = await ProfileApi.saveProfile({
       'name': nickName,
       'custom_id': null,
       'bio': bio,
       'image_deleted': deleted
     }, imageFile: imageFile);
-    this.setUser(user);
+    updateState(user: user);
   }
 
   Future<void> reloadProfile() async {
     AuthUser user = await AuthApi.getUser();
-    user.posts = state.user.posts;
-    this.setUser(user);
+    AuthUser? currentUser = state.user;
+    if (currentUser == null) return;
+    user.posts = currentUser.posts;
+    updateState(user: user);
   }
 
   Future<void> switchOpened(bool toOpen) async {
@@ -319,18 +333,24 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   //---------------------------------
 
   void breakOffWithFriend(Partner partner) {
-    this.state.user.removePartner(partner);
-    state = AuthProviderState(user: state.user);
+    AuthUser? user = state.user;
+    if (user == null) return;
+    user.removePartner(partner);
+    updateState();
   }
 
   void setPartner(Partner partner) {
-    this.state.user.addPartner(partner);
-    state = AuthProviderState(user: state.user);
+    AuthUser? user = state.user;
+    if (user == null) return;
+    user.addPartner(partner);
+    updateState();
   }
 
   void removePartner(Partner partner) {
-    this.state.user.removePartner(partner);
-    state = AuthProviderState(user: state.user);
+    AuthUser? user = state.user;
+    if (user == null) return;
+    user.removePartner(partner);
+    updateState();
   }
 
   //---------------------------------
@@ -350,9 +370,10 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   }
 
   void start(Category category) {
-    AuthUser user = this.state.user;
+    AuthUser? user = state.user;
+    if (user == null) return;
     user.addActiveHabitCategory(category);
-    state = state..user = user;
+    updateState();
   }
 }
 

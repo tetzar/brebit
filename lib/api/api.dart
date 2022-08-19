@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 
 import '../../library/cache.dart';
@@ -32,41 +34,53 @@ class Network {
     return _url + '/api' + apiUrl;
   }
 
-  static _getToken() async {
-    String tkn = await LocalManager.getToken(AuthUser.getSelfUid());
-    if (tkn != null) {
-      if (tkn != 'expired' && tkn.length != 0) {
-        token = tkn;
-        return tkn;
-      }
+  static Future<String?> _getToken() async {
+    String? uid = AuthUser.getSelfUid();
+    if (uid == null) {
+      return null;
     }
-    tkn = await AuthApi.refreshToken(AuthUser.getSelfUser());
+    String? tkn = await LocalManager.getToken(uid);
+    if (tkn != 'expired' && tkn.length != 0) {
+      token = tkn;
+      return tkn;
+    }
+    User? firebaseUser = AuthUser.getSelfUser();
+    if (firebaseUser == null) {
+      return null;
+    }
+    tkn = await AuthApi.refreshToken(firebaseUser);
     token = tkn;
     return token;
   }
 
-  static postWithoutToken(data, apiUrl) async {
+  static Future<http.Response> postWithoutToken(data, apiUrl, String calledAt) async {
     String fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    return await http.post(url,
+
+    http.Response response =  await http.post(url,
         body: jsonEncode(data), headers: _setHeadersWithoutToken()).timeout(
         Duration(seconds: TIME_OUT_SECONDS)
     );
+    hasErrorMessage(response, calledAt);
+    return response;
   }
 
-  static postData(data, apiUrl) async {
+  static Future<http.Response> postData(data, apiUrl, String calledAt) async {
     var fullUrl = _url + '/api' + apiUrl;
     await _getToken();
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    return await http.post(url, body: jsonEncode(data), headers: _setHeaders()).timeout(
-      Duration(seconds: TIME_OUT_SECONDS)
+
+    http.Response response = await http.post(url, body: jsonEncode(data), headers: _setHeaders()).timeout(
+        Duration(seconds: TIME_OUT_SECONDS)
     );
+    hasErrorMessage(response, calledAt);
+    return response;
   }
 
-  static postDataWithImage(
-      Map<String, String> data, List<File> imageList, apiUrl) async {
+  static Future<http.Response> postDataWithImage(
+      Map<String, String> data, List<File> imageList, apiUrl, String calledAt) async {
     String uploadURL = Network.getFullUrl(apiUrl);
     print(uploadURL);
 
@@ -76,51 +90,57 @@ class Network {
 
     await _getToken();
 
-    if (imageList != null) {
-      if (imageList.length > 0) {
-        imageList.forEach((file) async {
-          var stream = file.readAsBytes().asStream();
-          var length = file.lengthSync();
+    if (imageList.length > 0) {
+      imageList.forEach((file) async {
+        var stream = file.readAsBytes().asStream();
+        var length = file.lengthSync();
 
-          var multipartFile = new http.MultipartFile('file[]', stream, length,
-              filename: 'image.jpg', contentType: MediaType('image', 'jpeg'));
+        var multipartFile = new http.MultipartFile('file[]', stream, length,
+            filename: 'image.jpg', contentType: MediaType('image', 'jpeg'));
 
-          request.files.add(multipartFile);
-        });
-      }
+        request.files.add(multipartFile);
+      });
     }
     data.forEach((key, value) {
       request.fields[key] = value;
     });
     request.headers.addAll(_setHeadersMulti());
 
+
     http.Response response =
-        await http.Response.fromStream(await request.send());
+    await http.Response.fromStream(await request.send());
+    hasErrorMessage(response, calledAt);
     return response;
   }
 
-  static getData(apiUrl) async {
+  static Future<http.Response> getData(apiUrl, String calledAt) async {
     var fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
     await _getToken();
-    return await http.get(url, headers: _setHeaders());
+    http.Response response = await http.get(url, headers: _setHeaders());
+    hasErrorMessage(response, calledAt);
+    return response;
+
   }
 
-  static getWithoutToken(apiUrl) async {
+  static Future<http.Response> getWithoutToken(apiUrl, String calledAt) async {
     String fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    return await http.get(url, headers: _setHeadersWithoutToken());
+    http.Response response = await http.get(url, headers: _setHeadersWithoutToken());
+    hasErrorMessage(response, calledAt);
+    return response;
   }
 
-  static deleteData(apiUrl) async {
+  static Future<http.Response> deleteData(apiUrl, String calledAt) async {
     var fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
     await _getToken();
-
-    return await http.delete(url, headers: _setHeaders());
+    http.Response response = await http.delete(url, headers: _setHeaders());
+    hasErrorMessage(response, calledAt);
+    return response;
   }
 
   static _setHeadersWithoutToken() => {
@@ -155,6 +175,7 @@ class Network {
   }
 
   static void hasErrorMessage(http.Response response, String causedAt) {
+    print(response.body);
     if (response.statusCode != 200) {
       if (response.statusCode == 404) {
         throw InvalidUrlException(response.body, causedAt);
@@ -165,31 +186,24 @@ class Network {
       print(response.body);
       throw UnExpectedException(response.body, causedAt, response.statusCode);
     }
-    Map<String, dynamic> body = jsonDecode(response.body);
-    if (body.containsKey('message')) {
+    dynamic body = jsonDecode(response.body);
+    if (body is Map && body.containsKey('message')) {
       if (body.containsKey('exception_code')) {
         switch (body['exception_code']) {
           case 'record-not-found':
             throw RecordNotFoundException(body['message']);
-            break;
           case 'unauthorized':
             throw UnauthorizedException(body['message']);
-            break;
           case 'user-not-found':
             throw UserNotFoundException(body['message']);
-            break;
           case 'invalid-token':
             throw InvalidTokenException(body['message']);
-            break;
           case 'create-record-failed':
             throw CreateRecordFailedException(body['message']);
-            break;
           case 'firebase-not-found':
             throw FirebaseNotFoundException(body['message']);
-            break;
           case 'access-denied':
             throw AccessDeniedException(body['message']);
-            break;
         }
       }
     }

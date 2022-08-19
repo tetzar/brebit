@@ -1,26 +1,27 @@
-import '../../../../model/category.dart';
-import '../../../../model/habit_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../../model/category.dart';
+import '../../../../model/habit_log.dart';
+
 class LogCard extends StatelessWidget {
+  final HabitLog? log;
 
-  final HabitLog log;
-
-  LogCard({@required this.log});
+  LogCard({required this.log});
 
   @override
   Widget build(BuildContext context) {
+    HabitLog? log = this.log;
     if (log != null) {
       Map<String, dynamic> body = log.getBody();
       String logCardBody = '';
-      LogStyle style;
-      switch(HabitLog.getStateFromStateId(log.state)) {
+      LogStyle? style;
+      switch (HabitLog.getStateFromStateId(log.state)) {
         case HabitLogStateName.strategyChanged:
           style = LogStyle.strategyUpdated;
           logCardBody = 'マイルールを変更しました';
           break;
-        case HabitLogStateName.aimdateOvercame:
+        case HabitLogStateName.aimDateOvercame:
           style = LogStyle.achieved;
           if (body.containsKey('aim_date')) {
             logCardBody = '${body['aim_date']}日';
@@ -34,11 +35,12 @@ class LogCard extends StatelessWidget {
           style = null;
           break;
       }
-      return LogCardTile(logStyle: style, categoryName: log.category.name, body: logCardBody);
+      return LogCardTile(
+          logStyle: style, categoryName: log.category.name, body: logCardBody);
     }
     return Container(
       width: 0,
-        height: 0,
+      height: 0,
     );
   }
 }
@@ -64,22 +66,22 @@ Map<CategoryName, String> categoryNameList = {
 };
 
 class LogCardTile extends StatelessWidget {
-  final LogStyle logStyle;
+  final LogStyle? logStyle;
   final CategoryName categoryName;
   final String body;
 
   LogCardTile(
-      {@required this.logStyle, @required this.categoryName, @required this.body});
+      {required this.logStyle, required this.categoryName, required this.body});
 
   @override
   Widget build(BuildContext context) {
-    Widget icon;
+    Widget? icon;
     if (iconName.containsKey(logStyle)) {
       icon = SvgPicture.asset(
-        iconName[logStyle],
+        iconName[logStyle]!,
         width: 14,
         height: 14,
-        color: Theme.of(context).accentColor,
+        color: Theme.of(context).colorScheme.secondary,
       );
     }
 
@@ -88,44 +90,36 @@ class LogCardTile extends StatelessWidget {
       rowChildren.add(icon);
     }
 
-    rowChildren.add(
-      Expanded(
-        child: Container(
-          margin: EdgeInsets.only(left: 6),
-          child: Text(
-            body,
-            style: Theme.of(context).textTheme.bodyText1,
-          ),
+    rowChildren.add(Expanded(
+      child: Container(
+        margin: EdgeInsets.only(left: 6),
+        child: Text(
+          body,
+          style: Theme.of(context).textTheme.bodyText1,
         ),
-      )
-    );
+      ),
+    ));
 
     String _categoryName = '';
     if (categoryNameList.containsKey(categoryName)) {
-      _categoryName = categoryNameList[categoryName];
+      _categoryName = categoryNameList[categoryName]!;
     }
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: Theme
-              .of(context)
-              .primaryColorLight
-      ),
+          color: Theme.of(context).primaryColorLight),
       padding: EdgeInsets.all(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             _categoryName,
-            style: Theme
-                .of(context)
+            style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(
-                fontWeight: FontWeight.w700
-            ),
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 8),
           Row(

@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/view/timeline/post.dart';
 import 'package:brebit/view/widgets/dialog.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../library/cache.dart';
@@ -18,14 +16,16 @@ import '../../timeline/posts.dart';
 import '../others-profile.dart';
 import 'post-card-body/basic.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final Post post;
   final int index;
 
-  PostCard({@required this.post, @required this.index});
+  PostCard({required this.post, required this.index});
 
-  void redirectToProfile(BuildContext ctx, AuthUser user) {
-    if (ctx.read(authProvider.state).user.id == user.id) {
+  void redirectToProfile(WidgetRef ref, AuthUser user) {
+    AuthUser? thisUser = ref.read(authProvider.notifier).user;
+    if (thisUser == null) return;
+    if (thisUser.id == user.id) {
       Home.pushNamed('/profile');
     } else {
       Home.push(
@@ -34,7 +34,7 @@ class PostCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     bool isMine = post.isMine();
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -49,15 +49,18 @@ class PostCard extends StatelessWidget {
               width: 56,
               child: RawMaterialButton(
                 onPressed: () {
-                  redirectToProfile(context, post.user);
+                  redirectToProfile(ref, post.user);
                 },
                 child: Center(
                   child: CircleAvatar(
                     child: ClipOval(
                       child: isMine
-                          ? HookBuilder(builder: (context) {
-                              AuthUser _user =
-                                  useProvider(authProvider.state).user;
+                          ? Consumer(builder: (context, ref, child) {
+                              ref.watch(authProvider);
+                              AuthUser? _user =
+                                  ref.read(authProvider.notifier).user;
+                              if (_user == null)
+                                return AuthUser.getDefaultImage();
                               return _user.getImageWidget();
                             })
                           : post.user.getImageWidget(),
@@ -82,11 +85,44 @@ class PostCard extends StatelessWidget {
                           Expanded(
                             child: Container(
                               child: isMine
-                                  ? HookBuilder(
-                                      builder: (BuildContext context) {
-                                        AuthUser user =
-                                            useProvider(authProvider.state)
-                                                .user;
+                                  ? Consumer(
+                                      builder: (context, ref, child) {
+                                        AuthUser? user = ref
+                                            .watch(authProvider.notifier)
+                                            .user;
+                                        if (user == null) {
+                                          return RichText(
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                            text: TextSpan(
+                                                style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        ?.color,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 15),
+                                                children: <InlineSpan>[
+                                                  TextSpan(
+                                                    text: post.user.name,
+                                                  ),
+                                                  TextSpan(
+                                                      text:
+                                                          " @${post.user.customId}"
+                                                              .replaceAll("",
+                                                                  "\u{200B}"),
+                                                      style: TextStyle(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .subtitle1
+                                                                  ?.color,
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          fontSize: 15))
+                                                ]),
+                                          );
+                                        }
                                         return RichText(
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -95,7 +131,7 @@ class PostCard extends StatelessWidget {
                                                   color: Theme.of(context)
                                                       .textTheme
                                                       .bodyText1
-                                                      .color,
+                                                      ?.color,
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: 15),
                                               children: <InlineSpan>[
@@ -110,7 +146,7 @@ class PostCard extends StatelessWidget {
                                                         color: Theme.of(context)
                                                             .textTheme
                                                             .subtitle1
-                                                            .color,
+                                                            ?.color,
                                                         fontWeight:
                                                             FontWeight.w400,
                                                         fontSize: 15))
@@ -126,7 +162,7 @@ class PostCard extends StatelessWidget {
                                               color: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1
-                                                  .color,
+                                                  ?.color,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 15),
                                           children: <InlineSpan>[
@@ -140,7 +176,7 @@ class PostCard extends StatelessWidget {
                                                     color: Theme.of(context)
                                                         .textTheme
                                                         .subtitle1
-                                                        .color,
+                                                        ?.color,
                                                     fontWeight: FontWeight.w400,
                                                     fontSize: 15))
                                           ]),
@@ -155,7 +191,7 @@ class PostCard extends StatelessWidget {
                                   color: Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .color,
+                                      ?.color,
                                   fontWeight: FontWeight.w400,
                                   fontSize: 15),
                             ),
@@ -191,34 +227,38 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class LikeButton extends StatefulWidget {
+class LikeButton extends ConsumerStatefulWidget {
   final Post post;
 
-  LikeButton({@required this.post});
+  LikeButton({required this.post});
 
   @override
   _LikeButtonState createState() => _LikeButtonState(post: post);
 }
 
-class _LikeButtonState extends State<LikeButton> {
+class _LikeButtonState extends ConsumerState<LikeButton> {
   Post post;
-  bool _isLiked;
-  Timer _timer;
-  int favCount;
+  late bool _isLiked;
+  Timer? _timer;
+  late int favCount;
 
-  _LikeButtonState({@required this.post});
+  _LikeButtonState({required this.post});
 
   @override
   void didUpdateWidget(covariant LikeButton oldWidget) {
     this.post = widget.post;
+    this._isLiked = this.post.isLiked();
+    ref.read(postProvider(post.id).notifier).setPost(post);
+    print('updated');
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void initState() {
     this._isLiked = this.post.isLiked();
-    context.read(postProvider(post.id)).setPost(post);
-    favCount = context.read(postProvider(post.id).state).post.getFavCount();
+    ref.read(postProvider(post.id).notifier).setPost(post);
+    favCount = ref.read(postProvider(post.id).notifier).post?.getFavCount() ??
+        favCount;
     super.initState();
   }
 
@@ -236,9 +276,9 @@ class _LikeButtonState extends State<LikeButton> {
                 icon: Icon(
                   this._isLiked ? Icons.favorite : Icons.favorite_outline,
                   color: this._isLiked
-                      ? _theme.accentIconTheme.color
-                      : _theme.textTheme.bodyText1.color,
-                  size: _theme.accentIconTheme.size,
+                      ? _theme.iconTheme.color
+                      : _theme.textTheme.bodyText1?.color,
+                  size: _theme.iconTheme.size,
                 ),
                 onPressed: () async {
                   setState(() {
@@ -259,29 +299,29 @@ class _LikeButtonState extends State<LikeButton> {
                         await post.unlike();
                       }
                       setState(() {
-                        _isLiked = context
-                            .read(postProvider(post.id).state)
-                            .post
-                            .isLiked();
-                        favCount = context
-                            .read(postProvider(post.id).state)
-                            .post
-                            .getFavCount();
+                        Post? _post =
+                            ref.read(postProvider(post.id).notifier).post;
+                        if (_post != null) {
+                          _isLiked = _post.isLiked();
+                          favCount = _post.getFavCount();
+                        }
                       });
                     } on RecordNotFoundException {
-                      removePostFromAllProvider(post, context);
+                      removePostFromAllProvider(post, ref);
                     } catch (e) {
                       MyErrorDialog.show(e);
                     }
-                    context.read(postProvider(post.id)).setPostNotify(post);
+                    ref
+                        .read(postProvider(post.id).notifier)
+                        .setPostNotify(post);
                     await LocalManager.updateProfilePost(
-                        await context.read(authProvider).getUser(), post);
+                        await ref.read(authProvider.notifier).getUser(), post);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
+                        await ref.read(authProvider.notifier).getUser(),
                         post,
                         friendProviderName);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
+                        await ref.read(authProvider.notifier).getUser(),
                         post,
                         challengeProviderName);
                   });
@@ -293,8 +333,8 @@ class _LikeButtonState extends State<LikeButton> {
               favCount.toString(),
               style: TextStyle(
                 color: _isLiked
-                    ? _theme.accentIconTheme.color
-                    : _theme.textTheme.bodyText1.color,
+                    ? _theme.iconTheme.color
+                    : _theme.textTheme.bodyText1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -309,7 +349,7 @@ class _LikeButtonState extends State<LikeButton> {
 class CommentButton extends StatefulWidget {
   final Post post;
 
-  CommentButton({@required this.post});
+  CommentButton({required this.post});
 
   @override
   _CommentButtonState createState() => _CommentButtonState(post: post);
@@ -318,7 +358,7 @@ class CommentButton extends StatefulWidget {
 class _CommentButtonState extends State<CommentButton> {
   Post post;
 
-  _CommentButtonState({@required this.post});
+  _CommentButtonState({required this.post});
 
   @override
   void didUpdateWidget(covariant CommentButton oldWidget) {
@@ -337,8 +377,8 @@ class _CommentButtonState extends State<CommentButton> {
             width: 18,
             child: Icon(
               Icons.mode_comment_outlined,
-              color: _theme.textTheme.bodyText1.color,
-              size: _theme.accentIconTheme.size,
+              color: _theme.textTheme.bodyText1?.color,
+              size: _theme.iconTheme.size,
             ),
           ),
           Container(
@@ -346,7 +386,7 @@ class _CommentButtonState extends State<CommentButton> {
             child: Text(
               post.getCommentCount().toString(),
               style: TextStyle(
-                color: _theme.textTheme.bodyText1.color,
+                color: _theme.textTheme.bodyText1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),

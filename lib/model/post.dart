@@ -8,23 +8,21 @@ import 'favorite.dart';
 import 'model.dart';
 import 'user.dart';
 
-// ignore: non_constant_identifier_names
-List<Post> PostFromJson(List<dynamic> jsonList) =>
-    List<Post>.from(jsonList.cast<Map>().map((x) => Post.fromJson(x)));
+List<Post> postFromJson(List<dynamic> jsonList) => List<Post>.from(
+    jsonList.cast<Map<String, dynamic>>().map((x) => Post.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> PostToJson(List<Post> data) =>
+List<Map> postToJson(List<Post> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 class Post extends Model {
-  static Map<int, Post> posts;
+  static Map<int, Post> posts = {};
 
   int id;
   AuthUser user;
   Map<String, dynamic> body;
   List<Comment> comments;
   List<S3Image> images;
-  List<Favorite> favorites;
+  List<Favorite>? favorites;
   int favoriteCount;
   int public;
   DateTime createdAt;
@@ -32,24 +30,21 @@ class Post extends Model {
   bool hide;
 
   Post({
-    this.id,
-    this.user,
-    this.comments,
-    this.body,
-    this.public,
-    this.images,
-    this.hide,
-    this.favoriteCount,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.user,
+    required this.comments,
+    required this.body,
+    required this.public,
+    required this.images,
+    required this.hide,
+    required this.favoriteCount,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   static Post setPost(Post post) {
-    if (posts == null) {
-      posts = <int, Post>{};
-    }
     posts[post.id] = post;
-    return posts[post.id];
+    return posts[post.id]!;
   }
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -63,7 +58,7 @@ class Post extends Model {
         user: AuthUser.fromJson(json["user"]),
         body:
             (json['body'] is List) ? new Map<String, dynamic>() : json['body'],
-        comments: CommentFromJson(json['comments']),
+        comments: commentFromJson(json['comments']),
         public: json["public"],
         hide: json["hide"],
         favoriteCount: json['favorite_count'],
@@ -77,7 +72,7 @@ class Post extends Model {
         user: AuthUser.find(json["user_id"]),
         body:
             (json['body'] is List) ? new Map<String, dynamic>() : json['body'],
-        comments: CommentFromJson(json['comments']),
+        comments: commentFromJson(json['comments']),
         public: json["public"],
         hide: json["hide"],
         favoriteCount: json['favorite_count'],
@@ -98,7 +93,7 @@ class Post extends Model {
         "body": body,
         "public": public,
         "hide": hide,
-        "comments": CommentToJson(comments),
+        "comments": commentToJson(comments),
         'favorite_count': favoriteCount,
         "image_urls": s3ImageToUrls(),
       };
@@ -109,7 +104,6 @@ class Post extends Model {
   }
 
   List<String> s3ImageToUrls() {
-    if (images == null) return [];
     return images.map((image) => image.url).toList();
   }
 
@@ -123,7 +117,6 @@ class Post extends Model {
 
   Future<bool> addComment(String commentBody) async {
     Post post = await PostApi.addCommentToPost(this.id, commentBody);
-    if (post == null) return false;
     post.comments.forEach((comment) {
       comment.parent = this;
       List<Comment> existing = this.comments.where((com) {
@@ -143,7 +136,7 @@ class Post extends Model {
     return true;
   }
 
-  static List<S3Image> urlToS3Image(List<String> urls) {
+  static List<S3Image> urlToS3Image(List<String>? urls) {
     if (urls == null) return [];
     List<S3Image> images = [];
     for (String url in urls) {
@@ -152,10 +145,9 @@ class Post extends Model {
     return images;
   }
 
-  Future<bool> deleteComment(Comment comment) async {
-    bool res = await PostApi.deleteComment(comment.id);
-    if (res) removeComment(comment);
-    return res;
+  Future<void> deleteComment(Comment comment) async {
+    await PostApi.deleteComment(comment.id);
+    removeComment(comment);
   }
 
   void removeComment(Comment comment) {
@@ -169,17 +161,18 @@ class Post extends Model {
   //---------------------------------
 
   bool isLiked() {
-    AuthUser selfUser = AuthUser.selfUser;
+    AuthUser? selfUser = AuthUser.selfUser;
+    if (selfUser == null) return false;
     return selfUser.likedPostIds.contains(this.id);
   }
 
   Future<int> like() async {
-    if (!this.isLiked()) {
-      if (!AuthUser.selfUser.likedPostIds.contains(this.id)) {
-        AuthUser.selfUser.likedPostIds.add(this.id);
+    AuthUser? selfUser = AuthUser.selfUser;
+    if (!this.isLiked() && selfUser != null) {
+      if (!selfUser.likedPostIds.contains(this.id)) {
+        selfUser.likedPostIds.add(this.id);
       }
       int favCount = await PostApi.likeToPost(this.id);
-      if (favCount == null) return this.favoriteCount;
       this.favoriteCount = favCount;
       return favCount;
     }
@@ -187,15 +180,14 @@ class Post extends Model {
   }
 
   Future<int> unlike() async {
-    if (this.isLiked()) {
+    AuthUser? selfUser = AuthUser.selfUser;
+    if (this.isLiked() && selfUser != null) {
       int result = await PostApi.unlikeFromPost(this.id);
-      if (result != null) {
-        this.favoriteCount = result;
-        if (AuthUser.selfUser.likedPostIds.contains(this.id)) {
-          AuthUser.selfUser.likedPostIds.remove(this.id);
-        }
-        return result;
+      this.favoriteCount = result;
+      if (selfUser.likedPostIds.contains(this.id)) {
+        selfUser.likedPostIds.remove(this.id);
       }
+      return result;
     }
     return this.favoriteCount;
   }
@@ -205,12 +197,12 @@ class Post extends Model {
   }
 
   bool isMine() {
-    int selfUserId = AuthUser.selfUser.id;
+    int selfUserId = AuthUser.selfUser?.id ?? 0;
     return this.user.id == selfUserId;
   }
 
-  Future<bool> delete() async {
-    return await PostApi.deletePost(this);
+  Future<void> delete() async {
+    await PostApi.deletePost(this);
   }
 
   void setParentToComments() {
@@ -256,7 +248,6 @@ class Post extends Model {
   //---------------------------------
 
   static List<Post> sortByCreatedAt(List<Post> posts, [bool desc = true]) {
-    if (posts == null) return [];
     if (desc) {
       posts.sort((a, b) {
         return a.createdAt.isAfter(b.createdAt) ? -1 : 1;

@@ -1,4 +1,3 @@
-
 import 'package:brebit/library/data-set.dart';
 import 'package:brebit/model/strategy.dart';
 import 'package:brebit/model/user.dart';
@@ -8,12 +7,10 @@ import 'category.dart';
 import 'habit_log.dart';
 import 'model.dart';
 
-// ignore: non_constant_identifier_names
-List<Habit> HabitFromJson(List<dynamic> decodedList) =>
-    List<Habit>.from(decodedList.cast<Map>().map((x) => Habit.fromJson(x)));
+List<Habit> habitFromJson(List<dynamic> decodedList) =>
+    List<Habit>.from(decodedList.cast<Map<String, dynamic>>().map((x) => Habit.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> HabitToJson(List<Habit> data) =>
+List<Map> habitToJson(List<Habit> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 class Habit extends Model {
@@ -25,8 +22,8 @@ class Habit extends Model {
     HabitLogStateName.strategyChanged: 'strategy_changed',
     HabitLogStateName.activate: 'activate',
     HabitLogStateName.inactivate: 'inactivate',
-    HabitLogStateName.aimdateUpdated: 'aimdateUpdated',
-    HabitLogStateName.aimdateOvercame: 'aimdateOvercame',
+    HabitLogStateName.aimDateUpdated: 'aimDateUpdated',
+    HabitLogStateName.aimDateOvercame: 'aimDateOvercame',
     HabitLogStateName.did: 'did',
     HabitLogStateName.wannaDo: 'wannaDo',
   };
@@ -37,13 +34,13 @@ class Habit extends Model {
   List<HabitLog> habitLogs;
   List<Strategy> strategies;
   List<Analysis> analyses;
-  DateTime aimDate;
+  DateTime? aimDate;
   int state;
   int step;
   int limit;
   DateTime createdAt;
   DateTime updatedAt;
-  DateTime softDeletedAt;
+  DateTime? softDeletedAt;
 
   static List<int> days = [
     1,
@@ -57,18 +54,18 @@ class Habit extends Model {
   ];
 
   Habit({
-    this.id,
-    this.user,
-    this.category,
-    this.habitLogs,
-    this.strategies,
-    this.analyses,
-    this.state,
-    this.step,
-    this.limit,
+    required this.id,
+    required this.user,
+    required this.category,
+    required this.habitLogs,
+    required this.strategies,
+    required this.analyses,
+    required this.state,
+    required this.step,
+    required this.limit,
     this.aimDate,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
     this.softDeletedAt,
   });
 
@@ -90,14 +87,14 @@ class Habit extends Model {
           user: AuthUser.fromJson(json["user"]),
           category: Category.fromJson(json["category"]),
           habitLogs: json["habit_logs"].length > 0 && json['habit_logs'] != '[]'
-              ? HabitLogFromJson(json["habit_logs"])
+              ? habitLogFromJson(json["habit_logs"])
               : <HabitLog>[],
           strategies:
               json["strategies"].length > 0 && json['strategies'] != '[]'
-                  ? StrategyFromJson(json['strategies'])
+                  ? strategyFromJson(json['strategies'])
                   : <Strategy>[],
           analyses: json["analyses"].length > 0 && json['analyses'] != '[]'
-              ? AnalysisFromJson(json['analyses'])
+              ? analysisFromJson(json['analyses'])
               : <Analysis>[],
           aimDate: (json["aim_date"] != null)
               ? DateTime.parse(json["aim_date"])
@@ -117,14 +114,14 @@ class Habit extends Model {
           user: AuthUser.find(json["user_id"]),
           category: Category.find(json["category_id"]),
           habitLogs: json["habit_logs"].length > 0 && json['habit_logs'] != '[]'
-              ? HabitLogFromJson(json["habit_logs"])
+              ? habitLogFromJson(json["habit_logs"])
               : <HabitLog>[],
           strategies:
               json["strategy_ids"].length > 0 && json['strategy_ids'] != '[]'
                   ? Strategy.findAll(json['strategy_ids'])
                   : <Strategy>[],
           analyses: json["analyses"].length > 0 && json['analyses'] != '[]'
-              ? AnalysisFromJson(json['analyses'])
+              ? analysisFromJson(json['analyses'])
               : <Analysis>[],
           aimDate: (json["aim_date"] != null)
               ? DateTime.parse(json["aim_date"])
@@ -152,14 +149,14 @@ class Habit extends Model {
             category: Category.fromJson(json["category"]),
             habitLogs:
                 json["habit_logs"].length > 0 && json['habit_logs'] != '[]'
-                    ? HabitLogFromJson(json["habit_logs"])
+                    ? habitLogFromJson(json["habit_logs"])
                     : <HabitLog>[],
             strategies:
                 json["strategies"].length > 0 && json['strategies'] != '[]'
-                    ? StrategyFromJson(json['strategies'])
+                    ? strategyFromJson(json['strategies'])
                     : <Strategy>[],
             analyses: json["analyses"].length > 0 && json['analyses'] != '[]'
-                ? AnalysisFromJson(json['analyses'])
+                ? analysisFromJson(json['analyses'])
                 : <Analysis>[],
             aimDate: (json["aim_date"] != null)
                 ? DateTime.parse(json["aim_date"])
@@ -180,14 +177,14 @@ class Habit extends Model {
             category: Category.find(json["category_id"]),
             habitLogs:
                 json["habit_logs"].length > 0 && json['habit_logs'] != '[]'
-                    ? HabitLogFromJson(json["habit_logs"])
+                    ? habitLogFromJson(json["habit_logs"])
                     : <HabitLog>[],
             strategies:
                 json["strategy_ids"].length > 0 && json['strategy_ids'] != '[]'
                     ? Strategy.findAll(json['strategy_ids'])
                     : <Strategy>[],
             analyses: json["analyses"].length > 0 && json['analyses'] != '[]'
-                ? AnalysisFromJson(json['analyses'])
+                ? analysisFromJson(json['analyses'])
                 : <Analysis>[],
             aimDate: (json["aim_date"] != null)
                 ? DateTime.parse(json["aim_date"])
@@ -214,24 +211,24 @@ class Habit extends Model {
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
         "soft_deleted_at":
-            softDeletedAt == null ? null : softDeletedAt.toIso8601String(),
+            softDeletedAt?.toIso8601String(),
         "id": id,
         "category": category.toJson(),
         "user": user.toJson(),
         "state": state,
         "step": step,
         "limit": limit,
-        "aim_date": aimDate == null ? null : aimDate.toIso8601String(),
+        "aim_date": aimDate?.toIso8601String(),
         "habit_logs":
-            habitLogs.length > 0 ? HabitLogToJson(habitLogs) : <HabitLog>[],
+            habitLogs.length > 0 ? habitLogToJson(habitLogs) : <HabitLog>[],
         "strategies": strategies.length > 0
-            ? StrategyToJson(this.strategies)
+            ? strategyToJson(this.strategies)
             : <Strategy>[],
         "analyses":
-            analyses.length > 0 ? AnalysisToJson(this.analyses) : <Analysis>[],
+            analyses.length > 0 ? analysisToJson(this.analyses) : <Analysis>[],
       };
 
-  static Habit find(int habitId) {
+  static Habit? find(int habitId) {
     int habitIndex = Habit.habitList.indexWhere((habit) => habit.id == habitId);
     if (habitIndex < 0) {
       return null;
@@ -257,11 +254,9 @@ class Habit extends Model {
   //---------------------------------
 
   bool hasStarted() {
-    this.habitLogs.forEach((log) {
-      if (log.isState('started')) {
-        return true;
-      }
-    });
+    for (HabitLog log in habitLogs) {
+      if (log.isState('started')) return true;
+    }
     return false;
   }
 
@@ -283,7 +278,7 @@ class Habit extends Model {
     return logs;
   }
 
-  HabitLog getLatestLogIn(List<HabitLogStateName> stateList) {
+  HabitLog? getLatestLogIn(List<HabitLogStateName> stateList) {
     List<HabitLog> logs = this.logSort();
     for (HabitLog log in logs) {
       if (stateList.contains(log.getState())) {
@@ -326,8 +321,12 @@ class Habit extends Model {
         if (time.isAfter(today)) {
           _inactiveList.add(_t);
         } else {
-          HabitLog _log =
-              logs.reversed.firstWhere((log) => log.createdAt.isBefore(time));
+          HabitLog? _log;
+          try {
+            _log = logs.reversed.firstWhere((log) => log.createdAt.isBefore(time));
+          } on StateError {
+            _log = null;
+          }
           if (_log != null) {
             switch (_log.getState()) {
               case HabitLogStateName.inactivate:
@@ -347,8 +346,8 @@ class Habit extends Model {
     return _inactiveList;
   }
 
-  DateTime getStartTime() {
-    HabitLog _log = this.getLatestLogIn([HabitLogStateName.started]);
+  DateTime? getStartTime() {
+    HabitLog? _log = this.getLatestLogIn([HabitLogStateName.started]);
     if (_log != null) {
       return _log.createdAt;
     }
@@ -362,24 +361,24 @@ class Habit extends Model {
   Duration getStartToAimDate() {
     List<HabitLogStateName> startList = [
       HabitLogStateName.started,
-      HabitLogStateName.aimdateUpdated,
+      HabitLogStateName.aimDateUpdated,
       HabitLogStateName.activate,
     ];
-    HabitLog startLog = getLatestLogIn(startList);
-    if (startLog == null) {
+    HabitLog? startLog = getLatestLogIn(startList);
+    if (startLog == null || this.aimDate == null) {
       return Duration.zero;
     }
-    Duration diff = this.aimDate.difference(startLog.createdAt);
+    Duration diff = this.aimDate!.difference(startLog.createdAt);
     return diff;
   }
 
   Duration getStartToNow() {
     List<HabitLogStateName> startList = [
       HabitLogStateName.started,
-      HabitLogStateName.aimdateUpdated,
+      HabitLogStateName.aimDateUpdated,
       HabitLogStateName.activate,
     ];
-    HabitLog startLog = getLatestLogIn(startList);
+    HabitLog? startLog = getLatestLogIn(startList);
     if (startLog == null) {
       return Duration.zero;
     }
@@ -395,7 +394,7 @@ class Habit extends Model {
   //  strategy
   //---------------------------------
   bool isUsingStrategy(Strategy strategy) {
-    if (strategies == null) {}
+    if (strategy.id == null) return false;
     if (strategies.length > 0) {
       int index = this
           .strategies
@@ -409,9 +408,6 @@ class Habit extends Model {
   //  analysis
   //---------------------------------
   bool isUsingAnalysis(Analysis analysis) {
-    if (analyses == null) {
-      return false;
-    }
     if (analyses.length > 0) {
       int index = this
           .analyses

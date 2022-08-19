@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -16,30 +17,31 @@ import '../../widgets/strategy-card.dart';
 import '../../widgets/text-field.dart';
 import '../did/check_strategy.dart';
 
-CheckedValue checkedValue;
+late CheckedValue checkedValue;
 
 final buttonTextProvider =
-    StateNotifierProvider.autoDispose((ref) => ButtonTextProvider(''));
+    StateNotifierProvider.autoDispose((ref) => ButtonTextProvider(false));
 
-class ButtonTextProvider extends StateNotifier<String> {
-  ButtonTextProvider(String state) : super(state);
+class ButtonTextProvider extends StateNotifier<bool> {
+  ButtonTextProvider(bool state) : super(state);
 
   void notify() {
-    state = '';
+    state = !state;
   }
 }
 
-class CheckStrategyEndured extends StatelessWidget {
+class CheckStrategyEndured extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     checkedValue = new CheckedValue();
-    Habit habit = context.read(homeProvider.state).habit;
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
     List<Widget> strategyCards = <Widget>[];
     habit.strategies.forEach((strategy) {
       strategyCards.add(StrategyCard(
         strategy: strategy,
         onSelect: () {
-          return strategyCheck(strategy, context);
+          return strategyCheck(strategy, ref);
         },
         initialSelected: false,
       ));
@@ -60,11 +62,10 @@ class CheckStrategyEndured extends StatelessWidget {
           return true;
         },
         onTapped: () async {
-          await save(context);
+          await save(ref, habit);
         },
         child: Container(
           color: Theme.of(context).primaryColor,
-          height: double.infinity,
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -83,7 +84,7 @@ class CheckStrategyEndured extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Theme.of(context).textTheme.bodyText1.color),
+                        color: Theme.of(context).textTheme.bodyText1?.color),
                   ),
                 ),
               ),
@@ -104,28 +105,33 @@ class CheckStrategyEndured extends StatelessWidget {
     );
   }
 
-  bool strategyCheck(Strategy strategy, BuildContext _ctx) {
-    if (checkedValue.isChecked(strategy.id)) {
-      checkedValue.unsetChecked(strategy.id);
-      _ctx.read(buttonTextProvider).notify();
+  bool strategyCheck(Strategy strategy, WidgetRef _ref) {
+    int? strategyId = strategy.id;
+    if (strategyId == null) return false;
+    if (checkedValue.isChecked(strategyId)) {
+      checkedValue.unsetChecked(strategyId);
+      _ref.read(buttonTextProvider.notifier).notify();
       return false;
     } else {
-      checkedValue.setChecked(strategy.id);
-      _ctx.read(buttonTextProvider).notify();
+      checkedValue.setChecked(strategyId);
+      _ref.read(buttonTextProvider.notifier).notify();
       return true;
     }
   }
 
-  Future<void> save(BuildContext ctx) async {
+  Future<void> save(WidgetRef ref, Habit currentHabit) async {
     try {
       MyLoading.startLoading();
-      Habit habit = await HabitApi.endured(
-          checkedValue.checked,
-          ctx.read(conditionValueProvider.state).tags,
-          ctx.read(conditionValueProvider.state).mental,
-          ctx.read(conditionValueProvider.state).desire.toInt(),
-          ctx.read(homeProvider.state).habit);
-      ctx.read(homeProvider).setHabit(habit);
+      MentalValue? mentalValue = ref.read(conditionValueProvider.notifier).getMental();
+      if (mentalValue != null) {
+        Habit habit = await HabitApi.endured(
+            checkedValue.checked,
+            ref.read(conditionValueProvider.notifier).getTags(),
+            mentalValue,
+            ref.read(conditionValueProvider.notifier).getDesire().toInt(),
+            currentHabit);
+        ref.read(homeProvider.notifier).setHabit(habit);
+      }
       await MyLoading.dismiss();
       ApplicationRoutes.pushNamed('/endured/confirmation');
     } catch (e) {

@@ -51,18 +51,15 @@ class SendVerificationCodeScreenContent extends StatefulWidget {
 
 class _SendVerificationCodeScreenContentState
     extends State<SendVerificationCodeScreenContent> {
-  String email;
+  String? email;
 
   void initDynamicLinks() async {
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
+    FirebaseDynamicLinks.instance.onLink
+        .listen((PendingDynamicLinkData dynamicLink) async {
       Navigator.push(
           context,
           MaterialPageRoute(
               builder: (context) => EmailVerifyingScreen(dynamicLink)));
-    }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
     });
   }
 
@@ -71,7 +68,7 @@ class _SendVerificationCodeScreenContentState
     sendVerification();
     this.initDynamicLinks();
     try {
-      email = FirebaseAuth.instance.currentUser.email;
+      email = FirebaseAuth.instance.currentUser?.email;
       if (email == null) {
         ApplicationRoutes.pop();
       }
@@ -102,7 +99,7 @@ class _SendVerificationCodeScreenContentState
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             SizedBox(
               height: 24,
@@ -113,7 +110,7 @@ class _SendVerificationCodeScreenContentState
 届いたメールのリンクを開くと、
 登録が完了します。
             ''',
-              style: Theme.of(context).textTheme.bodyText1.copyWith(
+              style: Theme.of(context).textTheme.bodyText1?.copyWith(
                     fontSize: 17,
                   ),
               textAlign: TextAlign.center,
@@ -135,7 +132,7 @@ class _SendVerificationCodeScreenContentState
                     height: 34,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Text(
@@ -154,22 +151,25 @@ class _SendVerificationCodeScreenContentState
             ),
             InkWell(
               onTap: () async {
-                if (!FirebaseAuth.instance.currentUser.emailVerified) {
-                  try {
-                    await FirebaseAuth.instance.currentUser.delete();
-                  } on FirebaseAuthException {} catch (e) {
-                    MyErrorDialog.show(e, onConfirm: () {
-                      ApplicationRoutes.pop();
-                      ApplicationRoutes.pop();
-                    });
-                    return;
+                User? firebaseUser = FirebaseAuth.instance.currentUser;
+                try {
+                  if (firebaseUser == null)
+                    throw Exception('firebase user not found');
+                  if (!firebaseUser.emailVerified) {
+                    await firebaseUser.delete();
                   }
+                  Map<String, String>? registrationData =
+                  await LocalManager.getRegisterInformation(firebaseUser);
+                  Navigator.pushReplacementNamed(context, '/register',
+                      arguments: registrationData);
+                } on FirebaseAuthException {
+                } catch (e) {
+                  MyErrorDialog.show(e, onConfirm: () {
+                    ApplicationRoutes.pop();
+                    ApplicationRoutes.pop();
+                  });
+                  return;
                 }
-                Map<String, String> registrationData =
-                    await LocalManager.getRegisterInformation(
-                        FirebaseAuth.instance.currentUser);
-                Navigator.pushReplacementNamed(context, '/register',
-                    arguments: registrationData);
               },
               borderRadius: BorderRadius.circular(17),
               child: Row(
@@ -183,13 +183,14 @@ class _SendVerificationCodeScreenContentState
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor,
                       border: Border.all(
-                          color: Theme.of(context).accentColor, width: 1),
+                          color: Theme.of(context).colorScheme.secondary,
+                          width: 1),
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Text(
                       '登録内容を修正する',
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700),
                     ),
@@ -205,7 +206,7 @@ class _SendVerificationCodeScreenContentState
                 style: Theme.of(context)
                     .textTheme
                     .subtitle1
-                    .copyWith(fontSize: 12),
+                    ?.copyWith(fontSize: 12),
                 children: <TextSpan>[
                   TextSpan(
                     text: 'アカウントをお持ちの方は',
@@ -217,7 +218,7 @@ class _SendVerificationCodeScreenContentState
                           ApplicationRoutes.pushReplacementNamed('/login');
                         },
                       style: (TextStyle(
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                         decoration: TextDecoration.underline,
                       ))),
                 ],
@@ -232,7 +233,7 @@ class _SendVerificationCodeScreenContentState
   Future<void> sendVerification() async {
     try {
       MyLoading.startLoading();
-      User firebaseUser = FirebaseAuth.instance.currentUser;
+      User? firebaseUser = FirebaseAuth.instance.currentUser;
 
       if (firebaseUser != null && !firebaseUser.emailVerified) {
         var actionCodeSettings = ActionCodeSettings(
@@ -247,7 +248,8 @@ class _SendVerificationCodeScreenContentState
       }
       await MyLoading.dismiss();
       return;
-    } on FirebaseAuthException {} catch (e) {
+    } on FirebaseAuthException {
+    } catch (e) {
       await MyLoading.dismiss();
       MyErrorDialog.show(e);
       return;
@@ -256,7 +258,7 @@ class _SendVerificationCodeScreenContentState
   }
 }
 
-class EmailVerifyingScreen extends StatefulWidget {
+class EmailVerifyingScreen extends ConsumerStatefulWidget {
   final PendingDynamicLinkData dynamicLink;
 
   EmailVerifyingScreen(this.dynamicLink);
@@ -265,14 +267,14 @@ class EmailVerifyingScreen extends StatefulWidget {
   _EmailVerifyingScreenState createState() => _EmailVerifyingScreenState();
 }
 
-class _EmailVerifyingScreenState extends State<EmailVerifyingScreen>
+class _EmailVerifyingScreenState extends ConsumerState<EmailVerifyingScreen>
     with TickerProviderStateMixin {
-  AnimationController _loadingAnimationController;
-  Animation _loadingAnimation;
-  AnimationController _indicatorAnimationController;
-  Animation _indicatorAnimation;
+  late AnimationController _loadingAnimationController;
+  late Animation _loadingAnimation;
+  late AnimationController _indicatorAnimationController;
+  late Animation _indicatorAnimation;
 
-  bool complete;
+  bool complete = false;
 
   @override
   void initState() {
@@ -305,29 +307,31 @@ class _EmailVerifyingScreenState extends State<EmailVerifyingScreen>
         timerComplete = true;
       }
     });
-    final Uri deepLink = widget.dynamicLink?.link;
+    final Uri? deepLink = widget.dynamicLink.link;
     FirebaseAuth auth = FirebaseAuth.instance;
 
-    var actionCode = deepLink.queryParameters['oobCode'];
+    String? actionCode = deepLink?.queryParameters['oobCode'];
     try {
+      if (actionCode == null) throw Exception('cannot fetch oobCode');
       await auth.checkActionCode(actionCode);
       await auth.applyActionCode(actionCode);
 
       // If successful, reload the user:
-      await auth.currentUser.reload();
-      if (auth.currentUser.emailVerified) {
-        Map<String, String> registrationData =
-            await LocalManager.getRegisterInformation(
-                FirebaseAuth.instance.currentUser);
+      User? firebaseUser = auth.currentUser;
+      if (firebaseUser == null) throw Exception('firebase user not found');
+      await firebaseUser.reload();
+      if (firebaseUser.emailVerified) {
+        Map<String, String>? registrationData =
+            await LocalManager.getRegisterInformation(firebaseUser);
         if (registrationData == null) {
           Navigator.pushReplacementNamed(context, '/title');
           return;
         }
-        await context.read(authProvider).registerWithFirebase(
-            registrationData['nickName'],
-            registrationData['userName'],
-            auth.currentUser);
-        await MyApp.initialize(context);
+        await ref.read(authProvider.notifier).registerWithFirebase(
+            registrationData['nickName']!,
+            registrationData['userName']!,
+            firebaseUser);
+        await MyApp.initialize(ref);
         if (timerComplete) {
           loadComplete();
         } else {
@@ -352,7 +356,7 @@ class _EmailVerifyingScreenState extends State<EmailVerifyingScreen>
   }
 
   void startPageTransition() {
-    ApplicationRoutes.materialKey.currentState.pushReplacement(
+    ApplicationRoutes.pushReplacement(
       PageRouteBuilder(
         settings: RouteSettings(name: '/home'),
         pageBuilder: (context, animation1, animation2) =>
@@ -376,7 +380,7 @@ class _EmailVerifyingScreenState extends State<EmailVerifyingScreen>
         return false;
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).accentColor,
+        backgroundColor: Theme.of(context).colorScheme.secondary,
         body: Center(
           child: Stack(
             children: [

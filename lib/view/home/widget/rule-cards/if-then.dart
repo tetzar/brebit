@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class IfThenCard extends StatelessWidget {
 
   final Strategy strategy;
-  IfThenCard({@required this.strategy});
+  IfThenCard({required this.strategy});
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +53,13 @@ class IfThenCard extends StatelessWidget {
                     child: Text(
                         'If',
                       style: RuleCard.subjectTextStyle.copyWith(
-                        color: Theme.of(context).accentColor
+                        color: Theme.of(context).colorScheme.secondary
                       )
                     ),
                   ),
                 ),
                 Expanded(child: Text(ifBody, style: RuleCard.objectTextStyle.copyWith(
-                  color: Theme.of(context).textTheme.bodyText1.color
+                  color: Theme.of(context).textTheme.bodyText1?.color
                 ),))
               ],
             ),
@@ -83,13 +83,13 @@ class IfThenCard extends StatelessWidget {
                     child: Text(
                         'Then',
                         style: RuleCard.subjectTextStyle.copyWith(
-                            color: Theme.of(context).accentColor
+                            color: Theme.of(context).colorScheme.secondary
                         )
                     ),
                   ),
                 ),
                 Expanded(child: Text(thenBody, style: RuleCard.objectTextStyle.copyWith(
-                    color: Theme.of(context).textTheme.bodyText1.color
+                    color: Theme.of(context).textTheme.bodyText1?.color
                 ),))
               ],
             ),
@@ -102,7 +102,7 @@ class IfThenCard extends StatelessWidget {
 
 class LinePaint extends CustomPainter {
   BuildContext context;
-  LinePaint({@required this.context});
+  LinePaint({required this.context});
   @override
   void paint(Canvas canvas, Size size) {
     Paint line = new Paint()

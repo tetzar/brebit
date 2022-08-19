@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class Tags extends StatelessWidget {
 
   final List<TagCard> tags;
-  Tags({@required this.tags});
+  Tags({required this.tags});
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +29,14 @@ class Tags extends StatelessWidget {
 
 class SimpleTagCard extends TagCard {
 
-  final Function onCancel;
+  final Function? onCancel;
   final String name;
 
-  SimpleTagCard({@required this.onCancel, @required this.name});
+  SimpleTagCard({this.onCancel, required this.name});
 
   @override
   Widget getChild() {
+    Function? onCancel = this.onCancel;
     if (onCancel == null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -79,8 +80,8 @@ class SimpleTagCard extends TagCard {
 
 class AddTagCard extends TagCard {
 
-  final Function onTap;
-  AddTagCard({@required this.onTap});
+  final void Function() onTap;
+  AddTagCard({required this.onTap});
 
   @override
   Widget getChild() {

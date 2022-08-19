@@ -12,16 +12,16 @@ import 'cache.dart';
 
 class ReceivedNotification {
   ReceivedNotification({
-    @required this.id,
-    @required this.title,
-    @required this.body,
-    @required this.payload,
+    required this.id,
+    this.title,
+    this.body,
+    this.payload,
   });
 
   final int id;
-  final String title;
-  final String body;
-  final String payload;
+  final String? title;
+  final String? body;
+  final String? payload;
 }
 
 class MyNotification{
@@ -35,9 +35,9 @@ class MyNotification{
   static final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
 
-  static NotificationAppLaunchDetails notificationAppLaunchDetails;
+  static late NotificationAppLaunchDetails? notificationAppLaunchDetails;
 
-  static AndroidInitializationSettings initializationSettingsAndroid;
+  static late AndroidInitializationSettings initializationSettingsAndroid;
 
   static final BehaviorSubject<ReceivedNotification> didReceiveLocalNotificationSubject =
   BehaviorSubject<ReceivedNotification>();
@@ -57,7 +57,7 @@ class MyNotification{
         requestBadgePermission: false,
         requestSoundPermission: false,
         onDidReceiveLocalNotification:
-            (int id, String title, String body, String payload) async {
+            (int id, String? title, String? body, String? payload) {
           print(payload);
           didReceiveLocalNotificationSubject.add(ReceivedNotification(
               id: id, title: title, body: body, payload: payload));
@@ -66,11 +66,11 @@ class MyNotification{
         android: initializationSettingsAndroid,
         iOS: initializationSettingsIOS,);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onSelectNotification: (String payload) async {
+        onSelectNotification: (String? payload) {
           if (payload != null) {
             debugPrint('notification payload: $payload');
+            selectNotificationSubject.add(payload);
           }
-          selectNotificationSubject.add(payload);
         });
 
     _requestPermissions();
@@ -79,7 +79,7 @@ class MyNotification{
   }
 
   static dispose() {
-    didReceiveLocalNotificationSubject?.close();
+    didReceiveLocalNotificationSubject.close();
   }
 
   static void _requestPermissions() {
@@ -109,10 +109,10 @@ class MyNotification{
         context: context,
         builder: (BuildContext context) => CupertinoAlertDialog(
           title: receivedNotification.title != null
-              ? Text(receivedNotification.title)
+              ? Text(receivedNotification.title!)
               : null,
           content: receivedNotification.body != null
-              ? Text(receivedNotification.body)
+              ? Text(receivedNotification.body!)
               : null,
           actions: <Widget>[
             CupertinoDialogAction(
@@ -149,10 +149,10 @@ class MyNotification{
 
   static Future<void> showNotification(RemoteMessage message) async {
     if(message.notification != null){
-      RemoteNotification notification = message.notification;
+      RemoteNotification notification = message.notification!;
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
-          'your channel id', 'your channel name', 'your channel description',
+          'your channel id', 'your channel name', channelDescription: 'your channel description',
           importance: Importance.max,
           priority: Priority.high,
           ticker: 'ticker');
@@ -174,7 +174,7 @@ class MyNotification{
   }
 
   static Future<Map<String, bool>> getSetting() async{
-    Map<String, bool> settings = await LocalManager.getNotificationSetting();
+    Map<String, bool>? settings = await LocalManager.getNotificationSetting();
     if (settings == null) {
       settings = {
         'challenge': true,

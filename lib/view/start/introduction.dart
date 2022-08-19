@@ -1,8 +1,7 @@
-import 'package:flutter_svg/flutter_svg.dart';
-
-import '../../../library/cache.dart';
 import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+
+import '../../../library/cache.dart';
 
 class Introduction extends StatefulWidget {
   @override
@@ -24,12 +23,13 @@ class _IntroductionState extends State<Introduction> {
     );
   }
 
-  Widget _buildSvg(String assetName) {
-    return Align(
-      child: SvgPicture.asset('assets/introduction/$assetName.svg', width: 325.0),
-      alignment: Alignment.bottomCenter,
-    );
-  }
+  //
+  // Widget _buildSvg(String assetName) {
+  //   return Align(
+  //     child: SvgPicture.asset('assets/introduction/$assetName.svg', width: 325.0),
+  //     alignment: Alignment.bottomCenter,
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class _IntroductionState extends State<Introduction> {
     const pageDecoration = const PageDecoration(
       titleTextStyle: TextStyle(fontSize: 28.0, fontWeight: FontWeight.w700),
       bodyTextStyle: bodyStyle,
-      descriptionPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      titlePadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       pageColor: Colors.white,
       imagePadding: EdgeInsets.zero,
     );
@@ -59,13 +59,15 @@ class _IntroductionState extends State<Introduction> {
         ),
         PageViewModel(
           title: "習慣を記録",
-          body: "悪い習慣を行ってしまった、欲求を回避した、そんなときは記録機能を利用しましょう。\n過去の記録を振り返り、今の行動に繋げましょう！",
+          body:
+              "悪い習慣を行ってしまった、欲求を回避した、そんなときは記録機能を利用しましょう。\n過去の記録を振り返り、今の行動に繋げましょう！",
           image: _buildImage('intro-logs2x'),
           decoration: pageDecoration,
         ),
         PageViewModel(
           title: "フレンドと共有",
-          body: "チャレンジを継続できた、欲求を回避した、様々なことを投稿してフレンドと共有できます。\nまた、フレンドの進捗状況や戦略なども見ることができます。",
+          body:
+              "チャレンジを継続できた、欲求を回避した、様々なことを投稿してフレンドと共有できます。\nまた、フレンドの進捗状況や戦略なども見ることができます。",
           image: _buildImage('intro-share2x'),
           decoration: pageDecoration,
         ),
@@ -73,7 +75,7 @@ class _IntroductionState extends State<Introduction> {
       onDone: () => _onIntroEnd(context),
       //onSkip: () => _onIntroEnd(context), // You can override onSkip callback
       showSkipButton: true,
-      skipFlex: 0,
+      dotsFlex: 0,
       nextFlex: 0,
       skip: const Text('スキップ'),
       next: const Icon(Icons.arrow_forward),

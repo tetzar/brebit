@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../model/user.dart';
@@ -11,24 +10,23 @@ import '../profile/others-profile.dart';
 import '../widgets/user-card.dart';
 import 'search.dart';
 
-class AccountResult extends HookWidget {
-  Widget build(BuildContext context) {
-    InputFormProviderState inputFormProviderState =
-        useProvider(inputFormProvider.state);
-    List<AuthUser> result = inputFormProviderState.users;
+class AccountResult extends ConsumerWidget {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(inputFormProvider);
+    List<AuthUser>? result = ref.read(inputFormProvider.notifier).users;
     List<Widget> userCards = <Widget>[];
     if (result != null) {
       if (result.length == 0 &&
-          context.read(inputFormProvider).word.length > 0) {
+          ref.read(inputFormProvider.notifier).word.length > 0) {
         userCards.add(Container(
           width: double.infinity,
           margin: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            '申し訳ありません！”${context.read(inputFormProvider).word}”に関するユーザーはみつかりませんでした。',
+            '申し訳ありません！”${ref.read(inputFormProvider.notifier).word}”に関するユーザーはみつかりませんでした。',
             style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(fontWeight: FontWeight.w700, fontSize: 11),
+                ?.copyWith(fontWeight: FontWeight.w700, fontSize: 11),
             textAlign: TextAlign.left,
           ),
         ));
@@ -36,18 +34,19 @@ class AccountResult extends HookWidget {
         result.forEach((user) {
           userCards.add(InkWell(
             onTap: () {
-              onCardTap(context, user);
+              onCardTap(ref, user);
             },
             child: UserCard(
               user: user,
-              isFriend: context.read(authProvider.state).user.isFriend(user),
+              isFriend:
+                  ref.read(authProvider.notifier).user?.isFriend(user) ?? false,
             ),
           ));
         });
       }
       if (result.length < 5) {
         List<AuthUser> recommendation =
-            context.read(inputFormProvider).recommendation.users;
+            ref.read(inputFormProvider.notifier).recommendation?.users ?? [];
         int recommendationLength = recommendation.length;
         if (recommendationLength > 0) {
           userCards.add(Container(
@@ -67,11 +66,12 @@ class AccountResult extends HookWidget {
           AuthUser _user = recommendation[i];
           userCards.add(InkWell(
             onTap: () {
-              onCardTap(context, _user);
+              onCardTap(ref, _user);
             },
             child: UserCard(
               user: recommendation[i],
-              isFriend: context.read(authProvider.state).user.isFriend(_user),
+              isFriend: ref.read(authProvider.notifier).user?.isFriend(_user) ??
+                  false,
             ),
           ));
         }
@@ -89,12 +89,12 @@ class AccountResult extends HookWidget {
       //       decoration: BoxDecoration(
       //           borderRadius: BorderRadius.circular(17),
       //           border:
-      //               Border.all(color: Theme.of(context).accentColor, width: 1)),
+      //               Border.all(color: Theme.of(context).colorScheme.secondary, width: 1)),
       //       alignment: Alignment.center,
       //       child: Text(
       //         '更新',
       //         style: TextStyle(
-      //             color: Theme.of(context).accentColor,
+      //             color: Theme.of(context).colorScheme.secondary,
       //             fontWeight: FontWeight.w700,
       //             fontSize: 12),
       //       ),
@@ -120,8 +120,9 @@ class AccountResult extends HookWidget {
     );
   }
 
-  void onCardTap(BuildContext context, AuthUser user) {
-    if (context.read(authProvider.state).user.id == user.id) {
+  void onCardTap(WidgetRef ref, AuthUser user) {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser != null && selfUser.id == user.id) {
       Home.pushNamed('/profile');
     } else {
       Home.push(

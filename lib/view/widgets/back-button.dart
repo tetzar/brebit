@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 class MyBackButton extends StatelessWidget {
 
-  final Function onPressed;
+  final void Function()? onPressed;
 
   MyBackButton({
     this.onPressed,
@@ -27,7 +27,7 @@ class MyBackButton extends StatelessWidget {
 
 class MyBackButtonX extends StatelessWidget {
 
-  final Function onPressed;
+  final void Function()? onPressed;
 
   MyBackButtonX({
     this.onPressed,

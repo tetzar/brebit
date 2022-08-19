@@ -1,4 +1,6 @@
 
+import 'package:brebit/view/general/error-widget.dart';
+
 import '../../../../model/user.dart';
 import '../../../../api/profile.dart';
 import '../../../../provider/auth.dart';
@@ -21,29 +23,31 @@ class SavableProvider extends StateNotifier<bool> {
   }
 
   bool savable() {
-    return state ?? false;
+    return state;
   }
 }
 
-class CustomIdForm extends StatefulWidget {
+class CustomIdForm extends ConsumerStatefulWidget {
   @override
   _CustomIdFormState createState() => _CustomIdFormState();
 }
 
-class _CustomIdFormState extends State<CustomIdForm> {
-  GlobalKey<FormState> _key;
-  String customId;
-  int stack;
+class _CustomIdFormState extends ConsumerState<CustomIdForm> {
+  late GlobalKey<FormState> _key;
+  String customId = '';
+  int? stack;
 
   @override
   void initState() {
     _key = new GlobalKey<FormState>();
-    customId = context.read(authProvider.state).user.customId;
+    customId = ref.read(authProvider.notifier).user?.customId ?? '';
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user == null) return ErrorToHomeWidget();
     return Scaffold(
         appBar: getMyAppBar(
             context: context,
@@ -60,24 +64,24 @@ class _CustomIdFormState extends State<CustomIdForm> {
                   onValidate: (text) {
                   },
                   onSaved: (text) async {
-                    this.customId = text;
+                    this.customId = text ?? '';
                   },
                   onStateChange: (state) {
-                    context.read(_savableProvider).set(
+                    ref.read(_savableProvider.notifier).set(
                         state == CustomIdFieldState.allowed
                     );
-                    _key.currentState.validate();
+                    _key.currentState?.validate();
                   },
-                  initialValue: context.read(authProvider.state).user.customId,
+                  initialValue: user.customId,
                 )),
           ),
           label: '保存',
           onTapped: () async {
-            _key.currentState.save();
+            _key.currentState?.save();
             await save(context);
           },
           enable: () {
-            bool savable = context.read(_savableProvider).savable();
+            bool savable = ref.read(_savableProvider.notifier).savable();
             return savable;
           },
         ));
@@ -88,7 +92,7 @@ class _CustomIdFormState extends State<CustomIdForm> {
       MyLoading.startLoading();
       AuthUser user = await ProfileApi.saveProfile(
           {'name': null, 'custom_id': this.customId, 'bio': null});
-      ctx.read(authProvider).setUser(user);
+      ref.read(authProvider.notifier).updateState(user: user);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {

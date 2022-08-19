@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -22,15 +21,15 @@ class PrivacySettings extends StatelessWidget {
   }
 }
 
-class PrivacySettingContent extends StatefulWidget {
+class PrivacySettingContent extends ConsumerStatefulWidget {
   @override
   _PrivacySettingContentState createState() => _PrivacySettingContentState();
 }
 
-class _PrivacySettingContentState extends State<PrivacySettingContent> {
+class _PrivacySettingContentState extends ConsumerState<PrivacySettingContent> {
   @override
   Widget build(BuildContext context) {
-    bool hidden = context.read(authProvider.state).user.isHidden();
+    bool hidden = ref.read(authProvider.notifier).user?.isHidden() ?? true;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16),
       color: Theme.of(context).primaryColor,
@@ -39,15 +38,14 @@ class _PrivacySettingContentState extends State<PrivacySettingContent> {
         child: Column(
           children: [
             PrivacySettingListTileBox(properties: <PrivacySettingProperty>[
-              PrivacySettingProperty()
-                ..name = 'ポストとステータス'
-                ..hidden = hidden
-                ..func = changeOpen,
+              PrivacySettingProperty(
+                hidden,
+                'ポストとステータス',
+                changeOpen,
+              )
             ]),
             SettingListTileBox(properties: <SettingProperty>[
-              SettingProperty()
-                ..name = 'ブロック中'
-                ..func = showBlocking,
+              SettingProperty('ブロック中', showBlocking)
             ]),
           ],
         ),
@@ -56,9 +54,9 @@ class _PrivacySettingContentState extends State<PrivacySettingContent> {
   }
 
   Future<void> changeOpen(BuildContext context) async {
-    bool hidden = context.read(authProvider.state).user.isHidden();
+    bool hidden = ref.read(authProvider.notifier).user?.isHidden() ?? true;
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: ApplicationRoutes.materialKey.currentContext ?? context,
         builder: (context) {
           return MyDialog(
             title: Text(
@@ -66,7 +64,7 @@ class _PrivacySettingContentState extends State<PrivacySettingContent> {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             body: Text(
               'フレンド以外のユーザーが\nポストやステータスを確認できます',
@@ -81,7 +79,7 @@ class _PrivacySettingContentState extends State<PrivacySettingContent> {
               ApplicationRoutes.pop();
               try {
                 MyLoading.startLoading();
-                await context.read(authProvider).switchOpened(hidden);
+                await ref.read(authProvider.notifier).switchOpened(hidden);
                 await MyLoading.dismiss();
                 setState(() {});
               } catch (e) {
@@ -89,12 +87,12 @@ class _PrivacySettingContentState extends State<PrivacySettingContent> {
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme.of(context).accentColor,
+            actionColor: Theme.of(context).colorScheme.secondary,
           );
         });
   }
 
-  Future<void> showBlocking(BuildContext context) async {
+  Future<void> showBlocking(WidgetRef ref, BuildContext context) async {
     Home.pushNamed('/settings/privacy/blocking');
   }
 }

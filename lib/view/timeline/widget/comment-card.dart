@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:brebit/library/exceptions.dart';
-import 'package:brebit/model/post.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../library/cache.dart';
 import '../../../../model/comment.dart';
@@ -12,26 +14,23 @@ import '../../../../route/route.dart';
 import '../../general/loading.dart';
 import '../../general/report.dart';
 import '../../home/navigation.dart';
-import '../posts.dart';
 import '../../widgets/bottom-sheet.dart';
 import '../../widgets/dialog.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../posts.dart';
 
-class CommentTile extends StatefulWidget {
+class CommentTile extends ConsumerStatefulWidget {
   final Comment comment;
 
   CommentTile({
-    @required this.comment,
+    required this.comment,
   });
 
   @override
   _CommentTileState createState() => _CommentTileState();
 }
 
-class _CommentTileState extends State<CommentTile> {
-  Comment _comment;
+class _CommentTileState extends ConsumerState<CommentTile> {
+  late Comment _comment;
 
   @override
   void didUpdateWidget(covariant CommentTile oldWidget) {
@@ -42,7 +41,7 @@ class _CommentTileState extends State<CommentTile> {
   }
 
   void redirectToProfile(BuildContext context, AuthUser user) {
-    Home.navKey.currentState.pushNamed('/profile', arguments: user);
+    Home.pushNamed('/profile', args: user);
   }
 
   void _showActions(BuildContext context) {
@@ -56,13 +55,13 @@ class _CommentTileState extends State<CommentTile> {
               ApplicationRoutes.pop(context);
               try {
                 MyLoading.startLoading();
-                await context
-                    .read(postProvider(_comment.parent.id))
+                await ref
+                    .read(postProvider(_comment.parent.id).notifier)
                     .deleteComment(_comment);
                 await MyLoading.dismiss();
               } on RecordNotFoundException {
                 await MyLoading.dismiss();
-                removeCommentFromProvider(_comment, context);
+                removeCommentFromProvider(_comment, ref);
               } catch (e) {
                 await MyLoading.dismiss();
                 MyErrorDialog.show(e);
@@ -82,14 +81,12 @@ class _CommentTileState extends State<CommentTile> {
             text: 'コメントを報告',
             onSelect: () async {
               ApplicationRoutes.pop();
-              bool result = await ApplicationRoutes.push(MaterialPageRoute(
+              bool? result = await ApplicationRoutes.push(MaterialPageRoute(
                   builder: (context) => ReportView(this._comment)));
-              if (result != null) {
-                if (result) {
-                  context
-                      .read(postProvider(widget.comment.parent.id))
-                      .removeComment(widget.comment);
-                }
+              if (result != null && result) {
+                ref
+                    .read(postProvider(widget.comment.parent.id).notifier)
+                    .removeComment(widget.comment);
               }
             }),
         CancelBottomSheetItem(
@@ -113,7 +110,7 @@ class _CommentTileState extends State<CommentTile> {
 
   @override
   Widget build(BuildContext context) {
-    int thisUserId = context.read(authProvider.state).user.id;
+    int? thisUserId = ref.read(authProvider.notifier).user?.id;
     return InkWell(
       onLongPress: () {
         _showActions(context);
@@ -158,12 +155,13 @@ class _CommentTileState extends State<CommentTile> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: _comment.user.id == thisUserId
+                              child: thisUserId != null &&
+                                      _comment.user.id == thisUserId
                                   ? HookBuilder(
                                       builder: (BuildContext context) {
-                                        AuthUser user =
-                                            useProvider(authProvider.state)
-                                                .user;
+                                        AuthUser? user = ref
+                                            .watch(authProvider.notifier)
+                                            .user;
                                         return RichText(
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -172,22 +170,24 @@ class _CommentTileState extends State<CommentTile> {
                                                   color: Theme.of(context)
                                                       .textTheme
                                                       .bodyText1
-                                                      .color,
+                                                      ?.color,
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: 15),
                                               children: <InlineSpan>[
                                                 TextSpan(
-                                                  text: user.name,
+                                                  text: user?.name ??
+                                                      _comment.user.name,
                                                 ),
                                                 TextSpan(
-                                                    text: " @${user.customId}"
-                                                        .replaceAll(
-                                                            "", "\u{200B}"),
+                                                    text:
+                                                        " @${user?.customId ?? _comment.user.customId}"
+                                                            .replaceAll(
+                                                                "", "\u{200B}"),
                                                     style: TextStyle(
                                                         color: Theme.of(context)
                                                             .textTheme
                                                             .subtitle1
-                                                            .color,
+                                                            ?.color,
                                                         fontWeight:
                                                             FontWeight.w400,
                                                         fontSize: 15))
@@ -203,7 +203,7 @@ class _CommentTileState extends State<CommentTile> {
                                               color: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1
-                                                  .color,
+                                                  ?.color,
                                               fontWeight: FontWeight.w700,
                                               fontSize: 15),
                                           children: <InlineSpan>[
@@ -219,7 +219,7 @@ class _CommentTileState extends State<CommentTile> {
                                                     color: Theme.of(context)
                                                         .textTheme
                                                         .subtitle1
-                                                        .color,
+                                                        ?.color,
                                                     fontWeight: FontWeight.w400,
                                                     fontSize: 15))
                                           ]),
@@ -233,7 +233,7 @@ class _CommentTileState extends State<CommentTile> {
                                     color: Theme.of(context)
                                         .textTheme
                                         .subtitle1
-                                        .color,
+                                        ?.color,
                                     fontWeight: FontWeight.w400,
                                     fontSize: 15),
                               ),
@@ -246,8 +246,11 @@ class _CommentTileState extends State<CommentTile> {
                         width: double.infinity,
                         child: Text(
                           _comment.body,
-                          style: Theme.of(context).textTheme.bodyText1.copyWith(
-                              fontWeight: FontWeight.w400, fontSize: 13),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyText1
+                              ?.copyWith(
+                                  fontWeight: FontWeight.w400, fontSize: 13),
                         ),
                       ),
                       Container(
@@ -270,28 +273,28 @@ class _CommentTileState extends State<CommentTile> {
   }
 }
 
-void removeCommentFromProvider(Comment comment, BuildContext context) {
-  context.read(postProvider(comment.parent.id)).removeComment(comment);
+void removeCommentFromProvider(Comment comment, WidgetRef ref) {
+  ref.read(postProvider(comment.parent.id).notifier).removeComment(comment);
 }
 
-class CommentLikeButton extends StatefulWidget {
+class CommentLikeButton extends ConsumerStatefulWidget {
   final Comment comment;
 
-  CommentLikeButton({@required this.comment});
+  CommentLikeButton({required this.comment});
 
   @override
   _CommentLikeButtonState createState() =>
       _CommentLikeButtonState(comment: comment);
 }
 
-class _CommentLikeButtonState extends State<CommentLikeButton> {
+class _CommentLikeButtonState extends ConsumerState<CommentLikeButton> {
   Comment comment;
-  bool _isLiked;
-  Timer _timer;
-  bool waiting;
-  int favCount;
+  bool _isLiked = false;
+  Timer? _timer;
+  bool waiting = false;
+  int favCount = 0;
 
-  _CommentLikeButtonState({@required this.comment});
+  _CommentLikeButtonState({required this.comment});
 
   @override
   void initState() {
@@ -319,7 +322,7 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
         _timer?.cancel();
         _timer = Timer(Duration(milliseconds: 500), () async {
           waiting = false;
-          int count;
+          int count = this.favCount;
           try {
             if (this._isLiked) {
               await comment.like();
@@ -328,23 +331,23 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
             }
             setState(() {
               _isLiked = comment.isLiked();
-              favCount = comment.getFavCount();
             });
+            count = comment.getFavCount();
           } on RecordNotFoundException {
-            removeCommentFromProvider(comment, context);
+            removeCommentFromProvider(comment, ref);
           } catch (e) {
             MyErrorDialog.show(e);
           }
-          if (count != this.favCount && count != null) {
+          if (count != this.favCount) {
             setState(() {
               this.favCount = count;
             });
             await LocalManager.updatePost(
-                await context.read(authProvider).getUser(),
+                await ref.read(authProvider.notifier).getUser(),
                 comment.parent,
                 friendProviderName);
             await LocalManager.updatePost(
-                await context.read(authProvider).getUser(),
+                await ref.read(authProvider.notifier).getUser(),
                 comment.parent,
                 challengeProviderName);
           }
@@ -356,9 +359,9 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
             Icon(
               this._isLiked ? Icons.favorite : Icons.favorite_outline,
               color: this._isLiked
-                  ? _theme.accentIconTheme.color
-                  : _theme.textTheme.bodyText1.color,
-              size: _theme.accentIconTheme.size,
+                  ? _theme.iconTheme.color
+                  : _theme.textTheme.bodyText1?.color,
+              size: _theme.iconTheme.size,
             ),
             Container(
               padding: EdgeInsets.only(left: 4),
@@ -366,8 +369,8 @@ class _CommentLikeButtonState extends State<CommentLikeButton> {
                 this.favCount.toString(),
                 style: TextStyle(
                   color: _isLiked
-                      ? _theme.accentIconTheme.color
-                      : _theme.textTheme.bodyText1.color,
+                      ? _theme.iconTheme.color
+                      : _theme.textTheme.bodyText1?.color,
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
                 ),

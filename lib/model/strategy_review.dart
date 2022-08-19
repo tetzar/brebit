@@ -1,13 +1,11 @@
 
 import 'model.dart';
 
-// ignore: non_constant_identifier_names
-List<StrategyReview> StrategyReviewFromJson(List<dynamic> decodedList) =>
+List<StrategyReview> strategyReviewFromJson(List<dynamic> decodedList) =>
     new List<StrategyReview>.from(
-        decodedList.cast<Map>().map((x) => StrategyReview.fromJson(x)));
+        decodedList.cast<Map<String, dynamic>>().map((x) => StrategyReview.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> StrategyReviewToJson(List<StrategyReview> data) =>
+List<Map> strategyReviewToJson(List<StrategyReview> data) =>
     new List<Map>.from(data.map((x) => x.toJson()));
 
 class StrategyReview extends Model {
@@ -18,16 +16,16 @@ class StrategyReview extends Model {
   int inhibitTimes;
   DateTime createdAt;
   DateTime updatedAt;
-  DateTime softDeletedAt;
+  DateTime? softDeletedAt;
 
   StrategyReview({
-    this.id,
-    this.habitId,
-    this.strategyId,
-    this.achievedMinutes,
-    this.inhibitTimes,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.habitId,
+    required this.strategyId,
+    required this.achievedMinutes,
+    required this.inhibitTimes,
+    required this.createdAt,
+    required this.updatedAt,
     this.softDeletedAt,
   });
 
@@ -48,7 +46,7 @@ class StrategyReview extends Model {
   Map<String, dynamic> toJson() => {
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
-        "soft_deleted_at": softDeletedAt.toIso8601String(),
+        "soft_deleted_at": softDeletedAt?.toIso8601String(),
         "id": id,
         "habit_id": habitId,
         "strategy_id": strategyId,

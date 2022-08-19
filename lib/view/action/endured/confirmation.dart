@@ -1,4 +1,7 @@
 
+import 'package:brebit/model/habit.dart';
+import 'package:brebit/view/general/error-widget.dart';
+
 import '../../../../model/habit_log.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
@@ -9,9 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 
-class EnduredConfirmation extends StatelessWidget {
+class EnduredConfirmation extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
     return WillPopScope(
       onWillPop: () async {
         ApplicationRoutes.popUntil('/home');
@@ -34,7 +39,7 @@ class EnduredConfirmation extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Theme.of(context).textTheme.bodyText1.color),
+                    color: Theme.of(context).textTheme.bodyText1?.color),
               ),
               Container(
                 margin: EdgeInsets.only(top: 24),
@@ -43,7 +48,7 @@ class EnduredConfirmation extends StatelessWidget {
                   style: TextStyle(
                       fontWeight: FontWeight.w400,
                       fontSize: 15,
-                      color: Theme.of(context).textTheme.bodyText1.color),
+                      color: Theme.of(context).textTheme.bodyText1?.color),
                 ),
               ),
               Container(
@@ -52,9 +57,7 @@ class EnduredConfirmation extends StatelessWidget {
                   firstLabel: 'ポストする',
                   onFirstTapped: () async {
                     CreatePostArguments args = new CreatePostArguments();
-                    args.log = context
-                        .read(homeProvider)
-                        .getHabit()
+                    args.log = habit
                         .getLatestLogIn([HabitLogStateName.wannaDo]);
                     ApplicationRoutes.popUntil('/home');
                     ApplicationRoutes.pushNamed(

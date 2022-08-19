@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:developer' as dv;
 import 'dart:math';
 
+import 'package:brebit/view/widgets/app-bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../api/partner.dart';
@@ -23,7 +23,6 @@ import '../home/navigation.dart' as Home;
 import '../timeline/create_post.dart';
 import '../timeline/post.dart';
 import '../timeline/posts.dart';
-import '../widgets/back-button.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
 import 'activity.dart';
@@ -33,34 +32,32 @@ import 'widgets/others-profile-card.dart';
 import 'widgets/others-tab-bar.dart';
 import 'widgets/post-card.dart';
 
-class OtherProfile extends StatelessWidget {
+class OtherProfile extends ConsumerWidget {
   final AuthUser user;
 
-  OtherProfile({@required this.user});
+  OtherProfile({required this.user});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-        appBar: AppBar(
-          leading: MyBackButton(),
-          title: Text(user.customId),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.more_horiz),
-              onPressed: () {
-                showActions(context);
-              },
-            )
-          ],
-        ),
+        appBar:
+            getMyAppBar(context: context, titleText: user.customId, actions: [
+          IconButton(
+            icon: Icon(Icons.more_horiz),
+            onPressed: () {
+              showActions(context, ref);
+            },
+          )
+        ]),
         body: ProfileContent(
           user: user,
         ));
   }
 
-  void showActions(BuildContext context) {
-    Partner _partner = context.read(authProvider.state).user.getPartner(user);
+  void showActions(BuildContext context, WidgetRef ref) {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser == null) return;
+    Partner? _partner = selfUser.getPartner(user);
     PartnerState _partnerState = PartnerState.notRelated;
     if (_partner != null) {
       _partnerState = _partner.getState();
@@ -72,13 +69,13 @@ class OtherProfile extends StatelessWidget {
             context: context,
             text: 'フレンド申請',
             onSelect: () async {
-              await requestFriend(context);
+              await requestFriend(ref);
             }));
         _items.add(CautionBottomSheetItem(
             context: context,
             text: 'ブロック',
             onSelect: () async {
-              await block(context);
+              await block(ref);
             }));
         break;
       case PartnerState.request:
@@ -86,13 +83,13 @@ class OtherProfile extends StatelessWidget {
             context: context,
             text: '申請を取消',
             onSelect: () async {
-              await cancelRequest(context);
+              await cancelRequest(ref);
             }));
         _items.add(CautionBottomSheetItem(
             context: context,
             text: 'ブロック',
             onSelect: () async {
-              await block(context);
+              await block(ref);
             }));
         break;
       case PartnerState.requested:
@@ -100,19 +97,19 @@ class OtherProfile extends StatelessWidget {
             context: context,
             text: 'フレンド申請を承認',
             onSelect: () async {
-              await acceptRequest(context);
+              await acceptRequest(ref);
             }));
         _items.add(CautionBottomSheetItem(
             context: context,
             text: '申請を拒否',
             onSelect: () async {
-              await cancelRequest(context);
+              await cancelRequest(ref);
             }));
         _items.add(CautionBottomSheetItem(
             context: context,
             text: 'ブロック',
             onSelect: () async {
-              await block(context);
+              await block(ref);
             }));
         break;
       case PartnerState.partner:
@@ -120,13 +117,13 @@ class OtherProfile extends StatelessWidget {
             context: context,
             text: 'フレンドを解除',
             onSelect: () async {
-              await breakOffFriend(context);
+              await breakOffFriend(ref);
             }));
         _items.add(CautionBottomSheetItem(
             context: context,
             text: 'ブロック',
             onSelect: () async {
-              await block(context);
+              await block(ref);
             }));
         break;
       case PartnerState.block:
@@ -134,7 +131,7 @@ class OtherProfile extends StatelessWidget {
             context: context,
             text: 'ブロック解除',
             onSelect: () async {
-              await unblock(context);
+              await unblock(ref);
             }));
         break;
       default:
@@ -143,7 +140,7 @@ class OtherProfile extends StatelessWidget {
     _items.add(CancelBottomSheetItem(
         context: context,
         onSelect: () {
-          Navigator.pop(ApplicationRoutes.materialKey.currentContext);
+          ApplicationRoutes.pop();
         }));
     showCustomBottomSheet(
         hintText: user.customId,
@@ -152,14 +149,19 @@ class OtherProfile extends StatelessWidget {
         items: _items);
   }
 
-  Future<void> breakOffFriend(BuildContext context) async {
-    Partner partner = context.read(authProvider.state).user.getPartner(user);
+  Future<void> breakOffFriend(WidgetRef ref) async {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser == null) return;
+    Partner? partner = selfUser.getPartner(user);
+    if (partner == null) return;
     try {
       MyLoading.startLoading();
       await PartnerApi.breakOffWithPartner(partner);
-      context.read(authProvider).breakOffWithFriend(partner);
-      user.removePartner(
-          user.getPartner(context.read(authProvider.state).user));
+      ref.read(authProvider.notifier).breakOffWithFriend(partner);
+      Partner? othersPartner = user.getPartner(selfUser);
+      if (othersPartner != null) {
+        user.removePartner(othersPartner);
+      }
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -168,14 +170,14 @@ class OtherProfile extends StatelessWidget {
     }
   }
 
-  Future<void> requestFriend(BuildContext context) async {
+  Future<void> requestFriend(WidgetRef ref) async {
     try {
       MyLoading.startLoading();
       Map<String, Partner> partners = await PartnerApi.requestPartner(user);
-      context.read(authProvider).setPartner(partners['self_relation']);
-      context
-          .read(profileProvider(user.id))
-          .setPartner(partners['other_relation']);
+      ref.read(authProvider.notifier).setPartner(partners['self_relation']!);
+      ref
+          .read(profileProvider(user.id).notifier)
+          .setPartner(partners['other_relation']!);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -184,15 +186,19 @@ class OtherProfile extends StatelessWidget {
     }
   }
 
-  Future<void> acceptRequest(BuildContext context) async {
+  Future<void> acceptRequest(WidgetRef ref) async {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser == null) return;
+    Partner? partner = selfUser.getPartner(user);
+    if (partner == null) return;
     try {
       MyLoading.startLoading();
-      Map<String, Partner> result = await PartnerApi.acceptPartnerRequest(
-          context.read(authProvider.state).user.getPartner(user));
-      context.read(authProvider).setPartner(result['self_relation']);
-      context
-          .read(profileProvider(user.id))
-          .setPartner(result['other_relation']);
+      Map<String, Partner> result =
+          await PartnerApi.acceptPartnerRequest(partner);
+      ref.read(authProvider.notifier).setPartner(result['self_relation']!);
+      ref
+          .read(profileProvider(user.id).notifier)
+          .setPartner(result['other_relation']!);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -201,15 +207,16 @@ class OtherProfile extends StatelessWidget {
     }
   }
 
-  Future<void> cancelRequest(BuildContext context) async {
+  Future<void> cancelRequest(WidgetRef ref) async {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser == null) return;
+    Partner? partner = selfUser.getPartner(user);
+    if (partner == null) return;
     try {
       MyLoading.startLoading();
-      Partner partner = context.read(authProvider.state).user.getPartner(user);
       await PartnerApi.cancelPartnerRequest(partner);
-      context.read(authProvider).removePartner(partner);
-      context
-          .read(profileProvider(user.id))
-          .removePartner(context.read(authProvider.state).user);
+      ref.read(authProvider.notifier).removePartner(partner);
+      ref.read(profileProvider(user.id).notifier).removePartner(selfUser);
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
     } catch (e) {
@@ -218,10 +225,12 @@ class OtherProfile extends StatelessWidget {
     }
   }
 
-  Future<void> block(BuildContext context) async {
-    Navigator.pop(ApplicationRoutes.materialKey.currentContext);
+  Future<void> block(WidgetRef ref) async {
+    ApplicationRoutes.pop();
+    BuildContext? routeContext = ApplicationRoutes.materialKey.currentContext;
+    if (routeContext == null) return;
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: routeContext,
         builder: (context) {
           return MyDialog(
             title: Text(
@@ -229,7 +238,7 @@ class OtherProfile extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontWeight: FontWeight.w700, fontSize: 18),
+                  ?.copyWith(fontWeight: FontWeight.w700, fontSize: 18),
               textAlign: TextAlign.center,
             ),
             body: Text(
@@ -245,12 +254,12 @@ class OtherProfile extends StatelessWidget {
               try {
                 MyLoading.startLoading();
                 Map<String, Partner> partners = await PartnerApi.block(user);
-                context
-                    .read(authProvider)
-                    .setPartner(partners['self_relation']);
-                context
-                    .read(profileProvider(user.id))
-                    .setPartner(partners['other_relation']);
+                ref
+                    .read(authProvider.notifier)
+                    .setPartner(partners['self_relation']!);
+                ref
+                    .read(profileProvider(user.id).notifier)
+                    .setPartner(partners['other_relation']!);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -258,15 +267,18 @@ class OtherProfile extends StatelessWidget {
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
+            actionColor: Theme.of(context).primaryTextTheme.subtitle1?.color ??
+                Colors.pink,
           );
         });
   }
 
-  Future<void> unblock(BuildContext context) async {
-    Navigator.pop(ApplicationRoutes.materialKey.currentContext);
+  Future<void> unblock(WidgetRef ref) async {
+    ApplicationRoutes.pop();
+    BuildContext? routeContext = ApplicationRoutes.materialKey.currentContext;
+    if (routeContext == null) return;
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: routeContext,
         builder: (context) {
           return MyDialog(
             title: SizedBox(
@@ -282,14 +294,17 @@ class OtherProfile extends StatelessWidget {
             ),
             actionText: '解除',
             action: () async {
+              AuthUser? selfUser = ref.read(authProvider.notifier).user;
+              if (selfUser == null) return;
+              Partner? partner = selfUser.getPartner(user);
+              if (partner == null) return;
               try {
                 MyLoading.startLoading();
                 await PartnerApi.unblock(user);
-                context.read(authProvider).removePartner(
-                    context.read(authProvider.state).user.getPartner(user));
-                context
-                    .read(profileProvider(user.id))
-                    .removePartner(context.read(authProvider.state).user);
+                ref.read(authProvider.notifier).removePartner(partner);
+                ref
+                    .read(profileProvider(user.id).notifier)
+                    .removePartner(selfUser);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -297,39 +312,37 @@ class OtherProfile extends StatelessWidget {
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
+            actionColor: Theme.of(context).primaryTextTheme.subtitle1?.color ??
+                Colors.pink,
           );
         });
   }
 }
 
-class ProfileContent extends StatefulHookWidget {
+class ProfileContent extends ConsumerStatefulWidget {
   final AuthUser user;
 
-  ProfileContent({@required this.user});
+  ProfileContent({required this.user});
 
   @override
   _ProfileContentState createState() => _ProfileContentState();
 }
 
-class _ProfileContentState extends State<ProfileContent>
+class _ProfileContentState extends ConsumerState<ProfileContent>
     with SingleTickerProviderStateMixin {
-  Future<void> _futureGetProfile;
-  TabController _tabController;
+  late Future<void> _futureGetProfile;
+  late TabController _tabController;
+  late GlobalKey _profileCardKey;
+
+  late StreamController<double> _scrollStream;
+
+  late ScrollController scrollController;
 
   Future<void> _getProfile() async {
     Partner _partner =
-        await context.read(profileProvider(widget.user.id)).getProfile();
-    if (_partner != null) {
-      context.read(authProvider).setPartner(_partner);
-    }
+        await ref.read(profileProvider(widget.user.id).notifier).getProfile();
+    ref.read(authProvider.notifier).setPartner(_partner);
   }
-
-  GlobalKey _profileCardKey;
-
-  StreamController _scrollStream;
-
-  ScrollController scrollController;
 
   @override
   void initState() {
@@ -340,47 +353,51 @@ class _ProfileContentState extends State<ProfileContent>
       if (mounted) {
         _scrollStream.sink.add(max<double>(
             scrollController.offset -
-                _profileCardKey.currentContext.size.height,
+                (_profileCardKey.currentContext?.size?.height ?? 0),
             0));
       }
     });
-    if (context.read(authProvider.state).user.id == widget.user.id) {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser != null && selfUser.id == widget.user.id) {
       Home.Home.pushReplacementNamed('/profile');
     }
-    if (context.read(authProvider.state).user.isBlocked(widget.user)) {
+    if (selfUser != null && selfUser.isBlocked(widget.user)) {
       Home.Home.pop();
     }
-    context.read(profileProvider(widget.user.id)).setUser(widget.user);
+    ref.read(profileProvider(widget.user.id).notifier).setUser(widget.user);
     _futureGetProfile = _getProfile();
     if (widget.user.habitCategories.length > 0) {
       _tabController = new TabController(
           length: 3,
           vsync: this,
           initialIndex:
-              context.read(tabProvider(widget.user.id).state).toInt());
-      _tabController.animation.addListener(() {
-        context
-            .read(tabProvider(widget.user.id))
-            .set(_tabController.animation.value);
-      });
+              ref.read(tabProvider(widget.user.id).notifier).position.toInt());
+      Animation? animation = _tabController.animation;
+      if (animation != null) {
+        animation.addListener(() {
+          ref.read(tabProvider(widget.user.id).notifier).set(animation.value);
+        });
+      }
     } else {
       _tabController = new TabController(
           length: 2,
           vsync: this,
           initialIndex:
-              context.read(tabProvider(widget.user.id).state).toInt());
-      _tabController.animation.addListener(() {
-        context
-            .read(tabProvider(widget.user.id))
-            .set(_tabController.animation.value);
-      });
+              ref.read(tabProvider(widget.user.id).notifier).position.toInt());
+
+      Animation? animation = _tabController.animation;
+      if (animation != null) {
+        animation.addListener(() {
+          ref.read(tabProvider(widget.user.id).notifier).set(animation.value);
+        });
+      }
     }
     super.initState();
   }
 
   @override
   void dispose() {
-    _scrollStream?.close();
+    _scrollStream.close();
     super.dispose();
   }
 
@@ -394,9 +411,14 @@ class _ProfileContentState extends State<ProfileContent>
               MyErrorDialog.show(snapshots.error);
             }
             if (snapshots.connectionState == ConnectionState.done) {
+              ScrollController? scrollController =
+                  PrimaryScrollController.of(context);
+              if (scrollController == null) {
+                MyErrorDialog.show(Exception('scroll controller not found'));
+                return Container();
+              }
               return PostListView(
-                  user: widget.user,
-                  controller: PrimaryScrollController.of(context));
+                  user: widget.user, controller: scrollController);
             } else {
               return Center(
                 child: CircularProgressIndicator(),
@@ -433,8 +455,9 @@ class _ProfileContentState extends State<ProfileContent>
     TabBarView tabBarView =
         TabBarView(controller: _tabController, children: tabContents);
 
-    useProvider(authProvider.state);
-    if (context.read(authProvider.state).user.isBlocking(widget.user)) {
+    ref.watch(authProvider);
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser != null && selfUser.isBlocking(widget.user)) {
       return Container(
         height: double.infinity,
         child: Column(
@@ -463,7 +486,7 @@ class _ProfileContentState extends State<ProfileContent>
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                          ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(
@@ -475,7 +498,7 @@ class _ProfileContentState extends State<ProfileContent>
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17),
+                          ?.copyWith(fontSize: 17),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(
@@ -495,7 +518,7 @@ class _ProfileContentState extends State<ProfileContent>
                             padding: EdgeInsets.symmetric(horizontal: 24),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(17),
-                                color: Theme.of(context).accentColor),
+                                color: Theme.of(context).colorScheme.secondary),
                             child: Text(
                               'ブロック解除',
                               style: TextStyle(
@@ -516,8 +539,7 @@ class _ProfileContentState extends State<ProfileContent>
       );
     }
     if (widget.user.isHidden()) {
-      bool isRequesting =
-          context.read(authProvider.state).user.isRequesting(widget.user);
+      bool isRequesting = selfUser?.isRequesting(widget.user) ?? false;
       return Container(
         height: double.infinity,
         child: Column(
@@ -546,7 +568,7 @@ class _ProfileContentState extends State<ProfileContent>
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                          ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(
@@ -557,7 +579,7 @@ class _ProfileContentState extends State<ProfileContent>
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17),
+                          ?.copyWith(fontSize: 17),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(
@@ -579,13 +601,17 @@ class _ProfileContentState extends State<ProfileContent>
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(17),
                                       border: Border.all(
-                                          color: Theme.of(context).accentColor,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
                                           width: 1),
                                       color: Theme.of(context).primaryColor),
                                   child: Text(
                                     'フレンド申請を取り消す',
                                     style: TextStyle(
-                                        color: Theme.of(context).accentColor,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .secondary,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700),
                                   ),
@@ -601,7 +627,9 @@ class _ProfileContentState extends State<ProfileContent>
                                   padding: EdgeInsets.symmetric(horizontal: 24),
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(17),
-                                      color: Theme.of(context).accentColor),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary),
                                   child: Text(
                                     'フレンド申請',
                                     style: TextStyle(
@@ -670,8 +698,10 @@ class _ProfileContentState extends State<ProfileContent>
   }
 
   Future<void> unblock(BuildContext context) async {
+    BuildContext? routeContext = ApplicationRoutes.materialKey.currentContext;
+    if (routeContext == null) return;
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: routeContext,
         builder: (context) {
           return MyDialog(
             title: SizedBox(
@@ -687,16 +717,16 @@ class _ProfileContentState extends State<ProfileContent>
             ),
             actionText: '解除',
             action: () async {
+              AuthUser? selfUser = ref.read(authProvider.notifier).user;
+              Partner? partner = selfUser?.getPartner(widget.user);
+              if (selfUser == null || partner == null) return;
               try {
                 MyLoading.startLoading();
                 await PartnerApi.unblock(widget.user);
-                context.read(authProvider).removePartner(context
-                    .read(authProvider.state)
-                    .user
-                    .getPartner(widget.user));
-                context
-                    .read(profileProvider(widget.user.id))
-                    .removePartner(context.read(authProvider.state).user);
+                ref.read(authProvider.notifier).removePartner(partner);
+                ref
+                    .read(profileProvider(widget.user.id).notifier)
+                    .removePartner(selfUser);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -704,14 +734,15 @@ class _ProfileContentState extends State<ProfileContent>
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
+            actionColor: Theme.of(context).primaryTextTheme.subtitle1?.color ??
+                Colors.pink,
           );
         });
   }
 
   Future<void> request(BuildContext context) async {
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: ApplicationRoutes.materialKey.currentContext ?? context,
         builder: (context) {
           return MyDialog(
             title: SizedBox(
@@ -731,12 +762,12 @@ class _ProfileContentState extends State<ProfileContent>
                 MyLoading.startLoading();
                 Map<String, Partner> relations =
                     await PartnerApi.requestPartner(widget.user);
-                context
-                    .read(authProvider)
-                    .setPartner(relations['self_relation']);
-                context
-                    .read(profileProvider(widget.user.id))
-                    .setPartner(relations['other_relation']);
+                ref
+                    .read(authProvider.notifier)
+                    .setPartner(relations['self_relation']!);
+                ref
+                    .read(profileProvider(widget.user.id).notifier)
+                    .setPartner(relations['other_relation']!);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -750,7 +781,7 @@ class _ProfileContentState extends State<ProfileContent>
 
   Future<void> cancelRequest(BuildContext context) async {
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: ApplicationRoutes.materialKey.currentContext ?? context,
         builder: (context) {
           return MyDialog(
             title: SizedBox(
@@ -766,17 +797,16 @@ class _ProfileContentState extends State<ProfileContent>
             ),
             actionText: '取り消す',
             action: () async {
+              AuthUser? selfUser = ref.read(authProvider.notifier).user;
+              Partner? partner = selfUser?.getPartner(widget.user);
+              if (selfUser == null || partner == null) return;
               try {
                 MyLoading.startLoading();
-                Partner partner = context
-                    .read(authProvider.state)
-                    .user
-                    .getPartner(widget.user);
                 await PartnerApi.cancelPartnerRequest(partner);
-                context.read(authProvider).removePartner(partner);
-                context
-                    .read(profileProvider(widget.user.id))
-                    .removePartner(context.read(authProvider.state).user);
+                ref.read(authProvider.notifier).removePartner(partner);
+                ref
+                    .read(profileProvider(widget.user.id).notifier)
+                    .removePartner(selfUser);
                 await MyLoading.dismiss();
                 ApplicationRoutes.pop();
               } catch (e) {
@@ -784,30 +814,30 @@ class _ProfileContentState extends State<ProfileContent>
                 MyErrorDialog.show(e);
               }
             },
-            actionColor: Theme.of(context).accentTextTheme.subtitle1.color,
+            actionColor: Theme.of(context).primaryTextTheme.subtitle1?.color,
           );
         });
   }
 }
 
-class RequestedBar extends StatefulHookWidget {
+class RequestedBar extends ConsumerStatefulWidget {
   final AuthUser user;
 
-  RequestedBar({@required this.user});
+  RequestedBar({required this.user});
 
   @override
   _RequestedBarState createState() => _RequestedBarState();
 }
 
-class _RequestedBarState extends State<RequestedBar> {
-  bool _show;
+class _RequestedBarState extends ConsumerState<RequestedBar> {
+  bool _show = false;
 
   @override
   Widget build(BuildContext context) {
-    useProvider(authProvider.state);
+    ref.watch(authProvider);
     _show = false;
-    Partner partner =
-        context.read(authProvider.state).user.getPartner(widget.user);
+    Partner? partner =
+        ref.read(authProvider.notifier).user?.getPartner(widget.user);
     if (partner != null) {
       if (partner.stateIs(PartnerState.requested)) {
         _show = true;
@@ -830,12 +860,12 @@ class _RequestedBarState extends State<RequestedBar> {
             child: Text(
               widget.user.name + 'さんからフレンド申請が届いています',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 12),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 12),
             ),
           ),
           InkWell(
             onTap: () async {
-              acceptRequest(context);
+              acceptRequest(ref);
             },
             child: Container(
               margin: EdgeInsets.only(left: 8),
@@ -843,7 +873,7 @@ class _RequestedBarState extends State<RequestedBar> {
               width: 72,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
-                  color: Theme.of(context).accentColor),
+                  color: Theme.of(context).colorScheme.secondary),
               alignment: Alignment.center,
               child: Text(
                 '承認',
@@ -866,12 +896,13 @@ class _RequestedBarState extends State<RequestedBar> {
                   borderRadius: BorderRadius.circular(17),
                   color: Theme.of(context).primaryColor,
                   border: Border.all(
-                      color: Theme.of(context).accentColor, width: 1)),
+                      color: Theme.of(context).colorScheme.secondary,
+                      width: 1)),
               alignment: Alignment.center,
               child: Text(
                 '削除',
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     fontWeight: FontWeight.w700,
                     fontSize: 12),
               ),
@@ -882,15 +913,18 @@ class _RequestedBarState extends State<RequestedBar> {
     );
   }
 
-  Future<void> acceptRequest(BuildContext context) async {
+  Future<void> acceptRequest(WidgetRef ref) async {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    Partner? partner = selfUser?.getPartner(widget.user);
+    if (selfUser == null || partner == null) return;
     try {
       MyLoading.startLoading();
-      Map<String, Partner> result = await PartnerApi.acceptPartnerRequest(
-          context.read(authProvider.state).user.getPartner(widget.user));
-      context.read(authProvider).setPartner(result['self_relation']);
-      context
-          .read(profileProvider(widget.user.id))
-          .setPartner(result['other_relation']);
+      Map<String, Partner> result =
+          await PartnerApi.acceptPartnerRequest(partner);
+      ref.read(authProvider.notifier).setPartner(result['self_relation']!);
+      ref
+          .read(profileProvider(widget.user.id).notifier)
+          .setPartner(result['other_relation']!);
       await MyLoading.dismiss();
       setState(() {
         _show = false;
@@ -904,10 +938,11 @@ class _RequestedBarState extends State<RequestedBar> {
   Future<void> dennyRequest(BuildContext context) async {
     try {
       MyLoading.startLoading();
-      Partner partner =
-          context.read(authProvider.state).user.getPartner(widget.user);
+      Partner? partner =
+          ref.read(authProvider.notifier).user?.getPartner(widget.user);
+      if (partner == null) return;
       await PartnerApi.cancelPartnerRequest(partner);
-      context.read(authProvider).breakOffWithFriend(partner);
+      ref.read(authProvider.notifier).breakOffWithFriend(partner);
       await MyLoading.dismiss();
     } catch (e) {
       await MyLoading.dismiss();
@@ -916,33 +951,35 @@ class _RequestedBarState extends State<RequestedBar> {
   }
 }
 
-class PostListView extends StatefulWidget {
+class PostListView extends ConsumerStatefulWidget {
   final ScrollController controller;
   final AuthUser user;
 
-  PostListView({@required this.controller, @required this.user});
+  PostListView({required this.controller, required this.user});
 
   @override
   _PostListViewState createState() => _PostListViewState();
 }
 
-class _PostListViewState extends State<PostListView> {
-  List<Post> _posts;
-  bool nowLoading;
+class _PostListViewState extends ConsumerState<PostListView> {
+  late List<Post> _posts;
+  bool nowLoading = false;
 
-  Future<void> reloadOlder(BuildContext ctx) async {
-    if (!ctx.read(profileProvider(widget.user.id)).noMoreContent) {
+  Future<void> reloadOlder(WidgetRef ref) async {
+    if (!ref.read(profileProvider(widget.user.id).notifier).noMoreContent) {
       if ((widget.controller.position.maxScrollExtent -
                   widget.controller.position.pixels) <
               400 &&
           !nowLoading) {
         nowLoading = true;
         try {
-          await ctx.read(profileProvider(widget.user.id)).reloadOlderTimeLine();
+          await ref
+              .read(profileProvider(widget.user.id).notifier)
+              .reloadOlderTimeLine();
           nowLoading = false;
           setState(() {});
         } catch (e) {
-          dv.log('debug', error: e);
+          MyErrorDialog.show(e);
         }
       }
     }
@@ -951,11 +988,11 @@ class _PostListViewState extends State<PostListView> {
   @override
   void initState() {
     nowLoading = false;
-    _posts = context.read(profileProvider(widget.user.id).state).user.posts;
+    _posts = ref.read(profileProvider(widget.user.id).notifier).user.posts;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.controller.addListener(() async {
         if (mounted) {
-          await reloadOlder(context);
+          await reloadOlder(ref);
         }
       });
     });
@@ -967,14 +1004,16 @@ class _PostListViewState extends State<PostListView> {
     return RefreshIndicator(
       onRefresh: () async {
         try {
-          await context.read(profileProvider(widget.user.id)).reloadTimeLine();
+          await ref
+              .read(profileProvider(widget.user.id).notifier)
+              .reloadTimeLine();
         } catch (e) {
-          dv.log('debug', error: e);
+          MyErrorDialog.show(e);
         }
         if (mounted) {
           setState(() {
             _posts =
-                context.read(profileProvider(widget.user.id).state).user.posts;
+                ref.read(profileProvider(widget.user.id).notifier).user.posts;
           });
         }
       },
@@ -983,7 +1022,9 @@ class _PostListViewState extends State<PostListView> {
         itemCount: _posts.length + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == (_posts.length)) {
-            if (context.read(profileProvider(widget.user.id)).noMoreContent) {
+            if (ref
+                .read(profileProvider(widget.user.id).notifier)
+                .noMoreContent) {
               return Container(
                 height: 0,
               );
@@ -1005,18 +1046,18 @@ class _PostListViewState extends State<PostListView> {
           return InkWell(
               onTap: () async {
                 Post _post = _posts[index];
-                bool reported = await Home.Home.pushNamed('/post',
-                    args: PostArguments(post: _post));
+                bool? reported = await Home.Home.pushNamed('/post',
+                    args: PostArguments(post: _post)) as bool?;
                 if (reported != null) {
                   if (reported) {
-                    context
-                        .read(profileProvider(_post.user.id))
+                    ref
+                        .read(profileProvider(_post.user.id).notifier)
                         .removePost(_post);
-                    context
-                        .read(timelineProvider(friendProviderName))
+                    ref
+                        .read(timelineProvider(friendProviderName).notifier)
                         .removePost(_post);
-                    context
-                        .read(timelineProvider(challengeProviderName))
+                    ref
+                        .read(timelineProvider(challengeProviderName).notifier)
                         .removePost(_post);
                   }
                 }
@@ -1041,7 +1082,7 @@ class _PostListViewState extends State<PostListView> {
             bool result = await ApplicationRoutes.push(
                 MaterialPageRoute(builder: (context) => ReportView(post)));
             if (result) {
-              await removePostFromAllProvider(post, context);
+              await removePostFromAllProvider(post, ref);
             }
           }),
       CancelBottomSheetItem(
@@ -1058,22 +1099,22 @@ class _PostListViewState extends State<PostListView> {
   }
 }
 
-class FriendListView extends StatefulHookWidget {
+class FriendListView extends ConsumerStatefulWidget {
   final AuthUser user;
 
-  FriendListView({@required this.user});
+  FriendListView({required this.user});
 
   @override
   _FriendListViewState createState() => _FriendListViewState();
 }
 
-class _FriendListViewState extends State<FriendListView> {
-  List<Partner> _partners;
+class _FriendListViewState extends ConsumerState<FriendListView> {
+  late List<Partner> _partners;
 
   @override
   void initState() {
-    _partners = context
-        .read(profileProvider(widget.user.id).state)
+    _partners = ref
+        .read(profileProvider(widget.user.id).notifier)
         .user
         .getAcceptedPartners();
     super.initState();
@@ -1081,18 +1122,18 @@ class _FriendListViewState extends State<FriendListView> {
 
   @override
   Widget build(BuildContext context) {
-    useProvider(profileProvider(widget.user.id).state);
+    ref.watch(profileProvider(widget.user.id));
     return RefreshIndicator(
       onRefresh: () async {
         try {
-          await context.read(profileProvider(widget.user.id)).getProfile();
+          await ref.read(profileProvider(widget.user.id).notifier).getProfile();
         } catch (e) {
           dv.log('debug', error: e);
         }
         if (mounted) {
           setState(() {
-            _partners = context
-                .read(profileProvider(widget.user.id).state)
+            _partners = ref
+                .read(profileProvider(widget.user.id).notifier)
                 .user
                 .getAcceptedPartners();
           });
@@ -1109,15 +1150,15 @@ class _FriendListViewState extends State<FriendListView> {
   }
 }
 
-class ChallengeTab extends HookWidget {
+class ChallengeTab extends ConsumerWidget {
   final AuthUser user;
 
-  ChallengeTab({@required this.user});
+  ChallengeTab({required this.user});
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(profileProvider(user.id).state);
-    List<HabitLog> logs = context.read(profileProvider(user.id).state).logs;
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(profileProvider(user.id));
+    List<HabitLog> logs = ref.read(profileProvider(user.id).notifier).logs;
     List<List<HabitLog>> collected = HabitLog.collectByDate(logs);
     return Stack(
       children: [
@@ -1160,7 +1201,7 @@ class ChallengeTab extends HookWidget {
                     alignment: Alignment.center,
                     child: Text('詳細なアクティビティ',
                         style: TextStyle(
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                             fontSize: 12,
                             fontWeight: FontWeight.w700)),
                   ),
@@ -1206,7 +1247,7 @@ class LogCard extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
           ),
           SizedBox(
             height: 16,
@@ -1221,39 +1262,34 @@ class LogCard extends StatelessWidget {
   }
 
   Widget getSubject(HabitLog log, BuildContext context) {
-    TextStyle _style = Theme.of(context)
+    TextStyle? _style = Theme.of(context)
         .textTheme
         .bodyText1
-        .copyWith(fontSize: 13, fontWeight: FontWeight.w400);
+        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w400);
     switch (log.getState()) {
       case HabitLogStateName.started:
         return Text(
           '・チャレンジを開始しました。',
           style: _style,
         );
-        break;
       case HabitLogStateName.finished:
         return Text(
           '・チャレンジを終了しました。',
           style: _style,
         );
-        break;
       case HabitLogStateName.strategyChanged:
         return Text(
           '・ストラテジーを変更しました。',
           style: _style,
         );
-        break;
-      case HabitLogStateName.aimdateUpdated:
+      case HabitLogStateName.aimDateUpdated:
         return Text(
           '・スモールステップを更新しました。',
           style: _style,
         );
-        break;
-      case HabitLogStateName.aimdateOvercame:
+      case HabitLogStateName.aimDateOvercame:
         int step = log.getBody()['step'];
         return Text('・スモールステップを達成しました($step/${Habit.getStepCount()})');
-        break;
       case HabitLogStateName.did:
         final Map<CategoryName, String> didText = {
           CategoryName.cigarette: 'タバコを吸いました。',
@@ -1261,7 +1297,7 @@ class LogCard extends StatelessWidget {
           CategoryName.sweets: 'お菓子を食べました。',
           CategoryName.sns: 'SNSを見てしまいました。',
         };
-        String text = didText[log.category.name];
+        String text = didText[log.category.name]!;
         return GestureDetector(
             onTap: () {
               CreatePostArguments args = new CreatePostArguments();
@@ -1275,7 +1311,6 @@ class LogCard extends StatelessWidget {
                   text: text,
                   style: TextStyle(decoration: TextDecoration.underline))
             ])));
-        break;
       case HabitLogStateName.wannaDo:
         final Map<CategoryName, String> wannaDoText = {
           CategoryName.cigarette: '・タバコを吸いたい気持ちを抑えました。',
@@ -1283,17 +1318,15 @@ class LogCard extends StatelessWidget {
           CategoryName.sweets: '・お菓子を食べたい気持ちを抑えました。',
           CategoryName.sns: '・SNSを見たい気持ちを抑えました。',
         };
-        String text = wannaDoText[log.category.name];
+        String text = wannaDoText[log.category.name]!;
         return Text(
           text,
           style: _style,
         );
-        break;
       default:
         return SizedBox(
           height: 0,
         );
-        break;
     }
   }
 }

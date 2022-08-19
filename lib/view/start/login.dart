@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:brebit/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +21,7 @@ import '../widgets/text-field.dart';
 import 'name-form.dart';
 
 class Login extends StatelessWidget {
-  final String email;
+  final String? email;
 
   Login({this.email});
 
@@ -37,30 +36,36 @@ class Login extends StatelessWidget {
 }
 
 class LoginFormProviderState {
-  bool userNameOrEmail;
-  bool password;
+  bool? userNameOrEmail;
+  bool? password;
+
+  LoginFormProviderState copyWith({bool? userNameOrEmail, bool? password}) {
+    return LoginFormProviderState()
+        ..userNameOrEmail = userNameOrEmail ?? this.userNameOrEmail
+        ..password = password ?? this.password;
+  }
 }
 
 class LoginFormProvider extends StateNotifier<LoginFormProviderState> {
   LoginFormProvider(LoginFormProviderState state) : super(state);
 
-  get userNameOrEmail {
+  bool get userNameOrEmail {
     return this.state.userNameOrEmail ?? false;
   }
 
-  get password {
+  bool get password {
     return this.state.password ?? false;
   }
 
   set userNameOrEmail(bool s) {
     if (this.userNameOrEmail != s) {
-      this.state = state..userNameOrEmail = s;
+      this.state = state.copyWith(userNameOrEmail: s);
     }
   }
 
   set password(bool s) {
     if (this.password != s) {
-      this.state = state..password = s;
+      this.state = state.copyWith(password: s);
     }
   }
 
@@ -73,8 +78,8 @@ class LoginFormProvider extends StateNotifier<LoginFormProviderState> {
 final _loginFormProvider = StateNotifierProvider.autoDispose(
     (ref) => LoginFormProvider(LoginFormProviderState()));
 
-class LoginForm extends StatefulWidget {
-  final String email;
+class LoginForm extends ConsumerStatefulWidget {
+  final String? email;
 
   LoginForm(this.email);
 
@@ -82,15 +87,15 @@ class LoginForm extends StatefulWidget {
   LoginFormState createState() => LoginFormState();
 }
 
-class LoginFormState extends State<LoginForm> {
-  List<GlobalKey<FormState>> _keys;
-  FocusNode _passwordFocusNode;
-  FocusNode _nameFocusNode;
+class LoginFormState extends ConsumerState<LoginForm> {
+  late List<GlobalKey<FormState>> _keys;
+  late FocusNode _passwordFocusNode;
+  late FocusNode _nameFocusNode;
 
-  String userNameOrEmail;
-  String password;
-  String _userNameOrEmailMessage;
-  String _passwordMessage;
+  String userNameOrEmail = '';
+  String password = '';
+  String? _userNameOrEmailMessage;
+  String? _passwordMessage;
 
   String get userNameOrEmailMessage {
     return _userNameOrEmailMessage ?? '';
@@ -117,14 +122,14 @@ class LoginFormState extends State<LoginForm> {
     _nameFocusNode = new FocusNode();
     _nameFocusNode.addListener(() {
       if (!_nameFocusNode.hasFocus) {
-        _keys[0].currentState.validate();
+        _keys[0].currentState?.validate();
       }
     });
     _passwordFocusNode = new FocusNode();
     userNameOrEmailMessage = '';
     passwordMessage = '';
     if (widget.email != null) {
-      context.read(_loginFormProvider).userNameOrEmail =
+      ref.read(_loginFormProvider.notifier).userNameOrEmail =
           isEmail(widget.email) || isUserName(widget.email);
     }
     super.initState();
@@ -142,7 +147,7 @@ class LoginFormState extends State<LoginForm> {
     return MyHookBottomFixedButton(
       provider: _loginFormProvider,
       enable: () {
-        return context.read(_loginFormProvider).savable();
+        return ref.read(_loginFormProvider.notifier).savable();
       },
       onTapped: () async {
         _nameFocusNode.unfocus();
@@ -177,14 +182,14 @@ class LoginFormState extends State<LoginForm> {
                     return _p;
                   }
                   if (text.length == 0) {
-                    context.read(_loginFormProvider).userNameOrEmail = false;
+                    ref.read(_loginFormProvider.notifier).userNameOrEmail = false;
                     return '入力してください';
                   }
                   if (isEmail(text) || isUserName(text)) {
-                    context.read(_loginFormProvider).userNameOrEmail = true;
+                    ref.read(_loginFormProvider.notifier).userNameOrEmail = true;
                     return null;
                   }
-                  context.read(_loginFormProvider).userNameOrEmail = false;
+                  ref.read(_loginFormProvider.notifier).userNameOrEmail = false;
                   return '正しく入力してください';
                 },
                 validate: (text) {
@@ -193,7 +198,7 @@ class LoginFormState extends State<LoginForm> {
                     userNameOrEmailMessage = '';
                     return _p;
                   }
-                  if (text.length == 0) {
+                  if (text == null ||text.length == 0) {
                     return '入力してください';
                   }
                   if (isEmail(text) || isUserName(text)) {
@@ -202,10 +207,10 @@ class LoginFormState extends State<LoginForm> {
                   return '正しく入力してください';
                 },
                 onSaved: (text) {
-                  if (text.startsWith('@')) {
+                  if (text != null && text.startsWith('@')) {
                     text = text.substring(1);
                   }
-                  this.userNameOrEmail = text;
+                  this.userNameOrEmail = text ?? '';
                 },
               ),
             ),
@@ -226,16 +231,16 @@ class LoginFormState extends State<LoginForm> {
                     passwordMessage = '';
                     return _p;
                   }
-                  if (text.length < 6) {
+                  if (text == null ||text.length < 6) {
                     return '6文字以上入力してください';
                   }
                   return null;
                 },
                 onSaved: (text) {
-                  this.password = text;
+                  this.password = text ?? '';
                 },
                 onChanged: (text) {
-                  context.read(_loginFormProvider).password = text.length > 5;
+                  ref.read(_loginFormProvider.notifier).password = text.length > 5;
                 },
               ),
             ),
@@ -247,7 +252,7 @@ class LoginFormState extends State<LoginForm> {
                   style: Theme.of(context)
                       .textTheme
                       .subtitle1
-                      .copyWith(fontSize: 12),
+                      ?.copyWith(fontSize: 12),
                   children: <TextSpan>[
                     TextSpan(
                       text: 'パスワードを忘れた方は',
@@ -260,7 +265,7 @@ class LoginFormState extends State<LoginForm> {
                                 '/password-reset');
                           },
                         style: (TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           decoration: TextDecoration.underline,
                         ))),
                   ],
@@ -296,7 +301,7 @@ class LoginFormState extends State<LoginForm> {
                   style: Theme.of(context)
                       .textTheme
                       .subtitle1
-                      .copyWith(fontSize: 12),
+                      ?.copyWith(fontSize: 12),
                   children: <TextSpan>[
                     TextSpan(
                       text: 'アカウントをお持ちでない方は',
@@ -308,7 +313,7 @@ class LoginFormState extends State<LoginForm> {
                             ApplicationRoutes.pushReplacementNamed('/register');
                           },
                         style: (TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           decoration: TextDecoration.underline,
                         ))),
                   ],
@@ -321,7 +326,8 @@ class LoginFormState extends State<LoginForm> {
     );
   }
 
-  bool isEmail(String text) {
+  bool isEmail(String? text) {
+    if (text == null) return false;
     RegExp emailRegExp = new RegExp(
       r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
       caseSensitive: false,
@@ -330,7 +336,8 @@ class LoginFormState extends State<LoginForm> {
     return emailRegExp.hasMatch(text);
   }
 
-  bool isUserName(String text) {
+  bool isUserName(String? text) {
+    if (text == null) return false;
     RegExp userNameRegExp = new RegExp(
       r"^@?[a-zA-Z0-9_]+$",
       caseSensitive: false,
@@ -342,13 +349,13 @@ class LoginFormState extends State<LoginForm> {
   Future<void> submit(BuildContext context) async {
     bool valid = true;
     for (GlobalKey<FormState> _key in _keys) {
-      if (!_key.currentState.validate()) {
+      if (!(_key.currentState?.validate() ?? false)) {
         valid = false;
       }
     }
     if (valid) {
       for (GlobalKey<FormState> _key in _keys) {
-        _key.currentState.save();
+        _key.currentState?.save();
       }
       String email;
       await MyLoading.startLoading();
@@ -358,12 +365,13 @@ class LoginFormState extends State<LoginForm> {
         } on UserNotFoundException {
           passwordMessage = '';
           userNameOrEmailMessage = '登録されていないIDです';
-          _keys[0].currentState.validate();
+          _keys[0].currentState?.validate();
           return;
         } on FirebaseNotFoundException {
           passwordMessage = '';
           userNameOrEmailMessage = '別の方法でのログインをお試しください';
-          _keys[0].currentState.validate();
+          _keys[0].currentState?.validate();
+          return;
         } catch (e) {
           await MyLoading.startLoading();
           MyErrorDialog.show(e);
@@ -376,13 +384,13 @@ class LoginFormState extends State<LoginForm> {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
             .signInWithEmailAndPassword(email: email, password: password);
-        if (!userCredential.user.emailVerified) {
+        if (!(userCredential.user?.emailVerified ?? false)) {
           await MyLoading.dismiss();
           Navigator.pushReplacementNamed(context, '/email-verify');
           return;
         }
-        await context.read(authProvider).login(email, password);
-        await MyApp.initialize(context);
+        await ref.read(authProvider.notifier).login(email, password);
+        await MyApp.initialize(ref);
         await MyLoading.dismiss();
         Navigator.popUntil(context, ModalRoute.withName('/title'));
         Navigator.of(context).pushReplacementNamed("/home");
@@ -390,11 +398,11 @@ class LoginFormState extends State<LoginForm> {
         if (e.code == 'user-not-found') {
           passwordMessage = '';
           userNameOrEmailMessage = '登録されていません';
-          _keys[0].currentState.validate();
+          _keys[0].currentState?.validate();
         } else if (e.code == 'wrong-password') {
           passwordMessage = 'パスワードが正しくありません';
           userNameOrEmailMessage = '';
-          _keys[1].currentState.validate();
+          _keys[1].currentState?.validate();
         }
         await MyLoading.dismiss();
       } on UserNotFoundException {
@@ -410,14 +418,15 @@ class LoginFormState extends State<LoginForm> {
   Future<void> signInWithGoogle(BuildContext context) async {
     MyLoading.startLoading();
     try {
-      final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) throw Exception('google login failed');
 
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       // Create a new credential
-      final GoogleAuthCredential credential = GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
@@ -425,8 +434,10 @@ class LoginFormState extends State<LoginForm> {
       // Once signed in, return the UserCredential
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
-      await context.read(authProvider).loginWithFirebase(userCredential.user);
-      await MyApp.initialize(context);
+      User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) throw Exception('firebase user not found');
+      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+      await MyApp.initialize(ref);
       while (Navigator.canPop(context)) {
         Navigator.pop(context);
       }

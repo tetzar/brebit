@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:brebit/model/user.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:time_machine/time_machine.dart';
 
@@ -24,19 +23,21 @@ import '../widgets/dialog.dart';
 import 'friend-request.dart';
 import 'notification-information.dart';
 
-class NotificationPage extends StatefulWidget {
+class NotificationPage extends ConsumerStatefulWidget {
   @override
   _NotificationPageState createState() => _NotificationPageState();
 }
 
-class _NotificationPageState extends State<NotificationPage> {
-  Future<void> getNotifications;
+class _NotificationPageState extends ConsumerState<NotificationPage> {
+  late Future<void> getNotifications;
 
   @override
   void initState() {
-    this.getNotifications = context
-        .read(notificationProvider)
-        .getNotifications(context.read(authProvider.state).user);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user != null) {
+      this.getNotifications =
+          ref.read(notificationProvider.notifier).getNotifications(user);
+    }
     super.initState();
   }
 
@@ -44,7 +45,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        context.read(notificationProvider).markAsReadAll();
+        ref.read(notificationProvider.notifier).markAsReadAll();
         return true;
       },
       child: Scaffold(
@@ -53,7 +54,7 @@ class _NotificationPageState extends State<NotificationPage> {
             backButton: AppBarBackButton.arrow,
             titleText: '通知',
             onBack: () {
-              context.read(notificationProvider).markAsReadAll();
+              ref.read(notificationProvider.notifier).markAsReadAll();
               Home.pop();
             }),
         body: Container(
@@ -80,12 +81,12 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 }
 
-class PartnerRequestTile extends HookWidget {
+class PartnerRequestTile extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    useProvider(authProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
     List<Partner> requestedPartners =
-        context.read(authProvider.state).user.getRequestedPartners();
+        ref.read(authProvider.notifier).user?.getRequestedPartners() ?? [];
     if (requestedPartners.length == 0) {
       return SizedBox(
         height: 0,
@@ -109,13 +110,14 @@ class PartnerRequestTile extends HookWidget {
                 child: Text(
               'フレンド申請',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
             )),
             Container(
               height: 8,
               width: 8,
               decoration: BoxDecoration(
-                  color: Theme.of(context).accentColor, shape: BoxShape.circle),
+                  color: Theme.of(context).colorScheme.secondary,
+                  shape: BoxShape.circle),
             ),
             SizedBox(
               width: 8,
@@ -123,7 +125,7 @@ class PartnerRequestTile extends HookWidget {
             Text(
               requestedPartners.length.toString(),
               style:
-                  Theme.of(context).textTheme.subtitle1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.subtitle1?.copyWith(fontSize: 15),
             )
           ],
         ),
@@ -132,12 +134,12 @@ class PartnerRequestTile extends HookWidget {
   }
 }
 
-class NotificationList extends HookWidget {
+class NotificationList extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    useProvider(notificationProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(notificationProvider);
     List<UserNotification> notifications =
-        context.read(notificationProvider.state).notifications;
+        ref.read(notificationProvider.notifier).notifications;
     print(notifications
         .where((element) => element.readAt == null)
         .toList()
@@ -152,21 +154,21 @@ class NotificationList extends HookWidget {
           style: Theme.of(context)
               .textTheme
               .bodyText1
-              .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+              ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
         ),
       );
     }
     Map<bool, List<UserNotification>> collectedNotifications =
         UserNotification.collectByRead(notifications);
     List<Widget> columnChild = <Widget>[];
-    if (collectedNotifications[false].length > 0) {
+    if (collectedNotifications[false]!.length > 0) {
       columnChild.add(getCategoryBar('新着', context));
-      for (UserNotification notification in collectedNotifications[false]) {
+      for (UserNotification notification in collectedNotifications[false]!) {
         columnChild.add(NotificationTile(notification));
       }
     }
-    for (UserNotification _notification in collectedNotifications[true]) {
-      int index = collectedNotifications[true].indexOf(_notification);
+    for (UserNotification _notification in collectedNotifications[true]!) {
+      int index = collectedNotifications[true]!.indexOf(_notification);
       int _notificationIsDaysBefore = isDaysBefore(_notification.createdAt);
       if (index == 0) {
         if (_notificationIsDaysBefore == 0) {
@@ -178,7 +180,7 @@ class NotificationList extends HookWidget {
         }
       } else {
         int _previousNotificationIsDaysBefore =
-            isDaysBefore(collectedNotifications[true][index - 1].createdAt);
+            isDaysBefore(collectedNotifications[true]![index - 1].createdAt);
         if (_previousNotificationIsDaysBefore == 0) {
           if (_notificationIsDaysBefore != 0) {
             if (_notificationIsDaysBefore < 7) {
@@ -199,9 +201,8 @@ class NotificationList extends HookWidget {
         child: RefreshIndicator(
       onRefresh: () async {
         try {
-          context
-              .read(notificationProvider)
-              .refreshNotification(await context.read(authProvider).getUser());
+          ref.read(notificationProvider.notifier).refreshNotification(
+              await ref.read(authProvider.notifier).getUser());
         } catch (e) {
           MyErrorDialog.show(e);
         }
@@ -226,7 +227,7 @@ class NotificationList extends HookWidget {
         style: Theme.of(context)
             .textTheme
             .bodyText1
-            .copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+            ?.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -239,19 +240,19 @@ class NotificationList extends HookWidget {
   }
 }
 
-class NotificationTile extends StatelessWidget {
+class NotificationTile extends ConsumerWidget {
   final UserNotification notification;
 
   NotificationTile(this.notification);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     Map<String, dynamic> notificationBody = notification.getBody();
     UserNotificationType _notificationType = notification.getType();
-    Widget title;
-    Widget body;
-    Widget image;
-    Function onTap;
+    Widget? title;
+    Widget? body;
+    Widget? image;
+    void Function()? onTap;
     switch (_notificationType) {
       case UserNotificationType.liked:
         List<Favorite> favorites = notificationBody['favorites'];
@@ -270,7 +271,6 @@ class NotificationTile extends StatelessWidget {
               return SizedBox(
                 height: 0,
               );
-              break;
             case 1:
               title = RichText(
                   text: TextSpan(
@@ -278,7 +278,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: withLog ? 'さんがあなたの記録にいいねしました' : 'さんがいいねしました',
@@ -293,7 +293,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: 'さん、',
@@ -315,7 +315,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: 'さん、',
@@ -340,18 +340,19 @@ class NotificationTile extends StatelessWidget {
           );
           onTap = () async {
             PostArguments _args = PostArguments(post: post);
-            bool action = await Home.push(MaterialPageRoute(builder: (context) {
+            bool? action =
+                await Home.push(MaterialPageRoute(builder: (context) {
               return PostPage(
                 args: _args,
               );
-            }));
+            })) as bool?;
             if (action ?? false) {
-              onPostDelete(post, context);
+              onPostDelete(post, ref);
             }
           };
           if (postBody['type'] == 'custom') {
             if (postBody['content'] != null) {
-              String text;
+              String? text;
               if (postBody['content'].isEmpty) {
                 if (post.images.length > 0) {
                   text = '${post.images.length}枚の写真';
@@ -367,7 +368,7 @@ class NotificationTile extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .subtitle1
-                      .copyWith(fontSize: 12),
+                      ?.copyWith(fontSize: 12),
                 );
               }
             }
@@ -378,7 +379,6 @@ class NotificationTile extends StatelessWidget {
               return SizedBox(
                 height: 0,
               );
-              break;
             case 1:
               title = RichText(
                   text: TextSpan(
@@ -386,7 +386,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: 'さんが返信にいいねしました',
@@ -401,7 +401,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: 'さん、',
@@ -423,7 +423,7 @@ class NotificationTile extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       children: [
                     TextSpan(
                         text: 'さん、',
@@ -446,15 +446,15 @@ class NotificationTile extends StatelessWidget {
           Comment comment = notificationBody['comment'];
           onTap = () async {
             Post post = notificationBody['post'];
-            bool action = await Home.push(MaterialPageRoute(
+            bool? action = await Home.push(MaterialPageRoute(
                 builder: (context) => PostPage(
                       args: PostArguments(post: post),
-                    )));
+                    ))) as bool?;
             if (action ?? false) {
-              onPostDelete(post, context);
+              onPostDelete(post, ref);
             }
           };
-          if ((comment.body ?? '').isEmpty) {
+          if (comment.body.isEmpty) {
             body = SizedBox(
               height: 0,
             );
@@ -464,7 +464,7 @@ class NotificationTile extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style:
-                  Theme.of(context).textTheme.subtitle1.copyWith(fontSize: 12),
+                  Theme.of(context).textTheme.subtitle1?.copyWith(fontSize: 12),
             );
           }
         }
@@ -489,7 +489,7 @@ class NotificationTile extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                    ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                 children: [
               TextSpan(
                   text: 'さんが返信しました',
@@ -497,19 +497,19 @@ class NotificationTile extends StatelessWidget {
             ]));
         onTap = () async {
           Post post = notificationBody['post'];
-          bool action = await Home.push(MaterialPageRoute(
+          bool? action = await Home.push(MaterialPageRoute(
               builder: (context) => PostPage(
                     args: PostArguments(post: post),
-                  )));
+                  ))) as bool?;
           if (action ?? false) {
-            onPostDelete(post, context);
+            onPostDelete(post, ref);
           }
         };
         body = Text(
           comment.body,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.subtitle1.copyWith(fontSize: 12),
+          style: Theme.of(context).textTheme.subtitle1?.copyWith(fontSize: 12),
         );
         image = getImageWidget(context, comment.user.getImageWidget());
         break;
@@ -521,7 +521,7 @@ class NotificationTile extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                    ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                 children: [
               TextSpan(
                   text: 'さんへのフレンド申請が承認されました',
@@ -529,7 +529,9 @@ class NotificationTile extends StatelessWidget {
             ]));
         image = getImageWidget(context, partner.user.getImageWidget());
         onTap = () {
-          if (context.read(authProvider.state).user.id == partner.user.id) {
+          AuthUser? user = ref.read(authProvider.notifier).user;
+          if (user == null) return;
+          if (user.id == partner.user.id) {
             Home.pushNamed('/profile');
           } else {
             Home.push(MaterialPageRoute(
@@ -545,7 +547,7 @@ class NotificationTile extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                    ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                 children: [
               TextSpan(
                   text: 'さんからフレンドリクエストが届いています',
@@ -553,7 +555,9 @@ class NotificationTile extends StatelessWidget {
             ]));
         image = getImageWidget(context, partner.user.getImageWidget());
         onTap = () {
-          if (context.read(authProvider.state).user.id == partner.user.id) {
+          AuthUser? user = ref.read(authProvider.notifier).user;
+          if (user == null) return;
+          if (user.id == partner.user.id) {
             Home.pushNamed('/profile');
           } else {
             Home.push(MaterialPageRoute(
@@ -565,7 +569,7 @@ class NotificationTile extends StatelessWidget {
         image = Image.asset('assets/images/brebit_team.png');
         title = Text(
           notificationBody['title'],
-          style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+          style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
         );
         onTap = () {
           Home.push(MaterialPageRoute(
@@ -596,7 +600,10 @@ class NotificationTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  title,
+                  title ??
+                      SizedBox(
+                        height: 0,
+                      ),
                   SizedBox(
                     height: 8,
                   ),
@@ -609,7 +616,7 @@ class NotificationTile extends StatelessWidget {
                   ),
                   Text(
                     getTime(),
-                    style: Theme.of(context).textTheme.subtitle1.copyWith(
+                    style: Theme.of(context).textTheme.subtitle1?.copyWith(
                           fontSize: 10,
                         ),
                   )
@@ -648,35 +655,38 @@ class NotificationTile extends StatelessWidget {
     }
   }
 
-  Future<void> onPostDelete(Post post, BuildContext context) async {
+  Future<void> onPostDelete(Post post, WidgetRef ref) async {
     if (post.isMine()) {
       try {
         MyLoading.startLoading();
-        bool deleteSuccess = await context
-            .read(timelineProvider(friendProviderName))
+        await ref
+            .read(timelineProvider(friendProviderName).notifier)
             .deletePost(post);
-        if (deleteSuccess ?? false) {
-          context
-              .read(timelineProvider(challengeProviderName))
-              .removePost(post);
-        } else {
-          await context
-              .read(timelineProvider(friendProviderName))
-              .deletePost(post);
-        }
+        ref
+            .read(timelineProvider(challengeProviderName).notifier)
+            .removePost(post);
         await MyLoading.dismiss();
       } catch (e) {
-        await MyLoading.dismiss();
-        MyErrorDialog.show(e);
+        try {
+          await ref
+              .read(timelineProvider(challengeProviderName).notifier)
+              .deletePost(post);
+          await MyLoading.dismiss();
+        } catch (e) {
+          await MyLoading.dismiss();
+          MyErrorDialog.show(e);
+        }
       }
     } else {
-      context.read(timelineProvider(friendProviderName)).removePost(post);
-      context.read(timelineProvider(challengeProviderName)).removePost(post);
+      ref.read(timelineProvider(friendProviderName).notifier).removePost(post);
+      ref
+          .read(timelineProvider(challengeProviderName).notifier)
+          .removePost(post);
     }
   }
 
   Widget getImageWidget(BuildContext context, Widget image,
-      [Widget additionalImage]) {
+      [Widget? additionalImage]) {
     if (additionalImage == null) {
       return CircleAvatar(
         child: ClipOval(child: image),

@@ -1,3 +1,4 @@
+import 'package:brebit/model/category.dart';
 import 'package:brebit/model/strategy.dart';
 import 'package:brebit/view/widgets/back-button.dart';
 import 'package:brebit/view/widgets/strategy-card.dart';
@@ -41,10 +42,18 @@ class StrategyExplanation extends StatelessWidget {
     final twentySecExplanationPositionKey = new GlobalKey();
 
     return Scaffold(
-      appBar: getMyAppBar(context: context, titleText: '', backButton: AppBarBackButton.none, background: AppBarBackground.white, actions: [MyBackButtonX()]),
-      backgroundColor: Theme.of(context).primaryColor,
+      appBar: getMyAppBar(context: context,
+          titleText: '',
+          backButton: AppBarBackButton.none,
+          background: AppBarBackground.white,
+          actions: [MyBackButtonX()]),
+      backgroundColor: Theme
+          .of(context)
+          .primaryColor,
       body: Container(
-        color: Theme.of(context).primaryColor,
+        color: Theme
+            .of(context)
+            .primaryColor,
         alignment: Alignment.center,
         child: SingleChildScrollView(
           controller: _controller,
@@ -57,7 +66,11 @@ class StrategyExplanation extends StatelessWidget {
                 margin: EdgeInsets.only(top: 24),
                 child: Text(
                   '戦略的に習慣づけを行う',
-                  style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 26, fontWeight: FontWeight.w700),
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodyText1
+                      ?.copyWith(fontSize: 26, fontWeight: FontWeight.w700),
                 ),
               ),
               SizedBox(
@@ -66,9 +79,12 @@ class StrategyExplanation extends StatelessWidget {
               Container(
                 child: Text(
                     "多くの人が陥りがちな思い込みとして、「自分の行動は自分の意思でコントロールしている」というものが挙げられます。実際には、毎日の行動で意思によるものは思っているほど多くありません。人生の半分は習慣的な行動からできている、という調査もあるのです。"
-                    "\n\n強い意志は悪い習慣を断つ上では役に立ちますが、なくても問題ありません。むしろ、行動を継続することで意志力が鍛わるのです。"
-                    "\n\nBrebitでは様々な習慣づけのテクニックのうち、「If-Thenプランニング」と「20秒ルール」をストラテジー(戦略)として活用できるようになっています。",
-                    style: Theme.of(context).textTheme.bodyText1),
+                        "\n\n強い意志は悪い習慣を断つ上では役に立ちますが、なくても問題ありません。むしろ、行動を継続することで意志力が鍛わるのです。"
+                        "\n\nBrebitでは様々な習慣づけのテクニックのうち、「If-Thenプランニング」と「20秒ルール」をストラテジー(戦略)として活用できるようになっています。",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyText1),
               ),
               SizedBox(
                 height: 8,
@@ -86,10 +102,15 @@ class StrategyExplanation extends StatelessWidget {
                       bottom: 0,
                       child: Container(
                         height: 0.5,
-                        decoration: BoxDecoration(color: Theme.of(context).accentColor, borderRadius: BorderRadius.circular(1.5)),
+                        decoration: BoxDecoration(color: Theme
+                            .of(context)
+                            .colorScheme
+                            .secondary, borderRadius: BorderRadius.circular(
+                            1.5)),
                       ),
                     ),
-                    Text('If-Thenプランニングとは', textAlign: TextAlign.center, style: linkTextStyle),
+                    Text('If-Thenプランニングとは', textAlign: TextAlign.center,
+                        style: linkTextStyle),
                   ],
                 ),
               ),
@@ -109,10 +130,15 @@ class StrategyExplanation extends StatelessWidget {
                       bottom: 0,
                       child: Container(
                         height: 0.5,
-                        decoration: BoxDecoration(color: Theme.of(context).accentColor, borderRadius: BorderRadius.circular(1.5)),
+                        decoration: BoxDecoration(color: Theme
+                            .of(context)
+                            .colorScheme
+                            .secondary, borderRadius: BorderRadius.circular(
+                            1.5)),
                       ),
                     ),
-                    Text('20秒ルールとは', textAlign: TextAlign.center, style: linkTextStyle),
+                    Text('20秒ルールとは', textAlign: TextAlign.center,
+                        style: linkTextStyle),
                   ],
                 ),
               ),
@@ -123,7 +149,11 @@ class StrategyExplanation extends StatelessWidget {
                 key: ifThenExplanationPositionKey,
                 child: Text(
                   '習慣化の帝王、\nIf-Thenプランニング',
-                  style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodyText1
+                      ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
               ),
               SizedBox(
@@ -132,10 +162,13 @@ class StrategyExplanation extends StatelessWidget {
               Container(
                 child: Text(
                     "If-Thenプランニングとは、「Aが起きたらBをする」「Aの状況に陥ったらBをする」というように、行動のきっかけをあらかじめ決めておくことです。"
-                    "\n「If=もし〇〇したら」→「then=そのとき〇〇する」というように、条件と行動を結びつけるのが通常のTODOリストと異なる点です。"
-                    "\nただ目標を決めるだけではなく具体的な条件を決めることで、脳が反応しやすくなります。"
-                    "\n\nこのIf-Thenプランニングは例えば次のようにして習慣改善に用いることができます：",
-                    style: Theme.of(context).textTheme.bodyText1),
+                        "\n「If=もし〇〇したら」→「then=そのとき〇〇する」というように、条件と行動を結びつけるのが通常のTODOリストと異なる点です。"
+                        "\nただ目標を決めるだけではなく具体的な条件を決めることで、脳が反応しやすくなります。"
+                        "\n\nこのIf-Thenプランニングは例えば次のようにして習慣改善に用いることができます：",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyText1),
               ),
               SizedBox(
                 height: 8,
@@ -144,6 +177,7 @@ class StrategyExplanation extends StatelessWidget {
                 child: StrategyCard(
                   strategy: Strategy(
                     body: ifThenBody,
+                    category: Category.findFromCategoryName(CategoryName.cigarette)
                   ),
                   onSelect: () {
                     return false;
@@ -154,8 +188,12 @@ class StrategyExplanation extends StatelessWidget {
                 height: 8,
               ),
               Container(
-                child: Text("ポイントは、「何かをやる習慣」に置き換えることです。\n一般的に「何かをやらない習慣」をつくることは「何かをやる習慣」をつくるより難しいということがわかっています。そのため、「肉を注文しない」より「低カロリーのメニューを注文する」という習慣を作るほうが実行しやすくなります。",
-                    style: Theme.of(context).textTheme.bodyText1),
+                child: Text(
+                    "ポイントは、「何かをやる習慣」に置き換えることです。\n一般的に「何かをやらない習慣」をつくることは「何かをやる習慣」をつくるより難しいということがわかっています。そのため、「肉を注文しない」より「低カロリーのメニューを注文する」という習慣を作るほうが実行しやすくなります。",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyText1),
               ),
               SizedBox(
                 height: 16,
@@ -164,15 +202,23 @@ class StrategyExplanation extends StatelessWidget {
                 key: twentySecExplanationPositionKey,
                 child: Text(
                   '習慣づくりの基本、20秒ルール',
-                  style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodyText1
+                      ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
               ),
               SizedBox(
                 height: 8,
               ),
               Container(
-                child: Text("新しい習慣を身に付けようとする時には、その行動を「やりやすいようにすること」が大切です。逆に、ある習慣をやめるためにはその行動を「やりにくいようにすること」が大切です。\nひとつの行動にかかる時間を20秒増やすのが「20秒ルール」です。例えば、SNSをついつい見すぎてしまう場合は、次のような20秒ルールを取り入れるといいかもしれません：",
-                    style: Theme.of(context).textTheme.bodyText1),
+                child: Text(
+                    "新しい習慣を身に付けようとする時には、その行動を「やりやすいようにすること」が大切です。逆に、ある習慣をやめるためにはその行動を「やりにくいようにすること」が大切です。\nひとつの行動にかかる時間を20秒増やすのが「20秒ルール」です。例えば、SNSをついつい見すぎてしまう場合は、次のような20秒ルールを取り入れるといいかもしれません：",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyText1),
               ),
               SizedBox(
                 height: 8,
@@ -181,6 +227,7 @@ class StrategyExplanation extends StatelessWidget {
                 child: StrategyCard(
                   strategy: Strategy(
                     body: twentySecBody,
+                    category: Category.findFromCategoryName(CategoryName.cigarette)
                   ),
                   onSelect: () {
                     return false;
@@ -191,7 +238,12 @@ class StrategyExplanation extends StatelessWidget {
                 height: 8,
               ),
               Container(
-                child: Text(" こうすることで、SNSはアプリではなくブラウザから見なければならなくなり、手間が増えます。\n\n「20秒ルール」とはいっても20秒にこだわりすぎず、ワンステップずつ手間を増やすところから初めていきましょう。", style: Theme.of(context).textTheme.bodyText1),
+                child: Text(
+                    " こうすることで、SNSはアプリではなくブラウザから見なければならなくなり、手間が増えます。\n\n「20秒ルール」とはいっても20秒にこだわりすぎず、ワンステップずつ手間を増やすところから初めていきましょう。",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyText1),
               ),
             ],
           ),

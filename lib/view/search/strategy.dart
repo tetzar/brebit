@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../api/strategy.dart';
@@ -17,25 +16,24 @@ import '../widgets/dialog.dart';
 import '../widgets/strategy-card.dart';
 import 'search.dart';
 
-class StrategyResult extends HookWidget {
+class StrategyResult extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    InputFormProviderState inputFormProviderState =
-        useProvider(inputFormProvider.state);
-    List<Strategy> result = inputFormProviderState.strategies;
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(inputFormProvider);
+    List<Strategy>? result = ref.read(inputFormProvider.notifier).strategies;
     List<Widget> strategyCards = <Widget>[];
     if (result != null) {
       if (result.length == 0 &&
-          context.read(inputFormProvider).word.length > 0) {
+          ref.read(inputFormProvider.notifier).word.length > 0) {
         strategyCards.add(Container(
           width: double.infinity,
           margin: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            '申し訳ありません！”${context.read(inputFormProvider).word}”に関するストラテジーはみつかりませんでした。',
+            '申し訳ありません！”${ref.read(inputFormProvider.notifier).word}”に関するストラテジーはみつかりませんでした。',
             style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(fontWeight: FontWeight.w700, fontSize: 11),
+                ?.copyWith(fontWeight: FontWeight.w700, fontSize: 11),
             textAlign: TextAlign.left,
           ),
         ));
@@ -45,7 +43,7 @@ class StrategyResult extends HookWidget {
             strategy: strategy,
             showFollower: true,
             onSelect: () {
-              showSheet(context, strategy);
+              showSheet(context, ref, strategy);
               return false;
             },
           ));
@@ -53,7 +51,8 @@ class StrategyResult extends HookWidget {
       }
       if (result.length < 5) {
         List<Strategy> recommendation =
-            context.read(inputFormProvider).recommendation.strategies;
+            ref.read(inputFormProvider.notifier).recommendation?.strategies ??
+                [];
         int recommendationLength = recommendation.length;
         if (recommendationLength > 0) {
           strategyCards.add(Container(
@@ -74,7 +73,7 @@ class StrategyResult extends HookWidget {
             strategy: recommendation[i],
             showFollower: true,
             onSelect: () {
-              showSheet(context, recommendation[i]);
+              showSheet(context, ref, recommendation[i]);
               return false;
             },
           ));
@@ -91,12 +90,12 @@ class StrategyResult extends HookWidget {
       //     decoration: BoxDecoration(
       //         borderRadius: BorderRadius.circular(17),
       //         border:
-      //             Border.all(color: Theme.of(context).accentColor, width: 1)),
+      //             Border.all(color: Theme.of(context).colorScheme.secondary, width: 1)),
       //     alignment: Alignment.center,
       //     child: Text(
       //       '更新',
       //       style: TextStyle(
-      //           color: Theme.of(context).accentColor,
+      //           color: Theme.of(context).colorScheme.secondary,
       //           fontWeight: FontWeight.w700,
       //           fontSize: 12),
       //     ),
@@ -133,25 +132,23 @@ class StrategyResult extends HookWidget {
                   break;
                 default:
                   return;
-                  break;
               }
               List<int> tagIds = [];
               List<String> newTags = [];
               _formValue.tags.forEach((tag) {
-                if (tag.id == null) {
+                int? tagId = tag.id;
+                if (tagId == null) {
                   newTags.add(tag.name);
                 } else {
-                  tagIds.add(tag.id);
+                  tagIds.add(tagId);
                 }
               });
               data['tags'] = tagIds;
               data['new_tags'] = newTags;
-              Habit habit = await StrategyApi.storeStrategy(
-                  context.read(homeProvider).getHabit(), data);
-              habit.strategies.forEach((element) {
-                print(element.title);
-              });
-              context.read(homeProvider).setHabit(habit);
+              Habit? currentHabit = ref.read(homeProvider.notifier).getHabit();
+              if (currentHabit == null) return;
+              Habit habit = await StrategyApi.storeStrategy(currentHabit, data);
+              ref.read(homeProvider.notifier).setHabit(habit);
               await MyLoading.dismiss();
               ApplicationRoutes.pop(context);
             } catch (e) {
@@ -183,7 +180,7 @@ class StrategyResult extends HookWidget {
                 child: Icon(
                   Icons.add,
                   size: 20,
-                  color: Theme.of(context).textTheme.subtitle1.color,
+                  color: Theme.of(context).textTheme.subtitle1?.color,
                 ),
               ),
               Expanded(
@@ -191,7 +188,7 @@ class StrategyResult extends HookWidget {
                     style: Theme.of(context)
                         .textTheme
                         .subtitle1
-                        .copyWith(fontWeight: FontWeight.w400, fontSize: 13)),
+                        ?.copyWith(fontWeight: FontWeight.w400, fontSize: 13)),
               )
             ],
           ),
@@ -218,9 +215,10 @@ class StrategyResult extends HookWidget {
 
   Future<void> reload(BuildContext context) async {}
 
-  void showSheet(BuildContext context, Strategy strategy) {
-    bool isUsing =
-        context.read(homeProvider).getHabit().isUsingStrategy(strategy);
+  void showSheet(BuildContext context, WidgetRef ref, Strategy strategy) {
+    Habit? currentHabit = ref.read(homeProvider.notifier).getHabit();
+    if (currentHabit == null) return;
+    bool isUsing = currentHabit.isUsingStrategy(strategy);
     List<BottomSheetItem> items = <BottomSheetItem>[
       isUsing
           ? BottomSheetItem(
@@ -229,8 +227,8 @@ class StrategyResult extends HookWidget {
                 try {
                   MyLoading.startLoading();
                   Habit habit = await StrategyApi.removeStrategies(
-                      context.read(homeProvider).getHabit(), [strategy.id]);
-                  context.read(homeProvider).setHabit(habit);
+                      currentHabit, [strategy.id!]);
+                  ref.read(homeProvider.notifier).setHabit(habit);
                   await MyLoading.dismiss();
                 } catch (e) {
                   await MyLoading.dismiss();
@@ -240,7 +238,7 @@ class StrategyResult extends HookWidget {
               child: Text(
                 '自分のストラテジーから削除',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               ))
@@ -249,10 +247,10 @@ class StrategyResult extends HookWidget {
                 ApplicationRoutes.pop();
                 try {
                   MyLoading.startLoading();
-                  Habit habit = await StrategyApi.addStrategy(
-                      strategy, context.read(homeProvider).getHabit());
-                  context.read(homeProvider).setHabit(habit);
-                  context.read(inputFormProvider).removeStrategy(strategy);
+                  Habit habit =
+                      await StrategyApi.addStrategy(strategy, currentHabit);
+                  ref.read(homeProvider.notifier).setHabit(habit);
+                  ref.read(inputFormProvider.notifier).removeStrategy(strategy);
                   MyLoading.dismiss();
                 } catch (e) {
                   await MyLoading.dismiss();
@@ -262,7 +260,7 @@ class StrategyResult extends HookWidget {
               child: Text(
                 '自分のストラテジーに追加',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               )),

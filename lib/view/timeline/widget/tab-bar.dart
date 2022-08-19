@@ -1,12 +1,12 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final tabProvider = StateNotifierProvider.autoDispose((ref) => TabProvider(0));
 
 class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
+
+  double get position => state;
 
   void set(double s) {
     state = s;
@@ -18,17 +18,17 @@ enum ShowingTab {
   challenge,
 }
 
-class TimelineTabBarContent extends StatefulHookWidget {
+class TimelineTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
 
-  TimelineTabBarContent({@required this.tabController});
+  TimelineTabBarContent({required this.tabController});
 
   @override
   _TimelineTabBarContentState createState() => _TimelineTabBarContentState();
 }
 
-class _TimelineTabBarContentState extends State<TimelineTabBarContent> {
-  ShowingTab _showingTab;
+class _TimelineTabBarContentState extends ConsumerState<TimelineTabBarContent> {
+  late ShowingTab _showingTab;
 
   @override
   void initState() {
@@ -38,7 +38,8 @@ class _TimelineTabBarContentState extends State<TimelineTabBarContent> {
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider.state);
+    ref.watch(tabProvider);
+    double position = ref.read(tabProvider.notifier).position;
     if (_showingTab == ShowingTab.friends) {
       if (position > 0.9) {
         _showingTab = ShowingTab.challenge;
@@ -81,7 +82,7 @@ class _TimelineTabBarContentState extends State<TimelineTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color
+                                            ?.color
                                         : Theme.of(context).disabledColor),
                               )
                             ],
@@ -105,7 +106,7 @@ class _TimelineTabBarContentState extends State<TimelineTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color
+                                            ?.color
                                         : Theme.of(context).disabledColor),
                               ),
                             ],
@@ -146,7 +147,7 @@ class TabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  TabBarLinePainter({this.position, this.context});
+  TabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -156,7 +157,7 @@ class TabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;

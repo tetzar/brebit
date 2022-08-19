@@ -1,23 +1,23 @@
+import 'package:brebit/view/general/error-widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../api/strategy.dart';
 import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
 import '../../../../model/tag.dart';
-import '../../../../api/strategy.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
-import 'execute_strategy.dart';
-import '../widgets/slider.dart';
-import '../widgets/tags.dart';
 import '../../general/loading.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import '../circumstance.dart';
+import '../widgets/slider.dart';
+import '../widgets/tags.dart';
+import 'execute_strategy.dart';
 
 class WannaActionParam {
   String systemName;
@@ -25,22 +25,22 @@ class WannaActionParam {
   String desireMessage;
 
   WannaActionParam({
-    @required this.systemName,
-    @required this.appBarTitle,
-    @required this.desireMessage,
+    required this.systemName,
+    required this.appBarTitle,
+    required this.desireMessage,
   });
 }
 
-class ConditionWanna extends StatefulWidget {
+class ConditionWanna extends ConsumerStatefulWidget {
   @override
   _ConditionWannaState createState() => _ConditionWannaState();
 }
 
-class _ConditionWannaState extends State<ConditionWanna> {
+class _ConditionWannaState extends ConsumerState<ConditionWanna> {
   @override
   void initState() {
-    context.read(circumstanceSuggestionProvider).getSuggestions('');
-    context.read(conditionValueProvider).initialize();
+    ref.read(circumstanceSuggestionProvider.notifier).getSuggestions('');
+    ref.read(conditionValueProvider.notifier).initialize();
     super.initState();
   }
 
@@ -65,34 +65,36 @@ class _ConditionWannaState extends State<ConditionWanna> {
 
   @override
   Widget build(BuildContext context) {
-    Habit habit = context.read(homeProvider).getHabit();
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
     WannaActionParam param =
         params.firstWhere((p) => p.systemName == habit.category.systemName);
     return Scaffold(
-      appBar: getMyAppBar(
-        context: context,
-        titleText: param.appBarTitle
-      ),
+      appBar: getMyAppBar(context: context, titleText: param.appBarTitle),
       body: Container(
         color: Theme.of(context).primaryColor,
         height: double.infinity,
-        child: ConditionDidForm(param: param),
+        child: ConditionDidForm(
+          param: param,
+          habit: habit,
+        ),
       ),
     );
   }
 }
 
-class ConditionDidForm extends StatelessWidget {
+class ConditionDidForm extends ConsumerWidget {
   final WannaActionParam param;
+  final Habit habit;
 
-  ConditionDidForm({this.param});
+  ConditionDidForm({required this.param, required this.habit});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     TextStyle style = TextStyle(
         fontWeight: FontWeight.w400,
         fontSize: 15,
-        color: Theme.of(context).textTheme.bodyText1.color);
+        color: Theme.of(context).textTheme.bodyText1?.color);
     List<Widget> feelingTiles = <Widget>[];
     MentalValue.mentalValues.forEach((mentalValue) {
       feelingTiles.add(Container(
@@ -105,7 +107,7 @@ class ConditionDidForm extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 12, fontWeight: FontWeight.w400),
+                  ?.copyWith(fontSize: 12, fontWeight: FontWeight.w400),
             ),
             SvgPicture.asset(
               mentalValue.picturePath,
@@ -118,10 +120,10 @@ class ConditionDidForm extends StatelessWidget {
     });
     return MyHookBottomFixedButton(
       provider: conditionValueProvider,
-      enable: context.read(conditionValueProvider).savable,
+      enable: ref.read(conditionValueProvider.notifier).savable,
       label: '次へ',
       onTapped: () async {
-        await save(context);
+        await save(ref);
       },
       child: Container(
         padding: EdgeInsets.only(top: 24, left: 24, right: 24),
@@ -137,7 +139,9 @@ class ConditionDidForm extends StatelessWidget {
                   ),
                   MySlider(
                     onChanged: (double value) {
-                      context.read(conditionValueProvider).setDesire(value);
+                      ref
+                          .read(conditionValueProvider.notifier)
+                          .setDesire(value);
                     },
                     min: 0,
                     max: 10,
@@ -165,8 +169,8 @@ class ConditionDidForm extends StatelessWidget {
                       child: FeelingTiles(
                           list: feelingTiles,
                           onChanged: (MentalValue selected) {
-                            context
-                                .read(conditionValueProvider)
+                            ref
+                                .read(conditionValueProvider.notifier)
                                 .setMental(selected);
                           }))
                 ],
@@ -176,7 +180,7 @@ class ConditionDidForm extends StatelessWidget {
               child: Column(
                 children: [
                   TagCards(tagUpdate: (List<Tag> tags) {
-                    tagUpdate(tags, context);
+                    tagUpdate(tags, ref);
                   })
                 ],
               ),
@@ -187,26 +191,31 @@ class ConditionDidForm extends StatelessWidget {
     );
   }
 
-  void tagUpdate(List<Tag> tags, BuildContext ctx) {
-    ctx.read(conditionValueProvider).setTags(tags);
+  void tagUpdate(List<Tag> tags, WidgetRef ref) {
+    ref.read(conditionValueProvider.notifier).setTags(tags);
   }
 
-  Future<void> save(BuildContext ctx) async {
+  Future<void> save(WidgetRef ref) async {
     MyLoading.startLoading();
-    List<Strategy> recommendedStrategies;
+    List<Strategy> recommendedStrategies = [];
     try {
-      recommendedStrategies =
-          await StrategyApi.getRecommendStrategiesFromCondition(
-              ctx.read(conditionValueProvider.state).tags, {
-        'desire': ctx.read(conditionValueProvider.state).desire.toInt(),
-        'mental': ctx.read(conditionValueProvider.state).mental.id
-      });
+      MentalValue? mentalValue =
+          ref.read(conditionValueProvider.notifier).getMental();
+      if (mentalValue != null) {
+        recommendedStrategies =
+            await StrategyApi.getRecommendStrategiesFromCondition(
+                ref.read(conditionValueProvider.notifier).getTags(), {
+          'desire':
+              ref.read(conditionValueProvider.notifier).getDesire().toInt(),
+          'mental': mentalValue.id
+        });
+      }
     } catch (e) {
       await MyLoading.dismiss();
       MyErrorDialog.show(e);
       return;
     }
-    ExecuteStrategyWannaParam params = ExecuteStrategyWannaParam();
+    ExecuteStrategyWannaParam params = ExecuteStrategyWannaParam(recommendedStrategies);
     params.recommends = recommendedStrategies;
     await MyLoading.dismiss();
     ApplicationRoutes.pushNamed('/want/strategy/index', params);
@@ -217,7 +226,7 @@ class FeelingTiles extends StatefulWidget {
   final List<Widget> list;
   final Function(MentalValue) onChanged;
 
-  FeelingTiles({@required this.list, @required this.onChanged});
+  FeelingTiles({required this.list, required this.onChanged});
 
   @override
   _FeelingTilesState createState() => _FeelingTilesState();
@@ -227,11 +236,10 @@ class _FeelingTilesState extends State<FeelingTiles> {
   @override
   Widget build(BuildContext context) {
     List<Container> lines = <Container>[];
-    List<FeelingTile> tiles;
+    List<FeelingTile> tiles = [];
     for (int i = 0; i < widget.list.length; i++) {
       switch (i % 4) {
         case 0:
-          tiles = <FeelingTile>[];
           tiles.add(FeelingTile(
             onTap: () {
               select(MentalValue.mentalValues[i]);
@@ -256,6 +264,7 @@ class _FeelingTilesState extends State<FeelingTiles> {
               children: tiles,
             ),
           ));
+          tiles = [];
           break;
         default:
           tiles.add(FeelingTile(
@@ -287,22 +296,23 @@ class _FeelingTilesState extends State<FeelingTiles> {
   }
 }
 
-class FeelingTile extends HookWidget {
+class FeelingTile extends HookConsumerWidget {
   final Function onTap;
   final Widget child;
   final MentalValue mental;
   final EdgeInsets margin;
 
   FeelingTile(
-      {@required this.onTap,
-      @required this.child,
-      this.margin,
-      @required this.mental});
+      {required this.onTap,
+      required this.child,
+      required this.margin,
+      required this.mental});
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(conditionValueProvider.state);
-    bool selected = context.read(conditionValueProvider).mentalIs(this.mental);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(conditionValueProvider);
+    bool selected =
+        ref.read(conditionValueProvider.notifier).mentalIs(this.mental);
     return Expanded(
       child: Container(
         margin: margin,
@@ -318,8 +328,11 @@ class FeelingTile extends HookWidget {
                 borderRadius: BorderRadius.all(Radius.circular(6)),
                 border: Border.all(
                     color: selected
-                        ? Theme.of(context).accentColor
-                        : Theme.of(context).accentColor.withOpacity(0),
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withOpacity(0),
                     width: 2),
                 color: Theme.of(context).primaryColorLight),
             alignment: Alignment.center,
@@ -331,23 +344,23 @@ class FeelingTile extends HookWidget {
   }
 }
 
-class TagCards extends HookWidget {
+class TagCards extends HookConsumerWidget {
   final Function(List<Tag>) tagUpdate;
 
-  TagCards({@required this.tagUpdate});
+  TagCards({required this.tagUpdate});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     TextStyle style = TextStyle(
         fontWeight: FontWeight.w400,
         fontSize: 15,
-        color: Theme.of(context).textTheme.bodyText1.color);
-    useProvider(conditionValueProvider.state);
-    if (!context.read(conditionValueProvider).isTagsSet()) {
+        color: Theme.of(context).textTheme.bodyText1?.color);
+    ref.watch(conditionValueProvider);
+    if (!ref.read(conditionValueProvider.notifier).isTagsSet()) {
       return InkWell(
           onTap: () {
             CircumstanceParams param = CircumstanceParams(
-                selected: context.read(conditionValueProvider.state).tags,
+                selected: ref.read(conditionValueProvider.notifier).getTags(),
                 onSaved: (List<Tag> tags) {
                   tagUpdate(tags);
                 });
@@ -385,18 +398,18 @@ class TagCards extends HookWidget {
           ));
     }
     List<TagCard> tags = <TagCard>[];
-    context.read(conditionValueProvider.state).tags.forEach((tag) {
+    ref.read(conditionValueProvider.notifier).getTags().forEach((tag) {
       tags.add(SimpleTagCard(
         name: tag.name,
         onCancel: () {
-          context.read(conditionValueProvider).removeTag(tag);
+          ref.read(conditionValueProvider.notifier).removeTag(tag);
         },
       ));
     });
     tags.add(AddTagCard(
       onTap: () {
         CircumstanceParams param = CircumstanceParams(
-            selected: context.read(conditionValueProvider.state).tags,
+            selected: ref.read(conditionValueProvider.notifier).getTags(),
             onSaved: tagUpdate);
         ApplicationRoutes.pushNamed('/circumstance', param);
       },

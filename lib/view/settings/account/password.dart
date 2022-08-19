@@ -61,21 +61,21 @@ class _SavableProvider extends StateNotifier<_SavableProviderState> {
 final _savableProvider = StateNotifierProvider.autoDispose(
     (ref) => _SavableProvider(_SavableProviderState(false, false)));
 
-class ChangePasswordForm extends StatefulWidget {
+class ChangePasswordForm extends ConsumerStatefulWidget {
   @override
   _ChangePasswordFormState createState() => _ChangePasswordFormState();
 }
 
-class _ChangePasswordFormState extends State<ChangePasswordForm> {
-  GlobalKey<FormState> _newPasswordKey;
-  GlobalKey<FormState> _currentPasswordKey;
-  FocusNode _newPasswordFocusNode;
-  FocusNode _currentPasswordFocusNode;
-  String newPassword;
-  String currentPassword;
+class _ChangePasswordFormState extends ConsumerState<ChangePasswordForm> {
+  late GlobalKey<FormState> _newPasswordKey;
+  late GlobalKey<FormState> _currentPasswordKey;
+  late FocusNode _newPasswordFocusNode;
+  late FocusNode _currentPasswordFocusNode;
+  String newPassword = '';
+  String currentPassword = '';
 
-  String newPasswordErrorMessage;
-  String currentPasswordErrorMessage;
+  String newPasswordErrorMessage = '';
+  String currentPasswordErrorMessage = '';
 
   @override
   void initState() {
@@ -89,12 +89,12 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
     _currentPasswordFocusNode = new FocusNode();
     _newPasswordFocusNode.addListener(() {
       if (!_newPasswordFocusNode.hasFocus) {
-        _newPasswordKey.currentState.validate();
+        _newPasswordKey.currentState?.validate();
       }
     });
     _currentPasswordFocusNode.addListener(() {
       if (!_currentPasswordFocusNode.hasFocus) {
-        _currentPasswordKey.currentState.validate();
+        _currentPasswordKey.currentState?.validate();
       }
     });
     super.initState();
@@ -115,7 +115,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
       },
       label: '変更する',
       enable: () {
-        return context.read(_savableProvider).savable();
+        return ref.read(_savableProvider.notifier).savable();
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 64, horizontal: 24),
@@ -128,7 +128,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                  ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
             ),
             SizedBox(
               height: 40,
@@ -149,18 +149,18 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
                     currentPasswordErrorMessage = '';
                     return p;
                   }
-                  if (text.length < 6) {
+                  if (text == null || text.length < 6) {
                     return '6文字以上入力してください';
                   }
                   return null;
                 },
                 onChanged: (text) {
                   currentPassword = text;
-                  context.read(_savableProvider).setCurrentPassword(
+                  ref.read(_savableProvider.notifier).setCurrentPassword(
                       text.length > 5 && currentPassword != newPassword);
                 },
                 onSaved: (text) {
-                  this.currentPassword = text;
+                  this.currentPassword = text ?? '';
                 },
               ),
             ),
@@ -182,18 +182,18 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
                     currentPasswordErrorMessage = '';
                     return p;
                   }
-                  if (text.length < 6) {
+                  if (text == null || text.length < 6) {
                     return '6文字以上入力してください';
                   }
                   return null;
                 },
                 onChanged: (text) {
                   newPassword = text;
-                  context.read(_savableProvider).setNewPassword(
+                  ref.read(_savableProvider.notifier).setNewPassword(
                       text.length > 5 && currentPassword != newPassword);
                 },
                 onSaved: (text) {
-                  this.currentPassword = text;
+                  this.currentPassword = text ?? '';
                 },
               ),
             )
@@ -204,28 +204,29 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
   }
 
   Future<void> save() async {
-    if (_newPasswordKey.currentState.validate() &&
-        _currentPasswordKey.currentState.validate()) {
-      _currentPasswordKey.currentState.save();
-      _newPasswordKey.currentState.save();
+    if ((_newPasswordKey.currentState?.validate() ?? false) &&
+        (_currentPasswordKey.currentState?.validate() ?? false)) {
+      _currentPasswordKey.currentState!.save();
+      _newPasswordKey.currentState!.save();
       try {
-        User firebaseUser = FirebaseAuth.instance.currentUser;
-        String email = firebaseUser.email;
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
+        String? email = firebaseUser?.email;
+        if (firebaseUser == null || email == null) return;
         MyLoading.startLoading();
         await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: email, password: this.currentPassword);
         await firebaseUser.reload();
-        await FirebaseAuth.instance.currentUser.updatePassword(newPassword);
+        await firebaseUser.updatePassword(newPassword);
         await MyLoading.dismiss();
         ApplicationRoutes.pushReplacementNamed(
             '/settings/account/password/complete');
       } on FirebaseAuthException catch (e) {
         if (e.code == 'weak-password') {
           newPasswordErrorMessage = 'パスワードが脆弱です';
-          _newPasswordKey.currentState.validate();
+          _newPasswordKey.currentState?.validate();
         } else if (e.code == 'wrong-password') {
           currentPasswordErrorMessage = 'パスワードが正しくありません。';
-          _currentPasswordKey.currentState.validate();
+          _currentPasswordKey.currentState?.validate();
         } else {
           await MyLoading.dismiss();
           MyErrorDialog.show(e);
@@ -261,7 +262,7 @@ class PasswordChangeComplete extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
           ],
         ),

@@ -1,19 +1,21 @@
 import 'dart:async';
 
+import 'package:brebit/view/general/error-widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
 import '../../../../model/habit.dart';
-import '../../../../api/habit.dart';
 import '../../../../provider/condition.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
-import 'check_strategy.dart';
 import '../../general/loading.dart';
 import '../../widgets/app-bar.dart';
 import '../../widgets/dialog.dart';
 import '../../widgets/text-field.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'check_strategy.dart';
 
 final Map<CategoryName, String> appBarTitle = <CategoryName, String>{
   CategoryName.cigarette: 'たばこを吸ってしまった',
@@ -23,51 +25,58 @@ final Map<CategoryName, String> appBarTitle = <CategoryName, String>{
   CategoryName.notCategorized: 'やってしまった',
 };
 
-class CheckAmount extends StatelessWidget {
+class CheckAmount extends ConsumerWidget {
   final CheckedValue checkedValue;
 
-  CheckAmount({this.checkedValue});
+  CheckAmount({required this.checkedValue});
 
   @override
-  Widget build(BuildContext context) {
-    Habit _habit = context.read(homeProvider).getHabit();
+  Widget build(BuildContext context, WidgetRef ref) {
+    Habit? _habit = ref.read(homeProvider.notifier).getHabit();
+    if (_habit == null) {
+      return ErrorToHomeWidget();
+    }
     return Scaffold(
       appBar: getMyAppBar(
         context: context,
-        titleText: appBarTitle[_habit.category.name],
+        titleText: appBarTitle[_habit.category.name]!,
       ),
       body: InputForm(
         checkedValue: checkedValue,
+        habit: _habit,
       ),
     );
   }
 }
 
-class InputForm extends StatefulWidget {
+class InputForm extends ConsumerStatefulWidget {
   final CheckedValue checkedValue;
+  final Habit habit;
 
-  InputForm({@required this.checkedValue});
+  InputForm({required this.checkedValue, required this.habit});
 
   @override
   _InputFormState createState() => _InputFormState();
 }
 
-class _InputFormState extends State<InputForm> {
-  bool savable;
-  Function onSave;
+class _InputFormState extends ConsumerState<InputForm> {
+  bool savable = false;
+  int Function() onSave = () {
+    return -1;
+  };
 
-  Map<String, String> data;
+  Map<String, String> data = {};
 
   @override
   void initState() {
-    data = <String, String>{};
+    data = {};
     savable = false;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    Habit _habit = context.read(homeProvider).getHabit();
+    Habit _habit = widget.habit;
     Widget _form;
     switch (_habit.category.name) {
       case CategoryName.cigarette:
@@ -75,18 +84,16 @@ class _InputFormState extends State<InputForm> {
           question: 'たばこを何本吸いましたか',
           unit: '本',
           onChange: (String num) {
-            if (num.length > 0) {
-              savable = true;
-            } else {
-              savable = false;
-            }
+            savable = num.length > 0;
             setState(() {});
             data['number'] = num;
           },
           maxDigit: 1,
         );
         onSave = () {
-          return int.parse(data['number']);
+          String? number = data['number'];
+          if (number == null) return 0;
+          return int.parse(number);
         };
         break;
       case CategoryName.alcohol:
@@ -96,12 +103,10 @@ class _InputFormState extends State<InputForm> {
               question: '飲酒量はどのくらいでしたか？',
               unit: 'ml',
               onChange: (String num) {
-                savable = false;
-                if (data['concentration'] != null) {
-                  if (num.length > 0 && data['concentration'].length > 0) {
-                    savable = true;
-                  }
-                }
+                String? concentration = data['concentration'];
+                savable = concentration != null &&
+                    concentration.length > 0 &&
+                    num.length > 0;
                 setState(() {});
                 data['amount'] = num;
               },
@@ -111,12 +116,8 @@ class _InputFormState extends State<InputForm> {
               question: 'アルコール濃度は平均でどのくらいでしたか？',
               unit: '%',
               onChange: (String num) {
-                savable = false;
-                if (data['amount'] != null) {
-                  if (num.length > 0 && data['amount'].length > 0) {
-                    savable = true;
-                  }
-                }
+                String? amount = data['amount'];
+                savable = amount != null && amount.length > 0 && num.length > 0;
                 setState(() {});
                 data['concentration'] = num;
               },
@@ -128,16 +129,17 @@ class _InputFormState extends State<InputForm> {
               child: Builder(
                 builder: (context) {
                   String text;
-                  if (data['amount'] == null) {
+                  String? amount = data['amount'];
+                  if (amount == null) {
                     text = '飲酒量を入力してください';
                   } else {
-                    if (data['concentration'] == null) {
+                    String? concentration = data['concentration'];
+                    if (concentration == null) {
                       text = 'アルコール濃度を入力してください';
                     } else {
-                      int alcohol = (int.parse(data['amount']) *
-                              int.parse(data['concentration']) *
-                              0.01)
-                          .toInt();
+                      int alcohol =
+                          (int.parse(amount) * int.parse(concentration) * 0.01)
+                              .toInt();
                       text = '摂取したアルコールは${alcohol}mlです';
                     }
                   }
@@ -146,7 +148,7 @@ class _InputFormState extends State<InputForm> {
                     style: Theme.of(context)
                         .textTheme
                         .subtitle1
-                        .copyWith(fontSize: 12),
+                        ?.copyWith(fontSize: 12),
                   );
                 },
               ),
@@ -154,10 +156,10 @@ class _InputFormState extends State<InputForm> {
           ],
         );
         onSave = () {
-          return (int.parse(data['amount']) *
-                  int.parse(data['concentration']) *
-                  0.01)
-              .toInt();
+          String? amount = data['amount'];
+          String? concentration = data['concentration'];
+          if (amount == null || concentration == null) return 0;
+          return (int.parse(amount) * int.parse(concentration) * 0.01).toInt();
         };
         break;
       case CategoryName.sweets:
@@ -165,18 +167,16 @@ class _InputFormState extends State<InputForm> {
           question: 'お菓子をどのくらいたべましたか？',
           unit: 'kcal',
           onChange: (String num) {
-            if (num.length > 0) {
-              savable = true;
-            } else {
-              savable = false;
-            }
+            savable = num.length > 0;
             setState(() {});
             data['amount'] = num;
           },
           maxDigit: 6,
         );
         onSave = () {
-          return int.parse(data['amount']);
+          String? amount = data['amount'];
+          if (amount == null) return 0;
+          return int.parse(amount);
         };
         break;
       case CategoryName.sns:
@@ -184,18 +184,16 @@ class _InputFormState extends State<InputForm> {
           question: 'SNSをどのくらい使いましたか？',
           unit: '分',
           onChange: (String num) {
-            if (num.length > 0) {
-              savable = true;
-            } else {
-              savable = false;
-            }
+            savable = num.length > 0;
             setState(() {});
             data['minutes'] = num;
           },
           maxDigit: 4,
         );
         onSave = () {
-          return int.parse(data['minutes']);
+          String? minutes = data['minutes'];
+          if (minutes == null) return 0;
+          return int.parse(minutes);
         };
         break;
       default:
@@ -206,7 +204,7 @@ class _InputFormState extends State<InputForm> {
     return MyBottomFixedButton(
       enable: savable,
       onTapped: () {
-        save(context);
+        save(ref);
       },
       label: '次へ',
       child: Container(
@@ -224,19 +222,22 @@ class _InputFormState extends State<InputForm> {
     );
   }
 
-  Future<void> save(BuildContext ctx) async {
+  Future<void> save(WidgetRef ref) async {
     try {
       MyLoading.startLoading();
       int v = onSave();
-      ConditionValueState _value = ctx.read(conditionValueProvider.state);
+      ConditionValueState _value =
+          ref.read(conditionValueProvider.notifier).getState();
+      MentalValue? _mental = _value.mental;
+      if (_mental == null) return;
       Map<String, dynamic> result = await HabitApi.did(
-          _value.mental,
+          _mental,
           _value.desire.toInt(),
           _value.tags,
           widget.checkedValue.checked,
           v,
-          ctx.read(homeProvider.state).habit);
-      ctx.read(homeProvider).setHabit(result['habit']);
+          widget.habit);
+      ref.read(homeProvider.notifier).setHabit(result['habit']);
       await MyLoading.dismiss();
       ApplicationRoutes.popUntil('/home');
       ApplicationRoutes.pushNamed('/did/confirmation', result['log']);
@@ -256,10 +257,10 @@ class AmountInputField extends StatefulWidget {
   final OnChange onChange;
 
   AmountInputField({
-    @required this.question,
-    @required this.unit,
-    @required this.onChange,
-    @required this.maxDigit,
+    required this.question,
+    required this.unit,
+    required this.onChange,
+    required this.maxDigit,
   });
 
   @override
@@ -267,10 +268,10 @@ class AmountInputField extends StatefulWidget {
 }
 
 class _AmountInputFieldState extends State<AmountInputField> {
-  String value;
+  String value = '0';
 
-  FocusNode _focusNode;
-  TextEditingController _controller;
+  late FocusNode _focusNode;
+  late TextEditingController _controller;
 
   @override
   void initState() {
@@ -306,10 +307,10 @@ class _AmountInputFieldState extends State<AmountInputField> {
       children: [
         Text(
           widget.question,
-          style: Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+          style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
         ),
         MyTextField(
-            validate: (String text) {
+            validate: (String? text) {
               return null;
             },
             keyboardType: TextInputType.number,

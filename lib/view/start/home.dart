@@ -21,17 +21,19 @@ class _ApplicationHomeState extends State<ApplicationHome> {
 
   void initDynamicLinks() async {
 
-    final PendingDynamicLinkData data =
+    final PendingDynamicLinkData? data =
         await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data?.link;
+    final Uri? deepLink = data?.link;
     if (deepLink == null) return;
     if (deepLink.queryParameters.containsKey('continueUrl')) {
       final Uri continueUrl =
-          Uri.parse(deepLink.queryParameters['continueUrl']);
+          Uri.parse(deepLink.queryParameters['continueUrl']!);
       if (deepLink.queryParameters['mode'] == 'verifyEmail') {
-        FirebaseAuth.instance.currentUser.reload();
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser == null) return;
+        firebaseUser.reload();
         if (continueUrl.path == '/email-verifying') {
-          if (FirebaseAuth.instance.currentUser.emailVerified) {
+          if (firebaseUser.emailVerified) {
             pushReplacementNamed(context, '/home');
           } else {
             pushReplacementNamed(context, '/email-verifying', arguments: data);
@@ -39,7 +41,7 @@ class _ApplicationHomeState extends State<ApplicationHome> {
           return;
         }
         if (continueUrl.path == '/email-set') {
-          if (FirebaseAuth.instance.currentUser.emailVerified) {
+          if (firebaseUser.emailVerified) {
             pushReplacementNamed(context, '/home');
           } else {
             pushReplacementNamed(context, '/title');
@@ -49,8 +51,10 @@ class _ApplicationHomeState extends State<ApplicationHome> {
       }
       if (deepLink.queryParameters['mode'] == 'resetPassword') {
         try {
+          String? oobCode = deepLink.queryParameters['oobCode'];
+          if (oobCode == null) throw Exception('oobCode is null');
           await FirebaseAuth.instance
-              .verifyPasswordResetCode(deepLink.queryParameters['oobCode']);
+              .verifyPasswordResetCode(oobCode);
           pushReplacementNamed(context, '/password-reset/form',
               arguments: data);
         } catch (e) {
@@ -60,14 +64,12 @@ class _ApplicationHomeState extends State<ApplicationHome> {
       pushReplacementNamed(context, continueUrl.path, arguments: data);
       return;
     }
-    if (deepLink != null) {
-      pushReplacementNamed(context, deepLink.path);
-    }
+    pushReplacementNamed(context, deepLink.path);
   }
 
   void pushReplacementNamed(BuildContext context, String path,
       {dynamic arguments}) {
-    Widget page;
+    Widget? page;
     switch (path) {
       case '/title':
         page = MyTitle.Title();
@@ -82,29 +84,29 @@ class _ApplicationHomeState extends State<ApplicationHome> {
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => PasswordResetForm(arguments)));
         return;
-        break;
     }
     if (page == null) {
       Navigator.pushReplacementNamed(context, path, arguments: arguments);
+    } else {
+      Navigator.pushReplacement(
+          context,
+          new PageRouteBuilder(
+              settings: RouteSettings(name: path),
+              pageBuilder: (BuildContext context, _, __) {
+                return page!;
+              },
+              transitionDuration: Duration(milliseconds: 1000),
+              transitionsBuilder:
+                  (_, Animation<double> animation, __, Widget child) {
+                return new FadeTransition(opacity: animation, child: child);
+              }));
     }
-    Navigator.pushReplacement(
-        context,
-        new PageRouteBuilder(
-            settings: RouteSettings(name: path),
-            pageBuilder: (BuildContext context, _, __) {
-              return page;
-            },
-            transitionDuration: Duration(milliseconds: 1000),
-            transitionsBuilder:
-                (_, Animation<double> animation, __, Widget child) {
-              return new FadeTransition(opacity: animation, child: child);
-            }));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).accentColor,
+      backgroundColor: Theme.of(context).colorScheme.secondary,
       body: Center(
         child: SvgPicture.asset(
           'assets/splash/logo.svg',

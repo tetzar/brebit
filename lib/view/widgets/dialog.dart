@@ -11,15 +11,15 @@ class MyDialog extends StatelessWidget {
   final Widget body;
   final String actionText;
   final Function action;
-  final Color actionColor;
-  final Color disableColor;
+  final Color? actionColor;
+  final Color? disableColor;
   final bool onlyAction;
 
   MyDialog(
-      {@required this.title,
-      @required this.body,
-      @required this.actionText,
-      @required this.action,
+      {required this.title,
+      required this.body,
+      required this.actionText,
+      required this.action,
       this.actionColor,
       this.onlyAction = false,
       this.disableColor});
@@ -76,7 +76,8 @@ class MyDialog extends StatelessWidget {
                         child: Text(
                           actionText,
                           style: TextStyle(
-                            color: actionColor ?? Theme.of(context).accentColor,
+                            color: actionColor ??
+                                Theme.of(context).colorScheme.secondary,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                           ),
@@ -116,7 +117,7 @@ class MyDialog extends StatelessWidget {
                                   actionText,
                                   style: TextStyle(
                                     color: actionColor ??
-                                        Theme.of(context).accentColor,
+                                        Theme.of(context).colorScheme.secondary,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -136,17 +137,16 @@ class MyDialog extends StatelessWidget {
 }
 
 class MyErrorDialog extends StatelessWidget {
-  final Function onConfirm;
-  final String message;
+  final Function? onConfirm;
+  final String? message;
 
   MyErrorDialog({this.onConfirm, this.message});
 
-  static void show(var e, {Function onConfirm, String message}) {
+  static void show(var e, {Function? onConfirm, String? message}) {
     assert(e is Error || e is Exception);
     print('=======================================');
     print('Error');
     print('=======================================');
-    log('error', error: e);
     // debugDumpRenderTree();
     if (e is TimeoutException) {
       message = message ?? "サーバーに接続出来ませんでした";
@@ -154,8 +154,10 @@ class MyErrorDialog extends StatelessWidget {
     if (e is SocketException) {
       message = message ?? "インターネットの接続を\n確認してください";
     }
+    BuildContext? context = ApplicationRoutes.materialKey.currentContext;
+    if (context == null) return;
     showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: context,
         builder: (context) {
           return MyErrorDialog(
             onConfirm: onConfirm,
@@ -173,7 +175,7 @@ class MyErrorDialog extends StatelessWidget {
         style: Theme.of(context)
             .textTheme
             .bodyText1
-            .copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+            ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
       ),
       body: SizedBox(
         height: 0,
@@ -187,6 +189,4 @@ class MyErrorDialog extends StatelessWidget {
       onlyAction: true,
     );
   }
-
-
 }

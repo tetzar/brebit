@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:brebit/view/general/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
@@ -19,7 +18,7 @@ class SweetsInformation extends StatefulWidget {
 }
 
 class _SweetsInformationState extends State<SweetsInformation> {
-  final Category _category = Category.findWhereNameIs('sweets');
+  final Category _category = Category.findFromCategoryName(CategoryName.sweets);
 
   Map<String, int> data = <String, int>{'target-amount': 0};
 
@@ -171,7 +170,7 @@ class _SweetsInformationState extends State<SweetsInformation> {
       return false;
     }
     if (data.containsKey('amount')) {
-      if (!(data['amount'] > 0)) {
+      if (!(data['amount']! > 0)) {
         return false;
       }
     } else {
@@ -183,8 +182,8 @@ class _SweetsInformationState extends State<SweetsInformation> {
   Future<void> save(BuildContext ctx) async {
     if (savable()) {
       Map<String, double> _data = <String, double>{};
-      _data['limit'] = data['target-amount'].toDouble();
-      _data['average'] = data['amount'].toDouble();
+      _data['limit'] = data['target-amount']!.toDouble();
+      _data['average'] = data['amount']!.toDouble();
       MyLoading.startLoading();
       try {
         Map<String, dynamic> result =

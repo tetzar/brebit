@@ -4,19 +4,6 @@
 
 import 'dart:async';
 
-import 'package:brebit/view/widgets/dialog.dart';
-
-import 'library/messaging.dart';
-import 'library/notification.dart';
-import 'provider/auth.dart';
-import 'provider/home.dart';
-import 'provider/notification.dart';
-import 'route/route.dart';
-import 'view/general/loading.dart';
-import 'view/home/navigation.dart';
-import 'view/start/introduction.dart';
-import 'view/start/title.dart' as MyTitle;
-import 'view/theme/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -27,12 +14,23 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'library/cache.dart';
-import 'model/user.dart';
 import 'api/auth.dart';
+import 'library/cache.dart';
+import 'library/messaging.dart';
+import 'library/notification.dart';
+import 'model/user.dart';
+import 'provider/auth.dart';
+import 'provider/home.dart';
+import 'provider/notification.dart';
+import 'route/route.dart';
+import 'view/general/loading.dart';
+import 'view/home/navigation.dart';
+import 'view/start/introduction.dart';
+import 'view/start/title.dart' as MyTitle;
+import 'view/theme/theme.dart';
 
-String _initialRoute;
-AuthUser _user;
+String? _initialRoute;
+AuthUser? _user;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +40,7 @@ void main() async {
   await Firebase.initializeApp();
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,//縦固定
+    DeviceOrientation.portraitUp, //縦固定
   ]);
   // SharedPreferences pref = await SharedPreferences.getInstance();
   // await pref.clear();
@@ -54,53 +52,53 @@ void main() async {
     } else {
       _initialRoute = '/title';
     }
-    final PendingDynamicLinkData data =
+    final PendingDynamicLinkData? data =
         await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data?.link;
+    final Uri? deepLink = data?.link;
     if (deepLink != null) {
       _initialRoute = '/';
     }
 
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
-          final Uri deepLink = dynamicLink?.link;
-          if (deepLink.queryParameters.containsKey('continueUrl')) {
-            final Uri continueUrl =
-            Uri.parse(deepLink.queryParameters['continueUrl']);
-            if (deepLink.queryParameters['mode'] == 'verifyEmail') {
-              FirebaseAuth.instance.currentUser.reload();
-              if (continueUrl.path == '/email-verifying') {
-                if (!FirebaseAuth.instance.currentUser.emailVerified) {
-                  ApplicationRoutes.pushReplacementNamed('/email-verifying', arguments: dynamicLink);
-                }
-                return;
-              }
-              if (continueUrl.path == '/email-set') {
-                if (!FirebaseAuth.instance.currentUser.emailVerified) {
-                  ApplicationRoutes.pushReplacementNamed('/title');
-                }
-                return;
-              }
+    FirebaseDynamicLinks.instance.onLink
+        .listen((PendingDynamicLinkData dynamicLink) async {
+      final Uri? deepLink = dynamicLink.link;
+      User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (deepLink == null || firebaseUser == null) return;
+      if (deepLink.queryParameters.containsKey('continueUrl')) {
+        final Uri continueUrl =
+            Uri.parse(deepLink.queryParameters['continueUrl']!);
+        if (deepLink.queryParameters['mode'] == 'verifyEmail') {
+          firebaseUser.reload();
+          if (continueUrl.path == '/email-verifying') {
+            if (!firebaseUser.emailVerified) {
+              ApplicationRoutes.pushReplacementNamed('/email-verifying',
+                  arguments: dynamicLink);
             }
-            if (deepLink.queryParameters['mode'] == 'resetPassword') {
-              try {
-                await FirebaseAuth.instance
-                    .verifyPasswordResetCode(deepLink.queryParameters['oobCode']);
-                ApplicationRoutes.pushReplacementNamed('/password-reset/form',
-                    arguments: dynamicLink);
-              } catch (e) {
-                ApplicationRoutes.pushReplacementNamed('/title');
-              }
-            }
-            ApplicationRoutes.pushReplacementNamed(continueUrl.path, arguments: dynamicLink);
             return;
           }
-          if (deepLink != null) {
-            ApplicationRoutes.pushReplacementNamed(deepLink.path);
+          if (continueUrl.path == '/email-set') {
+            if (!firebaseUser.emailVerified) {
+              ApplicationRoutes.pushReplacementNamed('/title');
+            }
+            return;
           }
-        }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
+        }
+        if (deepLink.queryParameters['mode'] == 'resetPassword') {
+          try {
+            String? oobCode = deepLink.queryParameters['oobCode'];
+            if (oobCode == null) throw Exception('oobCode is null');
+            await FirebaseAuth.instance.verifyPasswordResetCode(oobCode);
+            ApplicationRoutes.pushReplacementNamed('/password-reset/form',
+                arguments: dynamicLink);
+          } catch (e) {
+            ApplicationRoutes.pushReplacementNamed('/title');
+          }
+        }
+        ApplicationRoutes.pushReplacementNamed(continueUrl.path,
+            arguments: dynamicLink);
+        return;
+      }
+      ApplicationRoutes.pushReplacementNamed(deepLink.path);
     });
   }
 
@@ -121,17 +119,17 @@ Future<bool> isFirstStart() async {
 
 Future<bool> isLoggedIn() async {
   FirebaseAuth _auth = FirebaseAuth.instance;
-  User _firebaseUser = _auth.currentUser;
+  User? _firebaseUser = _auth.currentUser;
   if (_firebaseUser == null) {
+    print('firebase user null');
     return false;
   } else {
     try {
       List<CredentialProviders> credentials = AuthProvider.getProviders();
       if (!credentials.contains(CredentialProviders.apple) &&
           !credentials.contains(CredentialProviders.google) &&
-          credentials.contains(CredentialProviders.password) &&
-          !FirebaseAuth.instance.currentUser.emailVerified
-      ) {
+          !credentials.contains(CredentialProviders.password) &&
+          !_firebaseUser.emailVerified) {
         return false;
       }
       _user = await AuthApi.getUser();
@@ -141,13 +139,14 @@ Future<bool> isLoggedIn() async {
       AuthUser.selfUser = _user;
       return true;
     } catch (e) {
+      print(e);
       return false;
     }
   }
 }
 
-class MyApp extends StatelessWidget {
-  static Future<void> initialize(BuildContext context) async {
+class MyApp extends ConsumerWidget {
+  static Future<void> initialize(WidgetRef ref) async {
     await MyFirebaseMessaging.init();
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -169,11 +168,11 @@ class MyApp extends StatelessWidget {
     } else {
       print('User declined or has not accepted permission');
     }
-    if (FirebaseAuth.instance.currentUser == null) {
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
       return;
     }
-    List<CredentialProviders> providers = FirebaseAuth
-        .instance.currentUser.providerData
+    List<CredentialProviders> providers = firebaseUser.providerData
         .map((userInfo) {
           return AuthProvider.getCredentialProviderFromId(userInfo.providerId);
         })
@@ -182,24 +181,27 @@ class MyApp extends StatelessWidget {
     if (!providers.contains(CredentialProviders.google) &&
         !providers.contains(CredentialProviders.apple)) {
       if (!providers.contains(CredentialProviders.password) ||
-          !FirebaseAuth.instance.currentUser.emailVerified) {
+          !firebaseUser.emailVerified) {
         _initialRoute = '/title';
         return;
       }
     }
-    AuthUser user = await context.read(authProvider).getUser();
+    AuthUser user = await ref.read(authProvider.notifier).getUser();
     AuthUser.selfUser = user;
-    Map<String, dynamic> result =
-        await context.read(homeProvider).getHome(user);
+    Map<String, dynamic>? result =
+        await ref.read(homeProvider.notifier).getHome(user);
     if (result != null) {
-      context.read(notificationProvider).unreadCount =
+      ref.read(notificationProvider.notifier).unreadCount =
           result['notificationCount'];
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    context.read(authProvider.state).user = _user;
+  Widget build(BuildContext context, WidgetRef ref) {
+    AuthUser? user = _user;
+    if (user != null) {
+      ref.read(authProvider.notifier).setUser(user);
+    }
     return MaterialApp(
         title: 'Brebit',
         initialRoute: '/splash',
@@ -210,15 +212,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Splash extends StatefulWidget {
+class Splash extends ConsumerStatefulWidget {
   @override
   _SplashState createState() => _SplashState();
 }
 
-class _SplashState extends State<Splash> {
+class _SplashState extends ConsumerState<Splash> {
   @override
   void initState() {
-    MyApp.initialize(context).then((_) {
+    MyApp.initialize(ref).then((_) {
       Navigator.pushReplacement(
           context,
           new PageRouteBuilder(
@@ -227,13 +229,10 @@ class _SplashState extends State<Splash> {
                 switch (_initialRoute) {
                   case '/home':
                     return Home(null);
-                    break;
                   case '/introduction':
                     return Introduction();
-                    break;
                   default:
                     return MyTitle.Title();
-                    break;
                 }
               },
               transitionDuration: Duration(milliseconds: 1000),
@@ -261,7 +260,7 @@ class _SplashState extends State<Splash> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).accentColor,
+      backgroundColor: Theme.of(context).colorScheme.secondary,
       body: Center(
         child: SvgPicture.asset(
           'assets/splash/logo.svg',

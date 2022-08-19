@@ -6,7 +6,7 @@ class UserCard extends StatelessWidget {
   final AuthUser user;
   final bool isFriend;
 
-  UserCard({@required this.user, @required this.isFriend});
+  UserCard({required this.user, required this.isFriend});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class UserCard extends StatelessWidget {
                       Text(
                         user.name,
                         style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyText1.color,
+                            color: Theme.of(context).textTheme.bodyText1?.color,
                             fontWeight: FontWeight.w700,
                             fontSize: 15),
                       ),
@@ -55,7 +55,7 @@ class UserCard extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: Theme.of(context).accentColor,),
+                            color: Theme.of(context).colorScheme.secondary,),
                         alignment: Alignment.center,
                         child: Text(
                           'フレンド',
@@ -79,7 +79,7 @@ class UserCard extends StatelessWidget {
                     child: Text(
                       '@' + user.customId,
                       style: TextStyle(
-                          color: Theme.of(context).textTheme.subtitle1.color,
+                          color: Theme.of(context).textTheme.subtitle1?.color,
                           fontWeight: FontWeight.w400,
                           fontSize: 15),
                     ),
@@ -93,7 +93,7 @@ class UserCard extends StatelessWidget {
                     child: Text(
                       user.bio,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyText1.color,
+                        color: Theme.of(context).textTheme.bodyText1?.color,
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                       ),

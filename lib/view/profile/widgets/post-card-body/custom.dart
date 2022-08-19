@@ -1,6 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:brebit/utils/aws.dart';
 import 'package:brebit/view/timeline/widget/photo-viewer.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../route/route.dart';
@@ -10,7 +11,7 @@ class CustomBody extends StatelessWidget {
   final Map<String, dynamic> body;
   final List<S3Image> images;
 
-  CustomBody({@required this.body, this.images});
+  CustomBody({required this.body, required this.images});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class CustomBody extends StatelessWidget {
         style: Theme.of(context)
             .textTheme
             .bodyText1
-            .copyWith(fontSize: 15, fontWeight: FontWeight.w400),
+            ?.copyWith(fontSize: 15, fontWeight: FontWeight.w400),
       ));
     }
 
@@ -49,14 +50,14 @@ class CustomBody extends StatelessWidget {
 class ImageGrid extends StatefulWidget {
   final List<S3Image> images;
 
-  ImageGrid({@required this.images});
+  ImageGrid({required this.images});
 
   @override
   _ImageGridState createState() => _ImageGridState();
 }
 
 class _ImageGridState extends State<ImageGrid> {
-  List<S3Image> images;
+  late List<S3Image> images;
 
   @override
   void initState() {
@@ -89,7 +90,6 @@ class _ImageGridState extends State<ImageGrid> {
             roundTopLeft: true,
             roundBottomLeft: true,
             roundBottomRight: true);
-        break;
       case 2:
         return Row(
           children: [
@@ -111,7 +111,6 @@ class _ImageGridState extends State<ImageGrid> {
             )
           ],
         );
-        break;
       case 3:
         return Row(
           children: [
@@ -147,7 +146,6 @@ class _ImageGridState extends State<ImageGrid> {
             )
           ],
         );
-        break;
       default:
         return Column(
           children: [
@@ -203,7 +201,6 @@ class _ImageGridState extends State<ImageGrid> {
             )
           ],
         );
-        break;
     }
   }
 
@@ -237,7 +234,7 @@ class _ImageGridState extends State<ImageGrid> {
                           topLeft: Radius.circular(roundTopLeft ? 8 : 0),
                         ),
                         image: DecorationImage(
-                            image: MemoryImage(snapshot.data),
+                            image: MemoryImage(snapshot.data as Uint8List),
                             fit: BoxFit.cover),
                       )),
                 )
@@ -256,7 +253,7 @@ class _ImageGridState extends State<ImageGrid> {
   }
 
   void open(BuildContext ctx, S3Image image) {
-    ApplicationRoutes.materialKey.currentState.push(FadeInRoute(
+    ApplicationRoutes.push(FadeInRoute(
       widget: GalleryPhotoViewWrapper(
         images: images,
         backgroundDecoration: const BoxDecoration(

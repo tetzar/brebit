@@ -1,3 +1,5 @@
+import 'package:brebit/view/settings/widgets/setting-tile.dart';
+
 class UserNotFoundException implements Exception {
   String cause;
 
@@ -53,4 +55,21 @@ class AccessDeniedException implements Exception {
   String cause;
 
   AccessDeniedException(this.cause);
+}
+
+class NotLoggedInException implements Exception{
+  String cause;
+
+  NotLoggedInException(this.cause);
+}
+
+class ProviderValueMissingException implements Exception{
+  String cause;
+
+  ProviderValueMissingException(this.cause);
+}
+
+class RouteNotFoundException implements Exception{
+  String cause;
+  RouteNotFoundException(this.cause);
 }

@@ -1,16 +1,17 @@
-import '../../../model/strategy.dart';
 import 'package:flutter/material.dart';
+
+import '../../../model/strategy.dart';
 
 typedef StrategyCardCallback = bool Function();
 
 class StrategyCard extends StatefulWidget {
   final Strategy strategy;
   final bool initialSelected;
-  final StrategyCardCallback onSelect;
+  final StrategyCardCallback? onSelect;
   final bool showFollower;
 
   StrategyCard(
-      {@required this.strategy,
+      {required this.strategy,
       this.initialSelected = false,
       this.onSelect,
       this.showFollower = false});
@@ -33,8 +34,8 @@ class StrategyCard extends StatefulWidget {
 }
 
 class _StrategyCardState extends State<StrategyCard> {
-  Map<String, dynamic> strategyBody;
-  bool selected;
+  late Map<String, dynamic> strategyBody;
+  bool selected = false;
 
   @override
   void initState() {
@@ -63,9 +64,10 @@ class _StrategyCardState extends State<StrategyCard> {
     }
     return InkWell(
       onTap: () {
-        if (widget.onSelect != null) {
+        Function()? onSelect = widget.onSelect;
+        if (onSelect != null) {
           setState(() {
-            selected = widget.onSelect();
+            selected = onSelect();
           });
         }
       },
@@ -78,8 +80,8 @@ class _StrategyCardState extends State<StrategyCard> {
             border: Border.all(
                 width: 2,
                 color: selected
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).accentColor.withOpacity(0)),
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.secondary.withOpacity(0)),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).shadowColor,
@@ -100,25 +102,24 @@ class _StrategyCardState extends State<StrategyCard> {
           left: StrategyCard.cardInnerHorizontalPadding,
           right: StrategyCard.cardInnerHorizontalPadding,
         ),
-        child: widget.showFollower ? Column(
-          children: [
-            Container(
-              margin: EdgeInsets.only(
-                bottom: 8
-              ),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                widget.strategy.getFollowers().toString() + '人が使用中',
-                style: TextStyle(
-                  color: Theme.of(context).disabledColor,
-                  fontWeight: FontWeight.w400,
-                  fontSize: 13
-                ),
-              ),
-            ),
-            strategyContent
-          ],
-        ) : strategyContent,
+        child: widget.showFollower
+            ? Column(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      widget.strategy.getFollowers().toString() + '人が使用中',
+                      style: TextStyle(
+                          color: Theme.of(context).disabledColor,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13),
+                    ),
+                  ),
+                  strategyContent
+                ],
+              )
+            : strategyContent,
       ),
     );
   }
@@ -127,7 +128,7 @@ class _StrategyCardState extends State<StrategyCard> {
 class TwentySecondCard extends StatelessWidget {
   final Map<String, dynamic> strategyBody;
 
-  TwentySecondCard({@required this.strategyBody});
+  TwentySecondCard({required this.strategyBody});
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +146,7 @@ class TwentySecondCard extends StatelessWidget {
                 text: TextSpan(
                     text: '20秒',
                     style: TextStyle(
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontSize: 13,
                         fontWeight: FontWeight.w700),
                     children: <TextSpan>[
@@ -157,7 +158,7 @@ class TwentySecondCard extends StatelessWidget {
             child: Text(
           content,
           style: StrategyCard.objectTextStyle
-              .copyWith(color: Theme.of(context).textTheme.bodyText1.color),
+              .copyWith(color: Theme.of(context).textTheme.bodyText1?.color),
         ))
       ],
     );
@@ -167,7 +168,7 @@ class TwentySecondCard extends StatelessWidget {
 class IfThenCard extends StatelessWidget {
   final Map<String, dynamic> strategyBody;
 
-  IfThenCard({@required this.strategyBody});
+  IfThenCard({required this.strategyBody});
 
   @override
   Widget build(BuildContext context) {
@@ -186,15 +187,15 @@ class IfThenCard extends StatelessWidget {
                 child: Container(
                   width: StrategyCard.subjectWidth,
                   child: Text('If',
-                      style: StrategyCard.subjectTextStyle
-                          .copyWith(color: Theme.of(context).accentColor)),
+                      style: StrategyCard.subjectTextStyle.copyWith(
+                          color: Theme.of(context).colorScheme.secondary)),
                 ),
               ),
               Expanded(
                   child: Text(
                 ifBody,
                 style: StrategyCard.objectTextStyle.copyWith(
-                    color: Theme.of(context).textTheme.bodyText1.color),
+                    color: Theme.of(context).textTheme.bodyText1?.color),
               ))
             ],
           ),
@@ -216,15 +217,15 @@ class IfThenCard extends StatelessWidget {
                 child: Container(
                   width: StrategyCard.subjectWidth,
                   child: Text('Then',
-                      style: StrategyCard.subjectTextStyle
-                          .copyWith(color: Theme.of(context).accentColor)),
+                      style: StrategyCard.subjectTextStyle.copyWith(
+                          color: Theme.of(context).colorScheme.secondary)),
                 ),
               ),
               Expanded(
                   child: Text(
                 thenBody,
                 style: StrategyCard.objectTextStyle.copyWith(
-                    color: Theme.of(context).textTheme.bodyText1.color),
+                    color: Theme.of(context).textTheme.bodyText1?.color),
               ))
             ],
           ),
@@ -237,7 +238,7 @@ class IfThenCard extends StatelessWidget {
 class LinePaint extends CustomPainter {
   BuildContext context;
 
-  LinePaint({@required this.context});
+  LinePaint({required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {

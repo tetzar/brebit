@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:brebit/view/general/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../api/habit.dart';
@@ -21,7 +19,8 @@ class AlcoholInformation extends StatefulWidget {
 }
 
 class _AlcoholInformationState extends State<AlcoholInformation> {
-  final Category _category = Category.findWhereNameIs('alcohol');
+  final Category _category =
+      Category.findFromCategoryName(CategoryName.alcohol);
 
   Map<String, int> data = <String, int>{'target-amount': 0};
 
@@ -78,7 +77,6 @@ class _AlcoholInformationState extends State<AlcoholInformation> {
                     !data.containsKey('per-week') &&
                     !data.containsKey('price')) {
                   ApplicationRoutes.pop();
-                  return true;
                 }
               }
               showDialog(
@@ -145,19 +143,19 @@ class _AlcoholInformationState extends State<AlcoholInformation> {
                               width: double.infinity,
                               alignment: Alignment.topRight,
                               margin: EdgeInsets.only(top: 8),
-                              child: HookBuilder(
-                                builder: (context) {
-                                  useProvider(informationValueProvider.state);
-                                  int amount = context
-                                      .read(informationValueProvider)
+                              child: Consumer(
+                                builder: (context, ref, child) {
+                                  ref.watch(informationValueProvider);
+                                  int? amount = ref
+                                      .read(informationValueProvider.notifier)
                                       .getValue('target-amount');
-                                  int concentration = context
-                                      .read(informationValueProvider)
+                                  int? concentration = ref
+                                      .read(informationValueProvider.notifier)
                                       .getValue('target-concentration');
-                                  TextStyle _style = Theme.of(context)
+                                  TextStyle? _style = Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .copyWith(fontSize: 12);
+                                      ?.copyWith(fontSize: 12);
                                   if (amount == null) {
                                     return Text(
                                       '飲酒の許容量を入力してください。',
@@ -229,19 +227,19 @@ class _AlcoholInformationState extends State<AlcoholInformation> {
                               width: double.infinity,
                               alignment: Alignment.topRight,
                               margin: EdgeInsets.only(top: 8),
-                              child: HookBuilder(
-                                builder: (context) {
-                                  useProvider(informationValueProvider.state);
-                                  int amount = context
-                                      .read(informationValueProvider)
+                              child: Consumer(
+                                builder: (context, ref, child) {
+                                  ref.watch(informationValueProvider);
+                                  int? amount = ref
+                                      .read(informationValueProvider.notifier)
                                       .getValue('amount');
-                                  int concentration = context
-                                      .read(informationValueProvider)
+                                  int? concentration = ref
+                                      .read(informationValueProvider.notifier)
                                       .getValue('concentration');
-                                  TextStyle _style = Theme.of(context)
+                                  TextStyle? _style = Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .copyWith(fontSize: 12);
+                                      ?.copyWith(fontSize: 12);
                                   if (amount == null) {
                                     return Text(
                                       '飲酒の許容量を入力してください。',
@@ -308,25 +306,25 @@ class _AlcoholInformationState extends State<AlcoholInformation> {
   bool savable() {
     return data.containsKey('target-amount') &&
         data.containsKey('concentration') &&
-        data['concentration'] > 0 &&
+        data['concentration']! > 0 &&
         data.containsKey('target-concentration') &&
         data.containsKey('amount') &&
-        data['amount'] > 0 &&
+        data['amount']! > 0 &&
         data.containsKey('per-week') &&
-        data['per-week'] > 0;
+        data['per-week']! > 0;
   }
 
   Future<void> save(BuildContext ctx) async {
     if (savable()) {
       Map<String, double> _data = <String, double>{};
-      _data['target-amount'] = data['target-amount'].toDouble();
-      _data['average-amount'] = data['amount'].toDouble();
+      _data['target-amount'] = data['target-amount']!.toDouble();
+      _data['average-amount'] = data['amount']!.toDouble();
       _data['limit'] =
-          (data['target-amount'] * data['target-concentration']).toDouble();
-      _data['average'] = (data['amount'] * data['concentration']).toDouble();
-      _data['concentration'] = data['concentration'].toDouble();
-      _data['target-concentration'] = data['target-concentration'].toDouble();
-      _data['days-per-week'] = data['per-week'].toDouble();
+          (data['target-amount']! * data['target-concentration']!).toDouble();
+      _data['average'] = (data['amount']! * data['concentration']!).toDouble();
+      _data['concentration'] = data['concentration']!.toDouble();
+      _data['target-concentration'] = data['target-concentration']!.toDouble();
+      _data['days-per-week'] = data['per-week']!.toDouble();
       MyLoading.startLoading();
       try {
         Map<String, dynamic> result =

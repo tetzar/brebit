@@ -1,3 +1,4 @@
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -7,18 +8,18 @@ import '../../../model/habit.dart';
 import '../../../provider/auth.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
+import '../../model/user.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
 import '../widgets/dialog.dart';
 
-class StartHabit extends StatefulWidget {
-  @override
-  _StartHabitState createState() => _StartHabitState();
-}
+class StartHabit extends ConsumerWidget {
+  const StartHabit({Key? key}) : super(key: key);
 
-class _StartHabitState extends State<StartHabit> {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user == null) return ErrorToHomeWidget();
     return Scaffold(
       appBar: getMyAppBar(
           context: context,
@@ -26,14 +27,18 @@ class _StartHabitState extends State<StartHabit> {
           backButton: AppBarBackButton.none,
           titleText: '新しいチャレンジ',
           actions: <Widget>[MyBackButtonX()]),
-      body: HabitCards(),
+      body: HabitCards(user),
     );
   }
 }
 
-class HabitCards extends StatelessWidget {
+class HabitCards extends ConsumerWidget {
+  final AuthUser user;
+
+  HabitCards(this.user);
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     List<Widget> widgets = <Widget>[
       Container(
         padding: EdgeInsets.only(bottom: 8),
@@ -49,11 +54,8 @@ class HabitCards extends StatelessWidget {
           height: 20,
         ),
         onPressed: () {
-          if (!context
-              .read(authProvider.state)
-              .user
-              .isUnStartedCategory(CategoryName.cigarette)) {
-            showRestartDialog(context, CategoryName.cigarette, 'たばこを減らす');
+          if (!user.isUnStartedCategory(CategoryName.cigarette)) {
+            showRestartDialog(ref, CategoryName.cigarette, 'たばこを減らす');
           } else {
             ApplicationRoutes.pushNamed('/category/cigarette');
           }
@@ -69,11 +71,8 @@ class HabitCards extends StatelessWidget {
           height: 20,
         ),
         onPressed: () {
-          if (!context
-              .read(authProvider.state)
-              .user
-              .isUnStartedCategory(CategoryName.alcohol)) {
-            showRestartDialog(context, CategoryName.alcohol, 'お酒を控える');
+          if (!user.isUnStartedCategory(CategoryName.alcohol)) {
+            showRestartDialog(ref, CategoryName.alcohol, 'お酒を控える');
           } else {
             ApplicationRoutes.pushNamed('/category/alcohol');
           }
@@ -93,11 +92,8 @@ class HabitCards extends StatelessWidget {
           height: 20,
         ),
         onPressed: () {
-          if (!context
-              .read(authProvider.state)
-              .user
-              .isUnStartedCategory(CategoryName.sweets)) {
-            showRestartDialog(context, CategoryName.sweets, 'お酒を控える');
+          if (!user.isUnStartedCategory(CategoryName.sweets)) {
+            showRestartDialog(ref, CategoryName.sweets, 'お酒を控える');
           } else {
             ApplicationRoutes.pushNamed('/category/sweets');
           }
@@ -113,11 +109,8 @@ class HabitCards extends StatelessWidget {
           height: 20,
         ),
         onPressed: () {
-          if (!context
-              .read(authProvider.state)
-              .user
-              .isUnStartedCategory(CategoryName.sns)) {
-            showRestartDialog(context, CategoryName.sns, 'お酒を控える');
+          if (!user.isUnStartedCategory(CategoryName.sns)) {
+            showRestartDialog(ref, CategoryName.sns, 'お酒を控える');
           } else {
             ApplicationRoutes.pushNamed('/category/sns');
           }
@@ -137,43 +130,47 @@ class HabitCards extends StatelessWidget {
   }
 
   void showRestartDialog(
-      BuildContext context, CategoryName categoryName, String categoryTitle) {
-    showDialog(
-        context: ApplicationRoutes.materialKey.currentContext,
-        builder: (_) {
-          return MyDialog(
-              title: Text('“$categoryTitle”は一時停止中です。\n再開しますか？',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyText1
-                      .copyWith(fontSize: 18, fontWeight: FontWeight.w700)),
-              body: SizedBox(
-                height: 0,
-              ),
-              actionText: '再開する',
-              action: () async {
-                try {
-                  Habit _habit = await context
-                      .read(authProvider)
-                      .restartHabit(categoryName);
-                  await context.read(homeProvider).restart(_habit);
-                } catch (e) {
-                  MyErrorDialog.show(e);
-                }
-                ApplicationRoutes.pop();
-                ApplicationRoutes.pop();
-              });
-        });
+      WidgetRef ref, CategoryName categoryName, String categoryTitle) {
+    BuildContext? applicationContext =
+        ApplicationRoutes.materialKey.currentContext;
+    if (applicationContext != null) {
+      showDialog(
+          context: applicationContext,
+          builder: (_) {
+            return MyDialog(
+                title: Text('“$categoryTitle”は一時停止中です。\n再開しますか？',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(applicationContext)
+                        .textTheme
+                        .bodyText1
+                        ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700)),
+                body: SizedBox(
+                  height: 0,
+                ),
+                actionText: '再開する',
+                action: () async {
+                  try {
+                    Habit _habit = await ref
+                        .read(authProvider.notifier)
+                        .restartHabit(categoryName);
+                    await ref.read(homeProvider.notifier).restart(_habit);
+                  } catch (e) {
+                    MyErrorDialog.show(e);
+                  }
+                  ApplicationRoutes.pop();
+                  ApplicationRoutes.pop();
+                });
+          });
+    }
   }
 }
 
 class HabitTab extends StatelessWidget {
   final Widget icon;
   final String tag;
-  final Function onPressed;
+  final void Function() onPressed;
 
-  HabitTab({@required this.icon, @required this.tag, @required this.onPressed});
+  HabitTab({required this.icon, required this.tag, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +195,7 @@ class HabitTab extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodyText1
-                      .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                      ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                 ),
               )
             ],

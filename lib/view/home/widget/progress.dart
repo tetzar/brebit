@@ -1,33 +1,35 @@
 import 'dart:async';
 import 'dart:math' as Math;
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../../../../provider/home.dart';
+import '../../../model/habit.dart';
 import 'achieved-dialog.dart';
 
-class ProgressCircle extends StatefulWidget {
-  final Function(BuildContext) onAimDateUpdated;
-  ProgressCircle({@required this.onAimDateUpdated});
+class ProgressCircle extends ConsumerStatefulWidget {
+  final Function(WidgetRef) onAimDateUpdated;
+  final Habit habit;
+
+  ProgressCircle({required this.onAimDateUpdated, required this.habit});
 
   @override
   _ProgressCircleState createState() => _ProgressCircleState();
 }
 
-class _ProgressCircleState extends State<ProgressCircle> {
-  int toNowMin;
-  int toAimMin;
-  double percentage;
-  Timer timer;
+class _ProgressCircleState extends ConsumerState<ProgressCircle> {
+  late int toNowMin;
+  late int toAimMin;
+  late double percentage;
+  late Timer timer;
+  late Habit habit;
 
   @override
   void initState() {
     super.initState();
-    toNowMin = context.read(homeProvider.state).habit.getStartToNow().inMinutes;
-    toAimMin =
-        context.read(homeProvider.state).habit.getStartToAimDate().inMinutes;
+    habit = widget.habit;
+    toNowMin = habit.getStartToNow().inMinutes;
+    toAimMin = habit.getStartToAimDate().inMinutes;
 
     if (!(toNowMin < toAimMin)) {
       percentage = 1;
@@ -42,8 +44,7 @@ class _ProgressCircleState extends State<ProgressCircle> {
     timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
       if (this.mounted) {
         setState(() {
-          toNowMin =
-              context.read(homeProvider.state).habit.getStartToNow().inMinutes;
+          toNowMin = habit.getStartToNow().inMinutes;
           if (!(toNowMin < toAimMin)) {
             percentage = 1;
             t.cancel();
@@ -63,9 +64,8 @@ class _ProgressCircleState extends State<ProgressCircle> {
 
   @override
   void didUpdateWidget(covariant ProgressCircle oldWidget) {
-    toNowMin = context.read(homeProvider.state).habit.getStartToNow().inMinutes;
-    toAimMin =
-        context.read(homeProvider.state).habit.getStartToAimDate().inMinutes;
+    toNowMin = habit.getStartToNow().inMinutes;
+    toAimMin = habit.getStartToAimDate().inMinutes;
 
     if (!(toNowMin < toAimMin)) {
       percentage = 1;
@@ -102,7 +102,7 @@ class _ProgressCircleState extends State<ProgressCircle> {
               alignment: Alignment.topCenter,
               child: Container(
                 child: CircleProgressBar(
-                  foregroundColor: Theme.of(context).accentColor,
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
                   backgroundColor: Colors.black12,
                   toAimMin: this.toAimMin,
                   toNowMin: this.toNowMin,
@@ -116,7 +116,7 @@ class _ProgressCircleState extends State<ProgressCircle> {
   }
 
   void achieved(BuildContext context) {
-    AchievedDialog.show(context, widget.onAimDateUpdated);
+    AchievedDialog.show(context, ref, widget.onAimDateUpdated);
   }
 }
 
@@ -135,11 +135,11 @@ class CircleProgressBar extends StatelessWidget {
   }
 
   CircleProgressBar({
-    Key key,
-    this.backgroundColor,
-    @required this.foregroundColor,
-    @required this.toAimMin,
-    @required this.toNowMin,
+    Key? key,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.toAimMin,
+    required this.toNowMin,
   }) : super(key: key);
 
   @override
@@ -164,20 +164,20 @@ class CircleProgressBar extends StatelessWidget {
               style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 28,
-                  color: Theme.of(context).textTheme.bodyText1.color),
+                  color: Theme.of(context).textTheme.bodyText1?.color),
               children: <TextSpan>[
                 TextSpan(
                     text: '\n/ ${toAimDays()}',
                     style: TextStyle(
                         fontWeight: FontWeight.w400,
                         fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyText1.color)),
+                        color: Theme.of(context).textTheme.bodyText1?.color)),
                 TextSpan(
                     text: '\n日継続中',
                     style: TextStyle(
                         fontWeight: FontWeight.w400,
                         fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyText1.color)),
+                        color: Theme.of(context).textTheme.bodyText1?.color)),
               ],
             ),
           )),
@@ -200,17 +200,17 @@ class CircleProgressBarPainter extends CustomPainter {
   final Color foregroundColor;
 
   CircleProgressBarPainter({
-    this.backgroundColor,
-    @required this.foregroundColor,
-    @required this.percentage,
-    double strokeWidth,
-  }) : this.strokeWidth = strokeWidth ?? 6;
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.percentage,
+    this.strokeWidth = 6,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final Offset center = size.center(Offset.zero);
     final Size constrainedSize =
-        size - Offset(this.strokeWidth, this.strokeWidth);
+        (size - Offset(this.strokeWidth, this.strokeWidth)) as Size;
     final shortestSide =
         Math.min(constrainedSize.width, constrainedSize.height);
     final radius = (shortestSide / 2);
@@ -219,7 +219,7 @@ class CircleProgressBarPainter extends CustomPainter {
         2 * Math.asin(this.strokeWidth / (4 * (radius + this.strokeWidth / 2)));
 
     final double startAngle = -(2 * Math.pi * 0.7) + 2 * Math.pi;
-    final double sweepAngle = (2 * Math.pi * 0.9 * (this.percentage ?? 0));
+    final double sweepAngle = (2 * Math.pi * 0.9 * (this.percentage));
 
     Rect rect = new Rect.fromCircle(center: center, radius: radius);
     SweepGradient grad = new SweepGradient(

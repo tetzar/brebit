@@ -1,12 +1,9 @@
-import 'dart:math';
-
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class Confetti {
-  FrontConfettiWidget _confettiWidget;
-  ConfettiController _controller;
+  late FrontConfettiWidget _confettiWidget;
+  late ConfettiController _controller;
 
   Confetti() {
     _controller =
@@ -30,7 +27,7 @@ class Confetti {
 class FrontConfettiWidget extends StatefulWidget {
   final ConfettiController controller;
 
-  const FrontConfettiWidget({Key key, @required this.controller})
+  const FrontConfettiWidget({Key? key, required this.controller})
       : super(key: key);
 
   @override
@@ -52,9 +49,8 @@ class _FrontConfettiWidgetState extends State<FrontConfettiWidget> {
         blastDirectionality: BlastDirectionality.explosive,
         gravity: 0.2,
         maxBlastForce: 50.0,
-        numberOfParticles: 10,),
+        numberOfParticles: 10,
+      ),
     );
   }
 }
-
-

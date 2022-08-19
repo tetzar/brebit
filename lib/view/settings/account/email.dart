@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:brebit/view/widgets/text-field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -40,18 +39,18 @@ class EmailSetting extends StatelessWidget {
 }
 
 class RegisterEmailProviderState {
-  bool email;
-  bool password;
+  bool? email;
+  bool? password;
 }
 
 class RegisterEmailProvider extends StateNotifier<RegisterEmailProviderState> {
   RegisterEmailProvider(RegisterEmailProviderState state) : super(state);
 
-  get email {
+  bool get email {
     return state.email ?? false;
   }
 
-  get password {
+  bool get password {
     return state.password ?? false;
   }
 
@@ -75,21 +74,21 @@ class RegisterEmailProvider extends StateNotifier<RegisterEmailProviderState> {
 final _registerEmailProvider = StateNotifierProvider.autoDispose(
     (ref) => RegisterEmailProvider(RegisterEmailProviderState()));
 
-class RegisterEmail extends StatefulWidget {
+class RegisterEmail extends ConsumerStatefulWidget {
   @override
   _RegisterEmailState createState() => _RegisterEmailState();
 }
 
-class _RegisterEmailState extends State<RegisterEmail> {
-  List<GlobalKey<FormState>> _keys;
-  String email;
-  String password;
+class _RegisterEmailState extends ConsumerState<RegisterEmail> {
+  late List<GlobalKey<FormState>> _keys;
+  String email = '';
+  String password = '';
 
-  FocusNode _emailFocusNode;
-  FocusNode _passwordFocusNode;
+  late FocusNode _emailFocusNode;
+  late FocusNode _passwordFocusNode;
 
-  String emailErrorMessage;
-  String passwordErrorMessage;
+  String? emailErrorMessage;
+  String? passwordErrorMessage;
 
   @override
   void initState() {
@@ -104,12 +103,12 @@ class _RegisterEmailState extends State<RegisterEmail> {
 
     _emailFocusNode.addListener(() {
       if (!_emailFocusNode.hasFocus) {
-        _keys[0].currentState.validate();
+        _keys[0].currentState?.validate();
       }
     });
     _passwordFocusNode.addListener(() {
       if (!_passwordFocusNode.hasFocus) {
-        _keys[1].currentState.validate();
+        _keys[1].currentState?.validate();
       }
     });
     super.initState();
@@ -149,7 +148,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
       },
       label: '登録する',
       enable: () {
-        return context.read(_registerEmailProvider).savable();
+        return ref.read(_registerEmailProvider.notifier).savable();
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 64, horizontal: 24),
@@ -162,7 +161,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                  ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
             ),
             SizedBox(
               height: 24,
@@ -171,7 +170,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
               'メールアドレスによる\nログインが可能になります。',
               textAlign: TextAlign.center,
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
             ),
             SizedBox(
               height: 40,
@@ -190,7 +189,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
                   _passwordFocusNode.requestFocus();
                 },
                 validate: (text) {
-                  if (text.isEmpty) {
+                  if (text == null || text.isEmpty) {
                     return '入力してください';
                   }
                   return isEmail(text) ? null : '正しく入力してください';
@@ -199,12 +198,13 @@ class _RegisterEmailState extends State<RegisterEmail> {
                 hintText: 'brebit@example.com',
                 onChanged: (String text) {
                   if (text.length == 0) {
-                    context.read(_registerEmailProvider).email = false;
+                    ref.read(_registerEmailProvider.notifier).email = false;
                   }
-                  context.read(_registerEmailProvider).email = isEmail(text);
+                  ref.read(_registerEmailProvider.notifier).email =
+                      isEmail(text);
                 },
-                onSaved: (String text) {
-                  this.email = text;
+                onSaved: (String? text) {
+                  this.email = text ?? '';
                 },
               ),
             ),
@@ -220,17 +220,17 @@ class _RegisterEmailState extends State<RegisterEmail> {
                 },
                 textInputAction: TextInputAction.done,
                 validate: (text) {
-                  if (text.length < 6) {
+                  if (text == null || text.length < 6) {
                     return '6文字以上入力してください';
                   }
                   return null;
                 },
                 onChanged: (text) {
-                  context.read(_registerEmailProvider).password =
+                  ref.read(_registerEmailProvider.notifier).password =
                       text.length > 5;
                 },
                 onSaved: (text) {
-                  this.password = text;
+                  this.password = text ?? '';
                 },
               ),
             )
@@ -243,22 +243,23 @@ class _RegisterEmailState extends State<RegisterEmail> {
   Future<void> save() async {
     bool valid = true;
     for (GlobalKey<FormState> _key in _keys) {
-      if (!_key.currentState.validate()) {
+      if (!(_key.currentState?.validate() ?? false)) {
         valid = false;
       }
     }
     if (valid) {
       for (GlobalKey<FormState> _key in _keys) {
-        _key.currentState.save();
+        _key.currentState?.save();
       }
       try {
         MyLoading.startLoading();
         AuthCredential credential =
             EmailAuthProvider.credential(email: email, password: password);
-        await FirebaseAuth.instance.currentUser.linkWithCredential(credential);
-        User firebaseUser = FirebaseAuth.instance.currentUser;
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser == null) return;
+        await firebaseUser.linkWithCredential(credential);
         await firebaseUser.reload();
-        if (firebaseUser != null && !firebaseUser.emailVerified) {
+        if (!firebaseUser.emailVerified) {
           var actionCodeSettings = ActionCodeSettings(
             url: 'https://brebit.dev/email-set',
             androidPackageName: "dev.brebit",
@@ -277,7 +278,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
         if (e.code == 'email-already-in-use') {
           await MyLoading.dismiss();
           showDialog(
-              context: ApplicationRoutes.materialKey.currentContext,
+              context: ApplicationRoutes.materialKey.currentContext ?? context,
               builder: (context) {
                 return MyDialog(
                   title: Text(
@@ -285,7 +286,7 @@ class _RegisterEmailState extends State<RegisterEmail> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyText1
-                        .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                        ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),
                   body: SizedBox(
@@ -335,7 +336,7 @@ class EmailRegisterComplete extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             SizedBox(
               height: 24,
@@ -343,7 +344,7 @@ class EmailRegisterComplete extends StatelessWidget {
             Text(
               'メールアドレス${this.email}\nを登録しました。',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
               textAlign: TextAlign.center,
             ),
             SizedBox(
@@ -352,7 +353,7 @@ class EmailRegisterComplete extends StatelessWidget {
             Text(
               '${this.email}宛に届いた\nメールのリンクを開くと、\nログインが可能になります。',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],
@@ -397,21 +398,21 @@ class _SavableProvider extends StateNotifier<_SavableProviderState> {
 final _savableProvider = StateNotifierProvider.autoDispose(
     (ref) => _SavableProvider(_SavableProviderState(false, false)));
 
-class ChangeEmail extends StatefulWidget {
+class ChangeEmail extends ConsumerStatefulWidget {
   @override
   _ChangeEmailState createState() => _ChangeEmailState();
 }
 
-class _ChangeEmailState extends State<ChangeEmail> {
-  GlobalKey<FormState> _emailKey;
-  GlobalKey<FormState> _passwordKey;
-  String email;
-  String password;
-  FocusNode _emailFocusNode;
-  FocusNode _passwordFocusNode;
+class _ChangeEmailState extends ConsumerState<ChangeEmail> {
+  late GlobalKey<FormState> _emailKey;
+  late GlobalKey<FormState> _passwordKey;
+  String email = '';
+  String password = '';
+  late FocusNode _emailFocusNode;
+  late FocusNode _passwordFocusNode;
 
-  String emailErrorMessage;
-  String passwordErrorMessage;
+  String emailErrorMessage = '';
+  String passwordErrorMessage = '';
 
   @override
   void initState() {
@@ -423,12 +424,12 @@ class _ChangeEmailState extends State<ChangeEmail> {
     _emailFocusNode = new FocusNode();
     _emailFocusNode.addListener(() {
       if (!_emailFocusNode.hasFocus) {
-        _emailKey.currentState.validate();
+        _emailKey.currentState?.validate();
       }
     });
     _passwordFocusNode.addListener(() {
       if (!_passwordFocusNode.hasFocus) {
-        _passwordKey.currentState.validate();
+        _passwordKey.currentState?.validate();
       }
     });
     super.initState();
@@ -444,19 +445,20 @@ class _ChangeEmailState extends State<ChangeEmail> {
   }
 
   Future<void> save() async {
-    if (_emailKey.currentState.validate() &&
-        _passwordKey.currentState.validate()) {
-      _emailKey.currentState.save();
-      _passwordKey.currentState.save();
+    if ((_emailKey.currentState?.validate() ?? false) &&
+        (_passwordKey.currentState?.validate() ?? false)) {
+      _emailKey.currentState!.save();
+      _passwordKey.currentState!.save();
       try {
         MyLoading.startLoading();
         await FirebaseAuth.instance
             .signInWithEmailAndPassword(email: email, password: password);
-        User firebaseUser = FirebaseAuth.instance.currentUser;
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser == null) return;
         await firebaseUser.reload();
         await firebaseUser.updateEmail(email);
         await firebaseUser.reload();
-        if (firebaseUser != null && !firebaseUser.emailVerified) {
+        if (!firebaseUser.emailVerified) {
           var actionCodeSettings = ActionCodeSettings(
             url: 'https://brebit.dev/email-set',
             androidPackageName: "dev.brebit",
@@ -475,7 +477,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
         if (e.code == 'email-already-in-use') {
           await MyLoading.dismiss();
           showDialog(
-              context: ApplicationRoutes.materialKey.currentContext,
+              context: ApplicationRoutes.materialKey.currentContext ?? context,
               builder: (context) {
                 return MyDialog(
                   title: Text(
@@ -483,7 +485,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyText1
-                        .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                        ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),
                   body: SizedBox(
@@ -498,7 +500,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
               });
         } else if (e.code == 'wrong-password') {
           passwordErrorMessage = 'パスワードが正しくありません';
-          _passwordKey.currentState.validate();
+          _passwordKey.currentState?.validate();
           await MyLoading.dismiss();
         } else {
           await MyLoading.dismiss();
@@ -520,7 +522,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
 
   @override
   Widget build(BuildContext context) {
-    String currentEmail = FirebaseAuth.instance.currentUser.email;
+    String? currentEmail = FirebaseAuth.instance.currentUser?.email;
     return MyHookBottomFixedButton(
       provider: _savableProvider,
       onTapped: () async {
@@ -530,7 +532,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
       },
       label: '変更する',
       enable: () {
-        return context.read(_savableProvider).savable();
+        return ref.read(_savableProvider.notifier).savable();
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 64, horizontal: 24),
@@ -543,7 +545,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                  ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
             ),
             SizedBox(
               height: 24,
@@ -552,7 +554,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
               '現在のメールアドレス: \n$currentEmail',
               textAlign: TextAlign.center,
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
             ),
             SizedBox(
               height: 40,
@@ -561,7 +563,7 @@ class _ChangeEmailState extends State<ChangeEmail> {
               key: _emailKey,
               child: MyTextField(
                 validate: (text) {
-                  if (text.length == 0) {
+                  if (text == null || text.length == 0) {
                     return '入力してください';
                   }
                   return isEmail(text) ? null : '正しく入力してください';
@@ -580,10 +582,10 @@ class _ChangeEmailState extends State<ChangeEmail> {
                 hintText: 'brebit@example.com',
                 onChanged: (String text) {
                   this.email = text;
-                  context.read(_savableProvider).setEmail(isEmail(text));
+                  ref.read(_savableProvider.notifier).setEmail(isEmail(text));
                 },
-                onSaved: (String text) {
-                  this.email = text;
+                onSaved: (String? text) {
+                  this.email = text ?? '';
                 },
               ),
             ),
@@ -605,13 +607,15 @@ class _ChangeEmailState extends State<ChangeEmail> {
                       passwordErrorMessage = '';
                       return p;
                     }
-                    if (text.length == 0) {
+                    if (text == null || text.length == 0) {
                       return '入力してください';
                     }
                     return text.length < 6 ? '６文字以上入力してください' : null;
                   },
                   onChanged: (text) {
-                    context.read(_savableProvider).setPassword(text.length > 5);
+                    ref
+                        .read(_savableProvider.notifier)
+                        .setPassword(text.length > 5);
                   },
                 ))
           ],
@@ -646,7 +650,7 @@ class EmailChangeComplete extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             SizedBox(
               height: 24,
@@ -654,7 +658,7 @@ class EmailChangeComplete extends StatelessWidget {
             Text(
               'メールアドレスを\n${this.email}に変更しました。',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
               textAlign: TextAlign.center,
             ),
             SizedBox(
@@ -663,7 +667,7 @@ class EmailChangeComplete extends StatelessWidget {
             Text(
               '${this.email}宛に届いた\nメールのリンクを開くと、\nログインが可能になります。',
               style:
-                  Theme.of(context).textTheme.bodyText1.copyWith(fontSize: 15),
+                  Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],

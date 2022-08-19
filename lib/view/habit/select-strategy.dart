@@ -77,7 +77,7 @@ class SelectedStrategy {
   }
 }
 
-SelectedStrategy _selected;
+late SelectedStrategy _selected;
 
 class SelectStrategyParams {
   Habit habit;
@@ -85,19 +85,21 @@ class SelectStrategyParams {
   List<Strategy> otherStrategies = <Strategy>[];
 
   SelectStrategyParams(
-      {this.habit, this.recommendStrategies, this.otherStrategies});
+      {required this.habit,
+      required this.recommendStrategies,
+      required this.otherStrategies});
 }
 
-class SelectStrategy extends StatelessWidget {
+class SelectStrategy extends ConsumerWidget {
   final SelectStrategyParams params;
 
-  SelectStrategy({@required this.params});
+  SelectStrategy({required this.params});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return WillPopScope(
       onWillPop: () async {
-        await onPop(context);
+        await onPop(ref);
         return true;
       },
       child: Scaffold(
@@ -106,12 +108,12 @@ class SelectStrategy extends StatelessWidget {
             background: AppBarBackground.gray,
             titleText: 'ストラテジーを選ぶ',
             onBack: () {
-              onPop(context);
+              onPop(ref);
             }),
         body: MyBottomFixedButton(
           label: '完了',
           onTapped: () async {
-            await save(context);
+            await save(ref);
           },
           enable: true,
           child: Container(
@@ -130,24 +132,25 @@ class SelectStrategy extends StatelessWidget {
     );
   }
 
-  Future<void> onPop(BuildContext _ctx) async {
+  Future<void> onPop(WidgetRef _ref) async {
     try {
       Map<String, dynamic> result = await StrategyApi.changeStrategy({
         'selected': [],
         'created': [],
       }, params.habit);
-      _ctx.read(homeProvider).setHabit(result['habit']);
-      _ctx.read(authProvider).setUser(result['user']);
+      _ref.read(homeProvider.notifier).setHabit(result['habit']);
+      _ref.read(authProvider.notifier).updateState(user: result['user']);
       ApplicationRoutes.popUntil('/home');
     } catch (e) {
       MyErrorDialog.show(e);
     }
   }
 
-  Future<void> save(BuildContext _ctx) async {
+  Future<void> save(WidgetRef _ref) async {
     List<int> selectedStrategyIds = <int>[];
     _selected.selectedStrategies.forEach((strategy) {
-      selectedStrategyIds.add(strategy.id);
+      int? id = strategy.id;
+      if (id != null) selectedStrategyIds.add(id);
     });
     List<Map<String, dynamic>> createdData = <Map<String, dynamic>>[];
     _selected.getSelectedCreated().forEach((value) {
@@ -164,15 +167,15 @@ class SelectStrategy extends StatelessWidget {
           break;
         default:
           return;
-          break;
       }
       List<int> tagIds = [];
       List<String> newTags = [];
       value.tags.forEach((tag) {
-        if (tag.id == null) {
+        int? id = tag.id;
+        if (id == null) {
           newTags.add(tag.name);
         } else {
-          tagIds.add(tag.id);
+          tagIds.add(id);
         }
       });
       data['tags'] = tagIds;
@@ -184,8 +187,8 @@ class SelectStrategy extends StatelessWidget {
         'selected': selectedStrategyIds,
         'created': createdData,
       }, params.habit);
-      _ctx.read(homeProvider).setHabit(result['habit']);
-      _ctx.read(authProvider).setUser(result['user']);
+      _ref.read(homeProvider.notifier).setHabit(result['habit']);
+      _ref.read(authProvider.notifier).updateState(user: result['user']);
       ApplicationRoutes.popUntil('/home');
     } catch (e) {
       MyErrorDialog.show(e);
@@ -196,7 +199,7 @@ class SelectStrategy extends StatelessWidget {
 class SelectStrategyContent extends StatefulWidget {
   final SelectStrategyParams params;
 
-  SelectStrategyContent({@required this.params});
+  SelectStrategyContent({required this.params});
 
   @override
   _SelectStrategyContentState createState() => _SelectStrategyContentState();
@@ -242,7 +245,7 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle _style = Theme.of(context).textTheme.subtitle1;
+    TextStyle? _style = Theme.of(context).textTheme.subtitle1;
     return Container(
       width: double.infinity,
       child: Column(
@@ -268,11 +271,11 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                       child: icon[widget.params.habit.category.name]),
                   Expanded(
                     child: Text(
-                      tag[widget.params.habit.category.name],
+                      tag[widget.params.habit.category.name]!,
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                          ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                     ),
                   )
                 ],
@@ -296,7 +299,7 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                       'ストラテジーとは？',
                       style: TextStyle(
                           decoration: TextDecoration.underline,
-                          color: Theme.of(context).accentColor),
+                          color: Theme.of(context).colorScheme.secondary),
                     ),
                     onTap: () {
                       print('jump to description');
@@ -363,12 +366,12 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                     child: Icon(
                       Icons.add,
                       size: 20,
-                      color: Theme.of(context).textTheme.subtitle1.color,
+                      color: Theme.of(context).textTheme.subtitle1?.color,
                     ),
                   ),
                   Expanded(
                     child: Text('カスタムのストラテジーを追加',
-                        style: Theme.of(context).textTheme.subtitle1.copyWith(
+                        style: Theme.of(context).textTheme.subtitle1?.copyWith(
                             fontWeight: FontWeight.w400, fontSize: 13)),
                   )
                 ],
@@ -376,9 +379,6 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
             ),
           ))
           ..addAll(_selected.createdValues.map((value) {
-            Strategy strategy = new Strategy();
-            strategy.category = widget.params.habit.category;
-            strategy.title = '';
             Map<String, dynamic> data;
             switch (value.strategyCategory) {
               case StrategyCategory.ifThen:
@@ -388,16 +388,17 @@ class _SelectStrategyContentState extends State<SelectStrategyContent> {
                   'then': value.getValue('then')
                 };
                 break;
-              case StrategyCategory.twentySec:
+              default:
                 data = <String, dynamic>{
                   'type': 'twenty_sec',
                   'rule': value.getValue('twenty-sec'),
                 };
                 break;
-              default:
-                break;
             }
-            strategy.body = Resolver.toMap(data);
+            Strategy strategy = Strategy(
+              body: Resolver.toMap(data),
+              category: widget.params.habit.category
+            );
             strategy.followers = 0;
             return StrategyCard(
               strategy: strategy,

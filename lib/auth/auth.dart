@@ -15,8 +15,6 @@ class Authorization{
       } else if (e.code == 'email-already-in-use') {
         return 'email-used';
       }
-    } catch (e) {
-      return e;
     }
     return 'success';
   }
@@ -33,8 +31,6 @@ class Authorization{
       } else if (e.code == 'wrong-password') {
         return 'wrong-password';
       }
-    } catch (e) {
-      return e;
     }
     return 'success';
   }

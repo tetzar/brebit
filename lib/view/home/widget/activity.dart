@@ -21,12 +21,13 @@ final _activityProvider =
 class ActivityProvider extends StateNotifier<List<HabitLog>> {
   ActivityProvider(List<HabitLog> state) : super(state);
 
-  DateTime t;
-  Function onOtherTap;
+  DateTime t = DateTime.now();
+  Function? onOtherTap;
 
-  void set(List<HabitLog> logs, DateTime time, {Function onOtherTap}) {
-    if (this.onOtherTap != null && time != this.t) {
-      this.onOtherTap();
+  void set(List<HabitLog> logs, DateTime time, {Function? onOtherTap}) {
+    Function? thisOnOtherTap = this.onOtherTap;
+    if (thisOnOtherTap != null && time != this.t) {
+      thisOnOtherTap();
     }
     t = time;
     this.onOtherTap = onOtherTap;
@@ -40,31 +41,40 @@ class ActivityProvider extends StateNotifier<List<HabitLog>> {
   void setTime(DateTime time) {
     this.t = time;
   }
+
+  List<HabitLog> getList() {
+    return [...state];
+  }
 }
 
-class HomeActivity extends StatefulHookWidget {
+class HomeActivity extends ConsumerStatefulWidget {
   @override
   _HomeActivityState createState() => _HomeActivityState();
 }
 
-class _HomeActivityState extends State<HomeActivity> {
-  DateTime showingDateTime;
-  StreamController<double> _streamController;
-  PageController _pageController;
-  GlobalKey _bodyKey;
-  Map<int, GlobalKey> _keyHolder;
-  List<int> hasLoadedMonths;
+class _HomeActivityState extends ConsumerState<HomeActivity> {
+  late StreamController<double> _streamController;
+  late PageController _pageController;
+  late GlobalKey _bodyKey;
+  Map<int, GlobalKey> _keyHolder = {};
+  List<int> hasLoadedMonths = [];
+  late Habit habit;
 
   void dailyCardAnimate() {
-    RenderBox _box = _bodyKey.currentContext.findRenderObject();
+    BuildContext? currentContext = _bodyKey.currentContext;
+    if (currentContext == null) return;
+    RenderBox _box = currentContext.findRenderObject() as RenderBox;
     double _bodyHeight = _box.size.height;
-    double pagePosition = _pageController.page;
+    double pagePosition = _pageController.page ?? 0;
 
-    GlobalKey _smallerKey = _keyHolder[pagePosition.floor()];
-    GlobalKey _largerKey = _keyHolder[pagePosition.ceil()];
+    BuildContext? _smallerBoxContext =
+        _keyHolder[pagePosition.floor()]?.currentContext;
+    BuildContext? _largerBoxContext =
+        _keyHolder[pagePosition.ceil()]?.currentContext;
+    if (_smallerBoxContext == null || _largerBoxContext == null) return;
     double rate = pagePosition - (pagePosition.floor()).toDouble();
-    RenderBox _smallerBox = _smallerKey.currentContext.findRenderObject();
-    RenderBox _largerBox = _largerKey.currentContext.findRenderObject();
+    RenderBox _smallerBox = _smallerBoxContext.findRenderObject() as RenderBox;
+    RenderBox _largerBox = _largerBoxContext.findRenderObject() as RenderBox;
     double _position =
         (_smallerBox.localToGlobal(_box.globalToLocal(Offset.zero)).dy +
                     _smallerBox.size.height) *
@@ -79,10 +89,17 @@ class _HomeActivityState extends State<HomeActivity> {
   void initState() {
     _keyHolder = <int, GlobalKey>{};
     _bodyKey = GlobalKey();
-    HabitLog startLog = context
-        .read(homeProvider.state)
-        .habit
-        .getLatestLogIn([HabitLogStateName.started]);
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) {
+      ApplicationRoutes.popUntil('/home');
+      return;
+    }
+    this.habit = habit;
+    HabitLog? startLog = habit.getLatestLogIn([HabitLogStateName.started]);
+    if (startLog == null) {
+      ApplicationRoutes.popUntil('/home');
+      return;
+    }
     int months = (DateTime.now().year - startLog.createdAt.year) * 12 +
         DateTime.now().month -
         startLog.createdAt.month +
@@ -93,18 +110,15 @@ class _HomeActivityState extends State<HomeActivity> {
       dailyCardAnimate();
     });
     _streamController = new StreamController<double>();
-    List<HabitLog> _logs = context.read(homeProvider.state).habit.habitLogs;
+    List<HabitLog> _logs = habit.habitLogs;
     List<List<HabitLog>> _collected = HabitLog.collectByDate(_logs);
     DateTime _now = DateTime.now();
-    List<HabitLog> _logInADay = _collected.firstWhere((collection) {
+    List<HabitLog>? _logInADay = _collected.firstWhere((collection) {
       return collection.first.createdAt.year == _now.year &&
           collection.first.createdAt.month == _now.month &&
           collection.first.createdAt.day == _now.day;
-    }, orElse: () => null);
-    if (_logInADay == null) {
-      _logInADay = <HabitLog>[];
-    }
-    context.read(_activityProvider).set(_logInADay, _now);
+    }, orElse: () => []);
+    ref.read(_activityProvider.notifier).set(_logInADay, _now);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         dailyCardAnimate();
@@ -133,13 +147,13 @@ class _HomeActivityState extends State<HomeActivity> {
 
   @override
   Widget build(BuildContext context) {
-    useProvider(homeProvider.state);
-    List<HabitLog> _logs = context.read(homeProvider.state).habit.habitLogs;
+    ref.watch(homeProvider);
+    List<HabitLog> _logs = habit.habitLogs;
     List<List<HabitLog>> _collected = HabitLog.collectByDate(_logs);
     SplayTreeMap<int, List<List<HabitLog>>> _monthlyCollected =
         SplayTreeMap<int, List<List<HabitLog>>>();
-    DateTime _t;
-    List<List<HabitLog>> _monthlyCollection;
+    DateTime? _t;
+    List<List<HabitLog>>? _monthlyCollection;
     int month = DateTime.now().month;
     int year = DateTime.now().year;
     while (month > _collected.first.first.createdAt.month ||
@@ -159,7 +173,8 @@ class _HomeActivityState extends State<HomeActivity> {
         _monthlyCollection = <List<HabitLog>>[dailyLogs];
         _t = dailyLogs.first.createdAt;
       } else {
-        if (_t.month != dailyLogs.first.createdAt.month) {
+        if (_t.month != dailyLogs.first.createdAt.month &&
+            _monthlyCollection != null) {
           String timeText = '';
           timeText += _t.year.toString() + '-';
           timeText +=
@@ -205,19 +220,19 @@ class _HomeActivityState extends State<HomeActivity> {
                       _key,
                       _monthlyCollected.values.toList()[i],
                       monthIdToDateTime(_monthlyCollected.keys.toList()[i]),
-                      context.read(homeProvider.state).habit);
+                      this.habit);
                 },
               )),
           Positioned(
             bottom: 0,
             child: HookBuilder(
               builder: (context) {
-                useProvider(_activityProvider.state);
+                ref.watch(_activityProvider);
                 return StreamBuilder<double>(
                     stream: _streamController.stream,
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        double _height = max(102, snapshot.data);
+                        double _height = max(102, snapshot.data!);
                         return Container(
                           height: _height,
                           width: MediaQuery.of(context).size.width,
@@ -225,8 +240,10 @@ class _HomeActivityState extends State<HomeActivity> {
                             horizontal:
                                 MediaQuery.of(context).size.width * 0.075 + 4,
                           ),
-                          child: LogCard(context.read(_activityProvider.state),
-                              context.read(_activityProvider).t, _height),
+                          child: LogCard(
+                              ref.read(_activityProvider.notifier).getList(),
+                              ref.read(_activityProvider.notifier).t,
+                              _height),
                         );
                       }
                       return SizedBox(
@@ -243,7 +260,7 @@ class _HomeActivityState extends State<HomeActivity> {
 }
 
 class MonthlyCard extends StatelessWidget {
-  final List<List<HabitLog>> monthlyLogs;
+  final List<List<HabitLog>?> monthlyLogs;
   final DateTime date;
   final Habit habit;
   final GlobalKey containerKey;
@@ -310,7 +327,7 @@ class MonthlyCard extends StatelessWidget {
                     child: Text(
                       '${date.year}年${date.month}月',
                       style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyText1.color,
+                          color: Theme.of(context).textTheme.bodyText1?.color,
                           fontSize: 20,
                           fontWeight: FontWeight.w700),
                     ),
@@ -353,7 +370,7 @@ class MonthlyCard extends StatelessWidget {
                   child: Text(
                     '${date.year}年${date.month}月',
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyText1.color,
+                        color: Theme.of(context).textTheme.bodyText1?.color,
                         fontSize: 20,
                         fontWeight: FontWeight.w700),
                   ),
@@ -367,8 +384,8 @@ class MonthlyCard extends StatelessWidget {
   }
 }
 
-class ActivityCalender extends StatefulWidget {
-  final List<List<HabitLog>> monthlyLog;
+class ActivityCalender extends ConsumerStatefulWidget {
+  final List<List<HabitLog>?> monthlyLog;
   final DateTime date;
   final Habit habit;
 
@@ -378,18 +395,23 @@ class ActivityCalender extends StatefulWidget {
   _ActivityCalenderState createState() => _ActivityCalenderState();
 }
 
-class _ActivityCalenderState extends State<ActivityCalender> {
+class _ActivityCalenderState extends ConsumerState<ActivityCalender> {
   @override
   Widget build(BuildContext context) {
     DateTime _t =
         DateTime.utc(widget.date.year, widget.date.month, 1).toLocal();
     List<ActivityTile> _tiles = <ActivityTile>[];
     List<DateTime> _inactive = widget.habit.isActiveDayListInMonth(_t);
-    DateTime _providerTime = context.read(_activityProvider).t;
+    DateTime _providerTime = ref.read(_activityProvider.notifier).t;
     while (_t.month == widget.date.month) {
-      List<HabitLog> logs = widget.monthlyLog.firstWhere(
-          (dailyLogs) => dailyLogs.first.createdAt.day == _t.day,
-          orElse: () => null);
+      List<HabitLog>? logs;
+      try {
+        logs = widget.monthlyLog.firstWhere(
+          (dailyLogs) => dailyLogs?.first.createdAt.day == _t.day,
+        );
+      } on StateError {
+        logs = null;
+      }
       if (logs == null) {
         logs = <HabitLog>[];
       }
@@ -440,30 +462,30 @@ class _ActivityCalenderState extends State<ActivityCalender> {
   }
 }
 
-class ActivityTile extends StatefulWidget {
+class ActivityTile extends ConsumerStatefulWidget {
   final List<HabitLog> logs;
   final DateTime day;
   final bool selected;
   final bool inactive;
 
   ActivityTile(
-      {@required this.logs,
-      @required this.day,
-      @required this.inactive,
-      @required this.selected});
+      {required this.logs,
+      required this.day,
+      required this.inactive,
+      required this.selected});
 
   @override
   _ActivityTileState createState() => _ActivityTileState();
 }
 
-class _ActivityTileState extends State<ActivityTile> {
-  bool selected;
+class _ActivityTileState extends ConsumerState<ActivityTile> {
+  bool selected = false;
 
   @override
   void initState() {
     selected = widget.selected;
     if (selected) {
-      context.read(_activityProvider).setOnOtherTap(() {
+      ref.read(_activityProvider.notifier).setOnOtherTap(() {
         setState(() {
           selected = false;
         });
@@ -487,8 +509,8 @@ class _ActivityTileState extends State<ActivityTile> {
           break;
         case HabitLogStateName.wannaDo:
         case HabitLogStateName.strategyChanged:
-        case HabitLogStateName.aimdateOvercame:
-        case HabitLogStateName.aimdateUpdated:
+        case HabitLogStateName.aimDateOvercame:
+        case HabitLogStateName.aimDateUpdated:
           hasActivity = true;
           break;
         default:
@@ -503,7 +525,7 @@ class _ActivityTileState extends State<ActivityTile> {
           ? null
           : () {
               this.selected = true;
-              context.read(_activityProvider).set(widget.logs, widget.day,
+              ref.read(_activityProvider.notifier).set(widget.logs, widget.day,
                   onOtherTap: () {
                 setState(() {
                   this.selected = false;
@@ -521,7 +543,7 @@ class _ActivityTileState extends State<ActivityTile> {
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                       width: 3,
                     ),
                     boxShadow: [
@@ -534,7 +556,7 @@ class _ActivityTileState extends State<ActivityTile> {
                         offset: Offset(0, 4),
                       )
                     ],
-                    color: Theme.of(context).accentColor),
+                    color: Theme.of(context).colorScheme.secondary),
                 alignment: Alignment.center,
                 child: Text(
                   '${widget.day.day}',
@@ -552,7 +574,7 @@ class _ActivityTileState extends State<ActivityTile> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasActivity
-                        ? Theme.of(context).accentColor
+                        ? Theme.of(context).colorScheme.secondary
                         : Theme.of(context).primaryColorDark,
                     width: 3,
                   ),
@@ -577,7 +599,7 @@ class _ActivityTileState extends State<ActivityTile> {
                         'assets/icon/check.svg',
                         height: 22,
                         width: 22,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
               ),
       ),
@@ -628,7 +650,7 @@ class LogCard extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontWeight: FontWeight.w700, fontSize: 20),
+                    ?.copyWith(fontWeight: FontWeight.w700, fontSize: 20),
               ),
               SizedBox(
                 height: 8,
@@ -653,7 +675,7 @@ class LogCard extends StatelessWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyText1
-                                .copyWith(
+                                ?.copyWith(
                                     fontSize: 13, fontWeight: FontWeight.w400),
                           );
                         },
@@ -667,23 +689,21 @@ class LogCard extends StatelessWidget {
   }
 
   Widget getSubject(HabitLog log, BuildContext context) {
-    TextStyle _style = Theme.of(context)
+    TextStyle? _style = Theme.of(context)
         .textTheme
         .bodyText1
-        .copyWith(fontSize: 13, fontWeight: FontWeight.w400);
+        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w400);
     switch (log.getState()) {
       case HabitLogStateName.started:
         return Text(
           '・チャレンジを開始しました。',
           style: _style,
         );
-        break;
       case HabitLogStateName.finished:
         return Text(
           '・チャレンジを終了しました。',
           style: _style,
         );
-        break;
       case HabitLogStateName.strategyChanged:
         return GestureDetector(
             onTap: () {
@@ -700,13 +720,12 @@ class LogCard extends StatelessWidget {
                   text: 'ストラテジーを変更しました。',
                   style: TextStyle(decoration: TextDecoration.underline))
             ])));
-        break;
-      case HabitLogStateName.aimdateUpdated:
+      case HabitLogStateName.aimDateUpdated:
         return Text(
           '・スモールステップを更新しました。',
           style: _style,
         );
-      case HabitLogStateName.aimdateOvercame:
+      case HabitLogStateName.aimDateOvercame:
         int step = log.getBody()['step'];
         return GestureDetector(
             onTap: () {
@@ -723,7 +742,6 @@ class LogCard extends StatelessWidget {
                   text: 'スモールステップを達成しました。($step/${Habit.getStepCount()})',
                   style: TextStyle(decoration: TextDecoration.underline))
             ])));
-        break;
       case HabitLogStateName.did:
         final Map<CategoryName, String> didText = {
           CategoryName.cigarette: 'タバコを吸いました。',
@@ -731,7 +749,7 @@ class LogCard extends StatelessWidget {
           CategoryName.sweets: 'お菓子を食べました。',
           CategoryName.sns: 'SNSを見てしまいました。',
         };
-        String text = didText[log.category.name];
+        String text = didText[log.category.name]!;
         return GestureDetector(
             onTap: () {
               ApplicationRoutes.push(MaterialPageRoute(
@@ -743,7 +761,6 @@ class LogCard extends StatelessWidget {
                   text: text,
                   style: TextStyle(decoration: TextDecoration.underline))
             ])));
-        break;
       case HabitLogStateName.wannaDo:
         final Map<CategoryName, String> wannaDoText = {
           CategoryName.cigarette: 'タバコを吸いたい気持ちを抑えました。',
@@ -751,7 +768,7 @@ class LogCard extends StatelessWidget {
           CategoryName.sweets: 'お菓子を食べたい気持ちを抑えました。',
           CategoryName.sns: 'SNSを見たい気持ちを抑えました。',
         };
-        String text = wannaDoText[log.category.name];
+        String text = wannaDoText[log.category.name]!;
         return GestureDetector(
             onTap: () {
               CreatePostArguments args = new CreatePostArguments();
@@ -767,25 +784,21 @@ class LogCard extends StatelessWidget {
                   text: text,
                   style: TextStyle(decoration: TextDecoration.underline))
             ])));
-        break;
       case HabitLogStateName.inactivate:
         return Text(
           '・チャレンジを中断しました。',
           style: _style,
         );
-        break;
       case HabitLogStateName.activate:
         return Text(
           '・チャレンジを再開しました。',
           style: _style,
         );
-        break;
 
       default:
         return SizedBox(
           height: 0,
         );
-        break;
     }
   }
 }

@@ -33,7 +33,7 @@ class Styles {
     border: OutlineInputBorder(
       gapPadding: 1.0,
       borderSide: BorderSide(
-        color: Colors.grey[600],
+        color: Colors.grey[600] ?? Colors.grey,
         width: 1.0,
       ),
     ),

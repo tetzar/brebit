@@ -4,12 +4,10 @@ import 'model.dart';
 
 import 'category.dart';
 
-// ignore: non_constant_identifier_names
-List<HabitLog> HabitLogFromJson(List<dynamic> decodedList) =>
-    List<HabitLog>.from(decodedList.cast<Map>().map((x) => HabitLog.fromJson(x)));
+List<HabitLog> habitLogFromJson(List<dynamic> decodedList) =>
+    List<HabitLog>.from(decodedList.cast<Map<String, dynamic>>().map((x) => HabitLog.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> HabitLogToJson(List<HabitLog> data) =>
+List<Map> habitLogToJson(List<HabitLog> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 enum HabitLogStateName {
@@ -18,8 +16,8 @@ enum HabitLogStateName {
   strategyChanged,
   activate,
   inactivate,
-  aimdateUpdated,
-  aimdateOvercame,
+  aimDateUpdated,
+  aimDateOvercame,
   did,
   wannaDo,
 }
@@ -31,8 +29,8 @@ class HabitLog extends Model {
     HabitLogStateName.strategyChanged: 2,
     HabitLogStateName.activate: 4,
     HabitLogStateName.inactivate: 5,
-    HabitLogStateName.aimdateUpdated: 6,
-    HabitLogStateName.aimdateOvercame: 7,
+    HabitLogStateName.aimDateUpdated: 6,
+    HabitLogStateName.aimDateOvercame: 7,
     HabitLogStateName.did: 8,
     HabitLogStateName.wannaDo: 9,
   };
@@ -43,15 +41,15 @@ class HabitLog extends Model {
   Map<String, dynamic> information;
   DateTime createdAt;
   DateTime updatedAt;
-  DateTime softDeletedAt;
+  DateTime? softDeletedAt;
 
   HabitLog({
-    this.id,
-    this.state,
-    this.information,
-    this.category,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.state,
+    required this.information,
+    required this.category,
+    required this.createdAt,
+    required this.updatedAt,
     this.softDeletedAt,
   });
 
@@ -72,8 +70,7 @@ class HabitLog extends Model {
   Map<String, dynamic> toJson() => {
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
-        "soft_deleted_at":
-            (softDeletedAt == null) ? null : softDeletedAt.toIso8601String(),
+        "soft_deleted_at":softDeletedAt?.toIso8601String(),
         "id": id,
         'category_id': category.id,
         "state": state,
@@ -81,11 +78,8 @@ class HabitLog extends Model {
       };
 
   static HabitLogStateName getStateFromStateId(int id) {
-    if (id == null) {
-      return null;
-    }
     HabitLogStateName key =
-        stateMap.keys.firstWhere((k) => stateMap[k] == id, orElse: () => null);
+        stateMap.keys.firstWhere((k) => stateMap[k] == id);
     return key;
   }
 
@@ -98,7 +92,7 @@ class HabitLog extends Model {
     return false;
   }
 
-  HabitLogStateName getState() {
+  HabitLogStateName? getState() {
     return HabitLog.getStateFromStateId(this.state);
   }
 
@@ -109,7 +103,6 @@ class HabitLog extends Model {
 
   static List<HabitLog> sortByCreatedAt(List<HabitLog> logs,
       [bool desc = true]) {
-    if (logs == null) return <HabitLog>[];
     if (desc) {
       logs.sort((a, b) {
         return a.createdAt.isAfter(b.createdAt) ? -1 : 1;
@@ -125,7 +118,7 @@ class HabitLog extends Model {
   static List<List<HabitLog>> collectByDate(List<HabitLog> logs) {
     sortByCreatedAt(logs);
     List<List<HabitLog>> collected = <List<HabitLog>>[];
-    DateTime d;
+    DateTime? d;
     List<HabitLog> collection = <HabitLog>[];
     for (HabitLog log in logs) {
       if (d == null) {

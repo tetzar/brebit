@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../model/user.dart';
@@ -10,8 +9,14 @@ final tabProvider =
 class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
 
+  get position => state;
+
   void set(double s) {
     state = s;
+  }
+
+  double getPosition() {
+    return state;
   }
 }
 
@@ -22,8 +27,8 @@ class ProfileTabBar extends SliverPersistentHeaderDelegate {
   static const double EXTENT = 43;
 
   ProfileTabBar({
-    @required this.tabController,
-    @required this.user,
+    required this.tabController,
+    required this.user,
   });
 
   @override
@@ -53,21 +58,21 @@ class ProfileTabBar extends SliverPersistentHeaderDelegate {
 
 enum ShowingTab { posts, friend, challenge }
 
-class _ProfileTabBarContent extends StatefulHookWidget {
+class _ProfileTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
   final AuthUser user;
 
   _ProfileTabBarContent({
-    @required this.tabController,
-    @required this.user,
+    required this.tabController,
+    required this.user,
   });
 
   @override
   __ProfileTabBarContentState createState() => __ProfileTabBarContentState();
 }
 
-class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
-  ShowingTab _showingTab;
+class __ProfileTabBarContentState extends ConsumerState<_ProfileTabBarContent> {
+  late ShowingTab _showingTab;
 
   @override
   void initState() {
@@ -77,7 +82,9 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider(widget.user.id).state);
+    ref.watch(tabProvider(widget.user.id));
+    double position =
+        ref.read(tabProvider(widget.user.id).notifier).getPosition();
     if (position < 0.1) {
       _showingTab = ShowingTab.posts;
     }
@@ -115,11 +122,11 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                               fontSize: 11,
                               fontWeight: FontWeight.w400,
                               color: _showingTab == ShowingTab.posts
-                                  ? Theme.of(context).textTheme.bodyText1.color
+                                  ? Theme.of(context).textTheme.bodyText1?.color
                                   : Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .color),
+                                      ?.color),
                         ))),
                   ),
                   Expanded(
@@ -137,11 +144,11 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                     ? Theme.of(context)
                                         .textTheme
                                         .bodyText1
-                                        .color
+                                        ?.color
                                     : Theme.of(context)
                                         .textTheme
                                         .subtitle1
-                                        .color),
+                                        ?.color),
                           ),
                         )),
                   ),
@@ -162,11 +169,11 @@ class __ProfileTabBarContentState extends State<_ProfileTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               )
                             ],
                           ),
@@ -209,7 +216,7 @@ class TabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  TabBarLinePainter({this.position, this.context});
+  TabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -224,7 +231,7 @@ class TabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;
@@ -240,13 +247,13 @@ class TabBarLinePainter extends CustomPainter {
 
 enum NotStartedShowingTab { posts, friend }
 
-class _NotStartedProfileTabBarContent extends StatefulHookWidget {
+class _NotStartedProfileTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
   final AuthUser user;
 
   _NotStartedProfileTabBarContent({
-    @required this.tabController,
-    @required this.user,
+    required this.tabController,
+    required this.user,
   });
 
   @override
@@ -255,8 +262,8 @@ class _NotStartedProfileTabBarContent extends StatefulHookWidget {
 }
 
 class __NotStartedProfileTabBarContentState
-    extends State<_NotStartedProfileTabBarContent> {
-  NotStartedShowingTab _showingTab;
+    extends ConsumerState<_NotStartedProfileTabBarContent> {
+  late NotStartedShowingTab _showingTab;
 
   @override
   void initState() {
@@ -266,7 +273,9 @@ class __NotStartedProfileTabBarContentState
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider(widget.user.id).state);
+    ref.watch(tabProvider(widget.user.id));
+    double position =
+        ref.read(tabProvider(widget.user.id).notifier).getPosition();
     if (position < 0.1) {
       _showingTab = NotStartedShowingTab.posts;
     }
@@ -307,11 +316,11 @@ class __NotStartedProfileTabBarContentState
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               )
                             ],
                           ),
@@ -335,11 +344,11 @@ class __NotStartedProfileTabBarContentState
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               )
                             ],
                           ),
@@ -379,7 +388,7 @@ class NotStartedTabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  NotStartedTabBarLinePainter({this.position, this.context});
+  NotStartedTabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -390,7 +399,7 @@ class NotStartedTabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;

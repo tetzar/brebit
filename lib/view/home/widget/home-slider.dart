@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final tabProvider = StateNotifierProvider((ref) => TabProvider(0));
@@ -10,21 +9,29 @@ class TabProvider extends StateNotifier<double> {
   void set(double s) {
     state = s;
   }
+
+  double getPosition() {
+    return state;
+  }
+
+  int getIndex() {
+    return this.getPosition().round();
+  }
 }
 
 enum ShowingTab { progress, analytics, pileUp }
 
-class HomeTabBarContent extends StatefulHookWidget {
+class HomeTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
 
-  HomeTabBarContent({@required this.tabController});
+  HomeTabBarContent({required this.tabController});
 
   @override
   _HomeTabBarContentState createState() => _HomeTabBarContentState();
 }
 
-class _HomeTabBarContentState extends State<HomeTabBarContent> {
-  ShowingTab _showingTab;
+class _HomeTabBarContentState extends ConsumerState<HomeTabBarContent> {
+  late ShowingTab _showingTab;
 
   @override
   void initState() {
@@ -34,7 +41,8 @@ class _HomeTabBarContentState extends State<HomeTabBarContent> {
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider.state);
+    ref.watch(tabProvider);
+    double position = ref.read(tabProvider.notifier).getPosition();
     if (position < 0.1) {
       _showingTab = ShowingTab.progress;
     }
@@ -77,11 +85,11 @@ class _HomeTabBarContentState extends State<HomeTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               )
                             ],
                           ),
@@ -104,11 +112,11 @@ class _HomeTabBarContentState extends State<HomeTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               ),
                             ],
                           ),
@@ -131,11 +139,11 @@ class _HomeTabBarContentState extends State<HomeTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               ),
                             ],
                           ),
@@ -178,7 +186,7 @@ class TabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  TabBarLinePainter({this.position, this.context});
+  TabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -193,7 +201,7 @@ class TabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;

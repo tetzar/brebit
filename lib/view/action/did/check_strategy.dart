@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -36,29 +37,30 @@ class CheckedValue {
 }
 
 final buttonTextProvider =
-    StateNotifierProvider.autoDispose((ref) => ButtonTextProvider(''));
+    StateNotifierProvider.autoDispose((ref) => ButtonTextProvider(false));
 
-class ButtonTextProvider extends StateNotifier<String> {
-  ButtonTextProvider(String state) : super(state);
+class ButtonTextProvider extends StateNotifier<bool> {
+  ButtonTextProvider(bool state) : super(state);
 
   void notify() {
-    state = '';
+    state = !state;
   }
 }
 
-CheckedValue checkedValue;
+late CheckedValue checkedValue;
 
-class CheckStrategyDid extends StatelessWidget {
+class CheckStrategyDid extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     checkedValue = new CheckedValue();
-    Habit habit = context.read(homeProvider.state).habit;
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
     List<Widget> strategyCards = <Widget>[];
     habit.strategies.forEach((strategy) {
       strategyCards.add(StrategyCard(
         strategy: strategy,
         onSelect: () {
-          return strategyCheck(strategy, context);
+          return strategyCheck(strategy, ref);
         },
         initialSelected: false,
       ));
@@ -68,6 +70,7 @@ class CheckStrategyDid extends StatelessWidget {
       appBar: getMyAppBar(context: context, titleText: ''),
       body: MyHookFlexibleLabelBottomFixedButton(
         labelChange: () {
+          print("label change");
           if (checkedValue.checked.length > 0) {
             return '次へ';
           } else {
@@ -79,11 +82,10 @@ class CheckStrategyDid extends StatelessWidget {
           return true;
         },
         onTapped: () async {
-          await save(context);
+          await save(ref, habit);
         },
         child: Container(
           color: Theme.of(context).primaryColor,
-          height: double.infinity,
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -102,7 +104,7 @@ class CheckStrategyDid extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Theme.of(context).textTheme.bodyText1.color),
+                        color: Theme.of(context).textTheme.bodyText1?.color),
                   ),
                 ),
               ),
@@ -123,33 +125,37 @@ class CheckStrategyDid extends StatelessWidget {
     );
   }
 
-  bool strategyCheck(Strategy strategy, BuildContext _ctx) {
-    if (checkedValue.isChecked(strategy.id)) {
-      checkedValue.unsetChecked(strategy.id);
-      _ctx.read(buttonTextProvider).notify();
+  bool strategyCheck(Strategy strategy, WidgetRef _ref) {
+    int? strategyId = strategy.id;
+    if (strategyId == null) return false;
+    if (checkedValue.isChecked(strategyId)) {
+      checkedValue.unsetChecked(strategyId);
+      _ref.read(buttonTextProvider.notifier).notify();
       return false;
     } else {
-      checkedValue.setChecked(strategy.id);
-      _ctx.read(buttonTextProvider).notify();
+      checkedValue.setChecked(strategyId);
+      _ref.read(buttonTextProvider.notifier).notify();
       return true;
     }
   }
 
-  Future<void> save(BuildContext ctx) async {
-    if (ctx.read(homeProvider).getHabit().hasLimit()) {
+  Future<void> save(WidgetRef ref, Habit habit) async {
+    if (habit.hasLimit()) {
       ApplicationRoutes.pushNamed('/did/used-amount', checkedValue);
     } else {
       try {
         MyLoading.startLoading();
-        ConditionValueState _value = ctx.read(conditionValueProvider.state);
+        ConditionValueState _value = ref.read(conditionValueProvider.notifier).getState();
+        MentalValue? _mental = _value.mental;
+        if (_mental == null) return;
         Map<String, dynamic> result = await HabitApi.did(
-            _value.mental,
+            _mental,
             _value.desire.toInt(),
             _value.tags,
             checkedValue.checked,
             1,
-            ctx.read(homeProvider.state).habit);
-        ctx.read(homeProvider).setHabit(result['habit']);
+            habit);
+        ref.read(homeProvider.notifier).setHabit(result['habit']);
         await MyLoading.dismiss();
         ApplicationRoutes.pushNamed('/did/confirmation', result['log']);
       } catch (e) {

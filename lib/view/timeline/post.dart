@@ -3,10 +3,7 @@ import 'dart:async';
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/provider/posts.dart';
 import 'package:brebit/provider/profile.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -30,30 +27,30 @@ import 'widget/comment-card.dart';
 class PostArguments {
   Post post;
 
-  PostArguments({@required this.post});
+  PostArguments({required this.post});
 }
 
-class PostPage extends StatefulWidget {
+class PostPage extends ConsumerStatefulWidget {
   final PostArguments args;
 
-  PostPage({@required this.args});
+  PostPage({required this.args});
 
   @override
   _PostPageState createState() => _PostPageState(args: args);
 }
 
-class _PostPageState extends State<PostPage> {
+class _PostPageState extends ConsumerState<PostPage> {
   PostArguments args;
 
-  _PostPageState({@required this.args});
+  _PostPageState({required this.args});
 
   String text = '';
 
-  bool showForm;
+  bool showForm = false;
 
-  bool keyboardIsOpen;
+  bool keyboardIsOpen = false;
 
-  Post _post;
+  late Post? _post;
 
   @override
   void initState() {
@@ -61,15 +58,13 @@ class _PostPageState extends State<PostPage> {
       Home.pop();
     }
     _post = args.post;
-    _post.setParentToComments();
-    if (context.read(postProvider(args.post.id).state) == null) {
-      context.read(postProvider(args.post.id)).setPost(args.post);
-    } else if (context.read(postProvider(args.post.id).state).post == null) {
-      context.read(postProvider(args.post.id)).setPost(args.post);
+    _post?.setParentToComments();
+    if (ref.read(postProvider(args.post.id).notifier).post == null) {
+      ref.read(postProvider(args.post.id).notifier).setPost(args.post);
     }
-    context.read(postProvider(widget.args.post.id)).reload().catchError(
+    ref.read(postProvider(widget.args.post.id).notifier).reload().catchError(
         (error) async {
-      await removePostFromAllProvider(widget.args.post, context);
+      await removePostFromAllProvider(widget.args.post, ref);
       Home.pop();
     }, test: (e) => e is RecordNotFoundException);
     showForm = false;
@@ -79,15 +74,15 @@ class _PostPageState extends State<PostPage> {
 
   @override
   Widget build(BuildContext context) {
-    return HookBuilder(
-      builder: (context) {
-        PostProviderState _postProviderState =
-            useProvider(postProvider(args.post.id).state);
-        useProvider(authProvider.state);
-        _post = _postProviderState.post;
+    return Consumer(
+      builder: (context, ref, child) {
+        ref.watch(postProvider(args.post.id));
+        ref.watch(authProvider);
+        _post = ref.read(postProvider(args.post.id).notifier).post;
         return KeyboardVisibilityBuilder(builder: (context, visible) {
           if (!visible) {
-            if (_focusNode != null) _focusNode.unfocus();
+            FocusNode? focusNode = _focusNode;
+            if (focusNode != null) focusNode.unfocus();
             if (keyboardIsOpen) {
               showForm = false;
               keyboardIsOpen = false;
@@ -95,6 +90,8 @@ class _PostPageState extends State<PostPage> {
           } else {
             keyboardIsOpen = true;
           }
+          Post? post = ref.read(postProvider(args.post.id).notifier).post;
+          if (post == null) return Container();
           return Container(
               width: MediaQuery.of(context).size.width,
               child: Scaffold(
@@ -108,14 +105,14 @@ class _PostPageState extends State<PostPage> {
                       ListView(
                         children: [
                           PostContent(
-                              post: _postProviderState.post,
+                              post: post,
                               onCommentTap: () {
                                 setState(() {
                                   showForm = true;
                                 });
                               }),
                           CommentList(
-                            comments: _postProviderState.post.comments,
+                            comments: post.comments,
                           ),
                         ],
                       ),
@@ -125,7 +122,7 @@ class _PostPageState extends State<PostPage> {
                           left: 0,
                           child: showForm
                               ? CommentForm(
-                                  post: _postProviderState.post,
+                                  post: post,
                                   text: text,
                                   unFocus: (String t) {
                                     this.text = t;
@@ -143,22 +140,23 @@ class _PostPageState extends State<PostPage> {
 
   @override
   void dispose() {
-    if (_post != null) {
-      LocalManager.updatePost(AuthUser.selfUser, _post, friendProviderName);
-      LocalManager.updatePost(AuthUser.selfUser, _post, challengeProviderName);
-    }
+    AuthUser? selfUser = AuthUser.selfUser;
+    Post? post = _post;
+    if (selfUser == null || post == null) return;
+    LocalManager.updatePost(selfUser, post, friendProviderName);
+    LocalManager.updatePost(selfUser, post, challengeProviderName);
     super.dispose();
   }
 }
 
-class PostContent extends StatelessWidget {
+class PostContent extends ConsumerWidget {
   final Post post;
   final Function onCommentTap;
 
-  PostContent({this.post, this.onCommentTap});
+  PostContent({required this.post, required this.onCommentTap});
 
   void redirectToProfile(BuildContext context, AuthUser user) {
-    Home.navKey.currentState.pushNamed('/profile', arguments: user);
+    Home.pushNamed('/profile', args: user);
   }
 
   void _showActions(BuildContext context) {
@@ -186,7 +184,7 @@ class PostContent extends StatelessWidget {
             text: 'ポストを報告',
             onSelect: () async {
               ApplicationRoutes.pop();
-              bool result = await ApplicationRoutes.push(MaterialPageRoute(
+              bool? result = await ApplicationRoutes.push(MaterialPageRoute(
                   builder: (context) => ReportView(this.post)));
               if (result != null) {
                 if (result) {
@@ -208,8 +206,8 @@ class PostContent extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    int thisUserId = context.read(authProvider.state).user.id;
+  Widget build(BuildContext context, WidgetRef ref) {
+    int? thisUserId = ref.read(authProvider.notifier).user?.id;
     Widget _profileContent = Container(
       width: MediaQuery.of(context).size.width,
       child: Row(
@@ -241,9 +239,10 @@ class PostContent extends StatelessWidget {
             padding: EdgeInsets.only(left: 8),
             width: double.infinity,
             child: post.user.id == thisUserId
-                ? HookBuilder(
-                    builder: (BuildContext context) {
-                      AuthUser user = useProvider(authProvider.state).user;
+                ? Consumer(
+                    builder: (BuildContext context, ref, _) {
+                      ref.watch(authProvider);
+                      AuthUser? user = ref.read(authProvider.notifier).user;
                       return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -251,12 +250,12 @@ class PostContent extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    user.name,
+                                    user?.name ?? post.user.name,
                                     style: TextStyle(
                                         color: Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color,
+                                            ?.color,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 15),
                                   ),
@@ -267,18 +266,18 @@ class PostContent extends StatelessWidget {
                                       color: Theme.of(context)
                                           .textTheme
                                           .subtitle1
-                                          .color,
+                                          ?.color,
                                       fontWeight: FontWeight.w400,
                                       fontSize: 15),
                                 ),
                               ],
                             ),
-                            Text('@' + user.customId,
+                            Text('@' + (user?.customId ?? post.user.customId),
                                 style: TextStyle(
                                     color: Theme.of(context)
                                         .textTheme
                                         .subtitle1
-                                        .color,
+                                        ?.color,
                                     fontWeight: FontWeight.w400,
                                     fontSize: 15))
                           ]);
@@ -297,7 +296,7 @@ class PostContent extends StatelessWidget {
                                     color: Theme.of(context)
                                         .textTheme
                                         .bodyText1
-                                        .color,
+                                        ?.color,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 15),
                               ),
@@ -308,7 +307,7 @@ class PostContent extends StatelessWidget {
                                   color: Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .color,
+                                      ?.color,
                                   fontWeight: FontWeight.w400,
                                   fontSize: 15),
                             ),
@@ -316,8 +315,10 @@ class PostContent extends StatelessWidget {
                         ),
                         Text('@' + post.user.customId,
                             style: TextStyle(
-                                color:
-                                    Theme.of(context).textTheme.subtitle1.color,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .subtitle1
+                                    ?.color,
                                 fontWeight: FontWeight.w400,
                                 fontSize: 15))
                       ]),
@@ -358,39 +359,40 @@ class PostContent extends StatelessWidget {
   }
 }
 
-Future<void> removePostFromAllProvider(Post post, BuildContext context) async {
-  context.read(timelineProvider(friendProviderName)).removePost(post);
-  context.read(timelineProvider(challengeProviderName)).removePost(post);
-  if (post.user.id == AuthUser.selfUser.id) {
-    context.read(authProvider).removePost(post);
+Future<void> removePostFromAllProvider(Post post, WidgetRef ref) async {
+  ref.read(timelineProvider(friendProviderName).notifier).removePost(post);
+  ref.read(timelineProvider(challengeProviderName).notifier).removePost(post);
+  AuthUser? selfUser = AuthUser.selfUser;
+  if (selfUser != null && post.user.id == selfUser.id) {
+    ref.read(authProvider.notifier).removePost(post);
   } else {
-    context.read(profileProvider(post.user.id)).removePost(post);
+    ref.read(profileProvider(post.user.id).notifier).removePost(post);
   }
-  await LocalManager.deletePost(
-      await context.read(authProvider).getUser(), post, friendProviderName);
-  await LocalManager.deletePost(
-      await context.read(authProvider).getUser(), post, challengeProviderName);
+  await LocalManager.deletePost(await ref.read(authProvider.notifier).getUser(),
+      post, friendProviderName);
+  await LocalManager.deletePost(await ref.read(authProvider.notifier).getUser(),
+      post, challengeProviderName);
   await LocalManager.deleteProfilePost(
-      await context.read(authProvider).getUser(), post);
+      await ref.read(authProvider.notifier).getUser(), post);
 }
 
-class LikeButton extends StatefulWidget {
+class LikeButton extends ConsumerStatefulWidget {
   final Post post;
 
-  LikeButton({@required this.post});
+  LikeButton({required this.post});
 
   @override
   _LikeButtonState createState() => _LikeButtonState(post: post);
 }
 
-class _LikeButtonState extends State<LikeButton> {
+class _LikeButtonState extends ConsumerState<LikeButton> {
   Post post;
-  bool _isLiked;
-  Timer _timer;
-  bool waiting;
-  int favCount;
+  bool _isLiked = false;
+  Timer? _timer;
+  bool waiting = false;
+  late int favCount;
 
-  _LikeButtonState({@required this.post});
+  _LikeButtonState({required this.post});
 
   @override
   void initState() {
@@ -401,9 +403,17 @@ class _LikeButtonState extends State<LikeButton> {
   }
 
   @override
+  void didUpdateWidget(covariant LikeButton oldWidget) {
+    this._isLiked = post.isLiked();
+    this.favCount = post.favoriteCount;
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!waiting) {
       this._isLiked = post.isLiked();
+      this.favCount = post.favoriteCount;
     }
     ThemeData _theme = Theme.of(context);
     return Container(
@@ -417,9 +427,9 @@ class _LikeButtonState extends State<LikeButton> {
                 icon: Icon(
                   this._isLiked ? Icons.favorite : Icons.favorite_outline,
                   color: this._isLiked
-                      ? _theme.accentIconTheme.color
-                      : _theme.textTheme.bodyText1.color,
-                  size: _theme.accentIconTheme.size,
+                      ? _theme.iconTheme.color
+                      : _theme.textTheme.bodyText1?.color,
+                  size: _theme.iconTheme.size,
                 ),
                 onPressed: () async {
                   waiting = true;
@@ -441,26 +451,25 @@ class _LikeButtonState extends State<LikeButton> {
                       } else {
                         await post.unlike();
                       }
-                      setState(() {
-                        _isLiked = post.isLiked();
-                        favCount = post.getFavCount();
-                      });
                     } on RecordNotFoundException {
-                      await removePostFromAllProvider(post, context);
-                      if (Home.navKey.currentState.canPop()) {
-                        Home.navKey.currentState.pop();
+                      await removePostFromAllProvider(post, ref);
+                      if (Home.canPop()) {
+                        Home.pop();
                       }
                       return;
                     }
-                    context.read(postProvider(post.id)).setPostNotify(post);
-                    await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
-                        post,
-                        friendProviderName);
-                    await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
-                        post,
-                        challengeProviderName);
+                    if (mounted) {
+                      ref.read(postProvider(post.id).notifier)
+                          .setPostNotify(post);
+                      await LocalManager.updatePost(
+                          await ref.read(authProvider.notifier).getUser(),
+                          post,
+                          friendProviderName);
+                      await LocalManager.updatePost(
+                          await ref.read(authProvider.notifier).getUser(),
+                          post,
+                          challengeProviderName);
+                    }
                   });
                 }),
           ),
@@ -470,8 +479,8 @@ class _LikeButtonState extends State<LikeButton> {
               favCount.toString(),
               style: TextStyle(
                 color: _isLiked
-                    ? _theme.accentIconTheme.color
-                    : _theme.textTheme.bodyText1.color,
+                    ? _theme.iconTheme.color
+                    : _theme.textTheme.bodyText1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -487,7 +496,7 @@ class CommentButton extends StatefulWidget {
   final Post post;
   final Function onTap;
 
-  CommentButton({@required this.post, @required this.onTap});
+  CommentButton({required this.post, required this.onTap});
 
   @override
   _CommentButtonState createState() => _CommentButtonState(post: post);
@@ -496,7 +505,7 @@ class CommentButton extends StatefulWidget {
 class _CommentButtonState extends State<CommentButton> {
   Post post;
 
-  _CommentButtonState({@required this.post});
+  _CommentButtonState({required this.post});
 
   void _showCommentForm(BuildContext context) {
     widget.onTap();
@@ -517,8 +526,8 @@ class _CommentButtonState extends State<CommentButton> {
               width: 18,
               child: Icon(
                 Icons.mode_comment_outlined,
-                color: _theme.textTheme.bodyText1.color,
-                size: _theme.accentIconTheme.size,
+                color: _theme.textTheme.bodyText1?.color,
+                size: _theme.iconTheme.size,
               ),
             ),
             Container(
@@ -526,7 +535,7 @@ class _CommentButtonState extends State<CommentButton> {
               child: Text(
                 post.getCommentCount().toString(),
                 style: TextStyle(
-                  color: _theme.textTheme.bodyText1.color,
+                  color: _theme.textTheme.bodyText1?.color,
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
                 ),
@@ -542,14 +551,14 @@ class _CommentButtonState extends State<CommentButton> {
 class CommentList extends StatefulWidget {
   final List<Comment> comments;
 
-  CommentList({@required this.comments});
+  CommentList({required this.comments});
 
   @override
   _CommentListState createState() => _CommentListState();
 }
 
 class _CommentListState extends State<CommentList> {
-  List<Comment> _comments;
+  late List<Comment> _comments;
 
   @override
   void initState() {
@@ -581,32 +590,28 @@ class _CommentListState extends State<CommentList> {
 }
 
 class CommentFormResult {
-  String comment;
+  String? comment;
 }
 
-class CommentForm extends StatefulWidget {
+class CommentForm extends ConsumerStatefulWidget {
   final Post post;
   final Function unFocus;
   final String text;
 
   CommentForm(
-      {Key key,
-      @required this.post,
-      @required this.text,
-      @required this.unFocus})
+      {Key? key, required this.post, required this.text, required this.unFocus})
       : super(key: key);
 
   @override
   _CommentFormState createState() => _CommentFormState();
 }
 
-FocusNode _focusNode;
+FocusNode? _focusNode;
 
-class _CommentFormState extends State<CommentForm> {
+class _CommentFormState extends ConsumerState<CommentForm> {
   GlobalKey<FormState> _key = new GlobalKey<FormState>();
   CommentFormResult res = new CommentFormResult();
-  PostProvider _postProvider;
-  bool _savable;
+  bool _savable = false;
 
   TextEditingController _textController = new TextEditingController();
 
@@ -615,26 +620,26 @@ class _CommentFormState extends State<CommentForm> {
     _textController.text = widget.text;
     _textController.selection =
         TextSelection.fromPosition(TextPosition(offset: widget.text.length));
-    _focusNode = new FocusNode();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
+    FocusNode focusNode = new FocusNode();
+    focusNode.addListener(() {
+      if (!focusNode.hasFocus) {
         widget.unFocus(_textController.text);
       }
     });
+    _focusNode = focusNode;
     _savable = widget.text.length > 0;
     super.initState();
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    _focusNode?.dispose();
     _textController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    this._postProvider = context.read(postProvider(widget.post.id));
     return Container(
       width: MediaQuery.of(context).size.width,
       color: Theme.of(context).primaryColor,
@@ -662,11 +667,11 @@ class _CommentFormState extends State<CommentForm> {
                   style: Theme.of(context)
                       .textTheme
                       .bodyText1
-                      .copyWith(fontSize: 14, fontWeight: FontWeight.w400),
+                      ?.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
                   maxLines: 4,
                   minLines: 1,
                   validator: (v) {
-                    if (v.length > 0) {
+                    if (v != null && v.length > 0) {
                       return null;
                     } else {
                       return '';
@@ -698,15 +703,15 @@ class _CommentFormState extends State<CommentForm> {
                   '送信',
                   style: TextStyle(
                       color: _savable
-                          ? Theme.of(context).accentColor
+                          ? Theme.of(context).colorScheme.secondary
                           : Theme.of(context).disabledColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 15),
                 ),
                 onTap: _savable
                     ? () async {
-                        await formSave();
-                        _focusNode.unfocus();
+                        await formSave(ref);
+                        _focusNode?.unfocus();
                       }
                     : null,
               ),
@@ -717,24 +722,29 @@ class _CommentFormState extends State<CommentForm> {
     );
   }
 
-  Future<void> formSave() async {
-    final FormState form = this._key.currentState;
-    if (form.validate()) {
+  Future<void> formSave(WidgetRef ref) async {
+    final FormState? form = this._key.currentState;
+    if (form != null && form.validate()) {
       try {
         form.save();
         MyLoading.startLoading();
-        await this._postProvider.addCommentToPost(res.comment);
-        await LocalManager.updatePost(
-            await context.read(authProvider).getUser(),
-            _postProvider.getPost(),
-            friendProviderName);
-        await LocalManager.updatePost(
-            await context.read(authProvider).getUser(),
-            _postProvider.getPost(),
-            challengeProviderName);
+        await ref
+            .read(postProvider(widget.post.id).notifier)
+            .addCommentToPost(res.comment);
+        Post? post = ref.read(postProvider(widget.post.id).notifier).getPost();
+        if (post != null) {
+          await LocalManager.updatePost(
+              await ref.read(authProvider.notifier).getUser(),
+              post,
+              friendProviderName);
+          await LocalManager.updatePost(
+              await ref.read(authProvider.notifier).getUser(),
+              post,
+              challengeProviderName);
+        }
         await MyLoading.dismiss();
       } on RecordNotFoundException {
-        await removePostFromAllProvider(widget.post, context);
+        await removePostFromAllProvider(widget.post, ref);
         Home.pop();
         await MyLoading.dismiss();
       } catch (e) {
