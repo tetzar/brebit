@@ -209,7 +209,7 @@ class _InputFormState extends ConsumerState<InputForm> {
       label: '次へ',
       child: Container(
           color: Theme.of(context).primaryColor,
-          height: double.infinity,
+          // height: double.infinity,
           width: MediaQuery.of(context).size.width,
           child: Column(
             children: [
