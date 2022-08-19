@@ -1,19 +1,26 @@
-import '../../../../library/notification.dart';
-import '../widgets/setting-tile.dart';
-import '../../widgets/app-bar.dart';
 import 'package:flutter/material.dart';
+
+import '../../../../library/notification.dart';
+import '../../widgets/app-bar.dart';
+import '../widgets/setting-tile.dart';
 
 class PushNotificationParam {
   bool challenge;
   bool reply;
   bool friend;
   bool information;
+
+  PushNotificationParam(
+      {required this.challenge,
+      required this.reply,
+      required this.friend,
+      required this.information});
 }
 
 class PushNotificationSetting extends StatefulWidget {
   final PushNotificationParam param;
 
-  PushNotificationSetting({@required this.param});
+  PushNotificationSetting({required this.param});
 
   @override
   _PushNotificationSettingState createState() =>
@@ -34,34 +41,35 @@ class _PushNotificationSettingState extends State<PushNotificationSetting> {
             children: [
               NotificationSettingListTileBox(
                   properties: <NotificationSettingProperty>[
-                    NotificationSettingProperty()
-                      ..name = '目標日数の達成'
-                      ..enable = widget.param.challenge
-                      ..onSwitch = (s) async {
+                    NotificationSettingProperty(
+                      widget.param.challenge,
+                      '目標日数の達成',
+                      (s) async {
                         await onChallengeChange(s);
                         return;
                       },
-                    NotificationSettingProperty()
-                      ..name = 'リプライ'
-                      ..enable = widget.param.reply
-                      ..onSwitch = (s) async {
+                    ),
+                    NotificationSettingProperty(
+                      widget.param.reply,
+                      'リプライ',
+                      (s) async {
                         await onReplyChange(s);
                         return;
                       },
-                    NotificationSettingProperty()
-                      ..name = 'フレンドリクエスト'
-                      ..enable = widget.param.friend
-                      ..onSwitch = (s) async {
-                        await onFriendChange(s);
-                        return;
-                      },
-                    NotificationSettingProperty()
-                      ..name = 'Brebitからのお知らせ'
-                      ..enable = widget.param.information
-                      ..onSwitch = (s) async {
+                    ),
+                    NotificationSettingProperty(
+                        widget.param.friend, 'フレンドリクエスト', (s) async {
+                      await onFriendChange(s);
+                      return;
+                    }),
+                    NotificationSettingProperty(
+                      widget.param.information,
+                      'Brebitからのお知らせ',
+                      (s) async {
                         await onInformationChange(s);
                         return;
                       },
+                    )
                   ]),
             ],
           ),

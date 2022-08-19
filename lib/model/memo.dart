@@ -1,11 +1,11 @@
 import 'model.dart';
 
 // ignore: non_constant_identifier_names
-List<Memo> MemoFromJson(List<dynamic> decodedList) =>
-    List<Memo>.from(decodedList.cast<Map>().map((x) => Memo.fromJson(x)));
+List<Memo> memoFromJson(List<dynamic> decodedList) =>
+    List<Memo>.from(decodedList.cast<Map<String, dynamic>>().map((x) => Memo.fromJson(x)));
 
 // ignore: non_constant_identifier_names
-List<Map> MemoToJson(List<Memo> contents) =>
+List<Map> memoToJson(List<Memo> contents) =>
     new List<Map>.from(contents.map((x) => x.toJson()));
 
 class Memo extends Model {
@@ -17,12 +17,12 @@ class Memo extends Model {
   DateTime updatedAt;
 
   Memo({
-    this.id,
-    this.type,
-    this.contents,
-    this.userId,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.type,
+    required this.contents,
+    required this.userId,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Memo.fromJson(Map<String, dynamic> json) => new Memo(

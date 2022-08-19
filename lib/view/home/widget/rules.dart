@@ -1,7 +1,5 @@
 import 'package:brebit/view/widgets/dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -10,6 +8,7 @@ import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
+import '../../../model/user.dart';
 import '../../search/search.dart';
 import '../../widgets/bottom-sheet.dart';
 import '../../widgets/strategy-card.dart';
@@ -49,13 +48,21 @@ class MyRulesChecked {
   }
 }
 
-MyRulesChecked myRulesChecked;
+class MyRules extends ConsumerWidget {
+  final AuthUser user;
 
-class MyRules extends HookWidget {
+  MyRules({required this.user});
+
   @override
-  Widget build(BuildContext context) {
-    final HomeProviderState _homeProviderState =
-        useProvider(homeProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(homeProvider);
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) {
+      ref.read(homeProvider.notifier).getHome(user);
+      return Container(
+        height: 0,
+      );
+    }
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 24),
@@ -90,14 +97,14 @@ class MyRules extends HookWidget {
                       ))
                 ],
               )),
-          RuleCards(strategies: _homeProviderState.habit.strategies),
+          RuleCards(habit: habit),
           Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             width: double.infinity,
             alignment: Alignment.center,
             child: InkWell(
               onTap: () {
-                Home.navKey.currentState.push(MaterialPageRoute(
+                Home.push(MaterialPageRoute(
                     builder: (context) => Search(
                           args: 'strategy',
                         )));
@@ -111,13 +118,14 @@ class MyRules extends HookWidget {
                     padding: EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
                         border: Border.all(
-                            color: Theme.of(context).accentColor, width: 1),
+                            color: Theme.of(context).colorScheme.secondary,
+                            width: 1),
                         borderRadius: BorderRadius.circular(17)),
                     alignment: Alignment.center,
                     child: Text(
                       'ストラテジーを追加',
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700),
                     ),
@@ -132,19 +140,19 @@ class MyRules extends HookWidget {
   }
 }
 
-class RuleCards extends StatelessWidget {
-  final List<Strategy> strategies;
+class RuleCards extends ConsumerWidget {
+  final Habit habit;
 
-  RuleCards({@required this.strategies});
+  RuleCards({required this.habit});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     List<StrategyCard> cards = <StrategyCard>[];
-    strategies.forEach((strategy) {
+    habit.strategies.forEach((strategy) {
       cards.add(StrategyCard(
         strategy: strategy,
         onSelect: () {
-          showSheet(context, strategy);
+          showSheet(ref, habit, context, strategy);
           return false;
         },
       ));
@@ -154,17 +162,19 @@ class RuleCards extends StatelessWidget {
     );
   }
 
-  void showSheet(BuildContext context, Strategy strategy) {
-    bool isUsing =
-        context.read(homeProvider).getHabit().isUsingStrategy(strategy);
+  void showSheet(WidgetRef ref, Habit currentHabit, BuildContext context,
+      Strategy strategy) {
+    bool isUsing = currentHabit.isUsingStrategy(strategy);
+    int? strategyId = strategy.id;
+    if (strategyId == null) return;
     List<BottomSheetItem> items = <BottomSheetItem>[
       isUsing
           ? BottomSheetItem(
               onTap: () async {
                 try {
                   Habit habit = await StrategyApi.removeStrategies(
-                      context.read(homeProvider).getHabit(), [strategy.id]);
-                  context.read(homeProvider).setHabit(habit);
+                      currentHabit, [strategyId]);
+                  ref.read(homeProvider.notifier).setHabit(habit);
                   ApplicationRoutes.pop();
                 } catch (e) {
                   MyErrorDialog.show(e);
@@ -173,16 +183,16 @@ class RuleCards extends StatelessWidget {
               child: Text(
                 '自分のストラテジーから削除',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               ))
           : BottomSheetItem(
               onTap: () async {
                 try {
-                  Habit habit = await StrategyApi.addStrategy(
-                      strategy, context.read(homeProvider).getHabit());
-                  context.read(homeProvider).setHabit(habit);
+                  Habit habit =
+                      await StrategyApi.addStrategy(strategy, currentHabit);
+                  ref.read(homeProvider.notifier).setHabit(habit);
                   ApplicationRoutes.pop();
                 } catch (e) {
                   MyErrorDialog.show(e);
@@ -191,7 +201,7 @@ class RuleCards extends StatelessWidget {
               child: Text(
                 '自分のストラテジーに追加',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               )),

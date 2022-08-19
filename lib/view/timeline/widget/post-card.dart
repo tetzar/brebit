@@ -2,10 +2,7 @@ import 'dart:async';
 
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/view/timeline/post.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../library/cache.dart';
@@ -18,14 +15,15 @@ import '../../profile/others-profile.dart';
 import '../../profile/widgets/post-card-body/basic.dart';
 import '../posts.dart';
 
-class PostCard extends HookWidget {
+class PostCard extends ConsumerWidget {
   final Post post;
   final int index;
 
-  PostCard({@required this.post, @required this.index});
+  PostCard({required this.post, required this.index});
 
-  void redirectToProfile(BuildContext ctx, AuthUser user) {
-    if (ctx.read(authProvider.state).user.id == user.id) {
+  void redirectToProfile(WidgetRef ref, AuthUser user) {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser != null && selfUser.id == user.id) {
       Home.pushNamed('/profile');
     } else {
       Home.push(
@@ -34,13 +32,13 @@ class PostCard extends HookWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (context.read(postProvider(post.id).state).post == null) {
-      context.read(postProvider(post.id)).setPost(post);
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.read(postProvider(post.id).notifier).post == null) {
+      ref.read(postProvider(post.id).notifier).setPost(post);
     }
-    PostProviderState _postProviderState =
-        useProvider(postProvider(post.id).state);
-    Post _post = _postProviderState.post;
+    ref.watch(postProvider(post.id));
+    Post? _post = ref.read(postProvider(post.id).notifier).post;
+    if (_post == null) return Container();
     bool isMine = _post.isMine();
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -55,16 +53,21 @@ class PostCard extends HookWidget {
               width: 56,
               child: RawMaterialButton(
                 onPressed: () {
-                  redirectToProfile(context, _postProviderState.post.user);
+                  Post? _post = ref.read(postProvider(post.id).notifier).post;
+                  if (_post != null) {
+                    redirectToProfile(ref, _post.user);
+                  }
                 },
                 child: Center(
                   child: CircleAvatar(
                     child: ClipOval(
                       child: isMine
-                          ? HookBuilder(builder: (context) {
-                              AuthUser _user =
-                                  useProvider(authProvider.state).user;
-                              return _user.getImageWidget();
+                          ? Consumer(builder: (context, ref, child) {
+                              ref.watch(authProvider);
+                              AuthUser? _user =
+                                  ref.read(authProvider.notifier).user;
+                              return _user?.getImageWidget() ??
+                                  post.user.getImageWidget();
                             })
                           : post.user.getImageWidget(),
                     ),
@@ -87,10 +90,12 @@ class PostCard extends HookWidget {
                         children: [
                           Expanded(
                             child: isMine
-                                ? HookBuilder(
-                                    builder: (BuildContext context) {
-                                      AuthUser user =
-                                          useProvider(authProvider.state).user;
+                                ? Consumer(
+                                    builder:
+                                        (BuildContext context, ref, child) {
+                                      ref.watch(authProvider);
+                                      AuthUser? user =
+                                          ref.read(authProvider.notifier).user;
                                       return RichText(
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -99,22 +104,24 @@ class PostCard extends HookWidget {
                                                 color: Theme.of(context)
                                                     .textTheme
                                                     .bodyText1
-                                                    .color,
+                                                    ?.color,
                                                 fontWeight: FontWeight.w700,
                                                 fontSize: 15),
                                             children: <InlineSpan>[
                                               TextSpan(
-                                                text: user.name,
+                                                text: user?.name ??
+                                                    _post.user.name,
                                               ),
                                               TextSpan(
-                                                  text: " @${user.customId}"
-                                                      .replaceAll(
-                                                          "", "\u{200B}"),
+                                                  text:
+                                                      " @${user?.customId ?? _post.user.customId}"
+                                                          .replaceAll(
+                                                              "", "\u{200B}"),
                                                   style: TextStyle(
                                                       color: Theme.of(context)
                                                           .textTheme
                                                           .subtitle1
-                                                          .color,
+                                                          ?.color,
                                                       fontWeight:
                                                           FontWeight.w400,
                                                       fontSize: 15))
@@ -130,7 +137,7 @@ class PostCard extends HookWidget {
                                             color: Theme.of(context)
                                                 .textTheme
                                                 .bodyText1
-                                                .color,
+                                                ?.color,
                                             fontWeight: FontWeight.w700,
                                             fontSize: 15),
                                         children: <InlineSpan>[
@@ -144,7 +151,7 @@ class PostCard extends HookWidget {
                                                   color: Theme.of(context)
                                                       .textTheme
                                                       .subtitle1
-                                                      .color,
+                                                      ?.color,
                                                   fontWeight: FontWeight.w400,
                                                   fontSize: 15))
                                         ]),
@@ -153,12 +160,12 @@ class PostCard extends HookWidget {
                           Container(
                             alignment: Alignment.centerRight,
                             child: Text(
-                              ' ' + _postProviderState.post.getCreatedTime(),
+                              ' ' + _post.getCreatedTime(),
                               style: TextStyle(
                                   color: Theme.of(context)
                                       .textTheme
                                       .subtitle1
-                                      .color,
+                                      ?.color,
                                   fontWeight: FontWeight.w400,
                                   fontSize: 15),
                             ),
@@ -196,35 +203,38 @@ class PostCard extends HookWidget {
   }
 }
 
-class LikeButton extends StatefulWidget {
+class LikeButton extends ConsumerStatefulWidget {
   final Post post;
 
-  LikeButton({@required this.post});
+  LikeButton({required this.post});
 
   @override
   _LikeButtonState createState() => _LikeButtonState(post: post);
 }
 
-class _LikeButtonState extends State<LikeButton> {
+class _LikeButtonState extends ConsumerState<LikeButton> {
   Post post;
-  bool _isLiked;
-  Timer _timer;
-  bool waiting;
-  int favCount;
+  late bool _isLiked;
+  Timer? _timer;
+  bool waiting = false;
+  late int favCount;
 
-  _LikeButtonState({@required this.post});
+  _LikeButtonState({required this.post});
 
   @override
   void initState() {
     this._isLiked = this.post.isLiked();
     waiting = false;
-    favCount = context.read(postProvider(post.id).state).post.getFavCount();
+    favCount = this.post.favoriteCount;
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant LikeButton oldWidget) {
     this.post = widget.post;
+    favCount = this.post.favoriteCount;
+    _isLiked = this.post.isLiked();
+    print('updated');
     super.didUpdateWidget(oldWidget);
   }
 
@@ -245,9 +255,9 @@ class _LikeButtonState extends State<LikeButton> {
                 icon: Icon(
                   this._isLiked ? Icons.favorite : Icons.favorite_outline,
                   color: this._isLiked
-                      ? _theme.accentIconTheme.color
-                      : _theme.textTheme.bodyText1.color,
-                  size: _theme.accentIconTheme.size,
+                      ? _theme.iconTheme.color
+                      : _theme.textTheme.bodyText1?.color,
+                  size: _theme.iconTheme.size,
                 ),
                 onPressed: () async {
                   waiting = true;
@@ -270,28 +280,28 @@ class _LikeButtonState extends State<LikeButton> {
                         await post.unlike();
                       }
                       setState(() {
-                        _isLiked = context
-                            .read(postProvider(post.id).state)
-                            .post
-                            .isLiked();
-                        favCount = context
-                            .read(postProvider(post.id).state)
-                            .post
-                            .getFavCount();
+                        Post? _post =
+                            ref.read(postProvider(post.id).notifier).post;
+                        if (_post != null) {
+                          _isLiked = _post.isLiked();
+                          favCount = _post.getFavCount();
+                        }
                       });
                     } on RecordNotFoundException {
-                      await removePostFromAllProvider(post, context);
+                      await removePostFromAllProvider(post, ref);
                     }
-                    context.read(postProvider(post.id)).setPostNotify(post);
+                    ref
+                        .read(postProvider(post.id).notifier)
+                        .setPostNotify(post);
 
                     await LocalManager.updateProfilePost(
-                        await context.read(authProvider).getUser(), post);
+                        await ref.read(authProvider.notifier).getUser(), post);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
+                        await ref.read(authProvider.notifier).getUser(),
                         post,
                         friendProviderName);
                     await LocalManager.updatePost(
-                        await context.read(authProvider).getUser(),
+                        await ref.read(authProvider.notifier).getUser(),
                         post,
                         challengeProviderName);
                   });
@@ -303,8 +313,8 @@ class _LikeButtonState extends State<LikeButton> {
               favCount.toString(),
               style: TextStyle(
                 color: _isLiked
-                    ? _theme.accentIconTheme.color
-                    : _theme.textTheme.bodyText1.color,
+                    ? _theme.iconTheme.color
+                    : _theme.textTheme.bodyText1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -319,7 +329,7 @@ class _LikeButtonState extends State<LikeButton> {
 class CommentButton extends StatefulWidget {
   final Post post;
 
-  CommentButton({@required this.post});
+  CommentButton({required this.post});
 
   @override
   _CommentButtonState createState() => _CommentButtonState(post: post);
@@ -328,7 +338,7 @@ class CommentButton extends StatefulWidget {
 class _CommentButtonState extends State<CommentButton> {
   Post post;
 
-  _CommentButtonState({@required this.post});
+  _CommentButtonState({required this.post});
 
   @override
   void didUpdateWidget(covariant CommentButton oldWidget) {
@@ -347,8 +357,8 @@ class _CommentButtonState extends State<CommentButton> {
             width: 18,
             child: Icon(
               Icons.mode_comment_outlined,
-              color: _theme.textTheme.bodyText1.color,
-              size: _theme.accentIconTheme.size,
+              color: _theme.textTheme.bodyText1?.color,
+              size: _theme.iconTheme.size,
             ),
           ),
           Container(
@@ -356,7 +366,7 @@ class _CommentButtonState extends State<CommentButton> {
             child: Text(
               post.getCommentCount().toString(),
               style: TextStyle(
-                color: _theme.textTheme.bodyText1.color,
+                color: _theme.textTheme.bodyText1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),

@@ -1,3 +1,5 @@
+import 'package:brebit/view/general/error-widget.dart';
+
 import '../../../../model/habit.dart';
 import '../../../../model/strategy.dart';
 import '../../../../provider/home.dart';
@@ -11,19 +13,21 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ExecuteStrategyWannaParam {
+  ExecuteStrategyWannaParam(this.recommends);
   List<Strategy> recommends;
 }
 
-class ExecuteStrategyWanna extends StatelessWidget {
+class ExecuteStrategyWanna extends ConsumerWidget {
   final ExecuteStrategyWannaParam params;
 
-  ExecuteStrategyWanna({@required this.params});
+  ExecuteStrategyWanna({required this.params});
 
   final CheckedValue checkedValue = CheckedValue();
 
   @override
-  Widget build(BuildContext context) {
-    Habit habit = context.read(homeProvider.state).habit;
+  Widget build(BuildContext context, WidgetRef ref) {
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
     List<Widget> strategyCards = <Widget>[];
     habit.strategies.forEach((strategy) {
       strategyCards.add(StrategyCard(
@@ -57,7 +61,6 @@ class ExecuteStrategyWanna extends StatelessWidget {
         },
         child: Container(
           color: Theme.of(context).primaryColor,
-          height: double.infinity,
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -73,7 +76,7 @@ class ExecuteStrategyWanna extends StatelessWidget {
                   style: TextStyle(
                       fontWeight: FontWeight.w400,
                       fontSize: 15,
-                      color: Theme.of(context).textTheme.bodyText1.color),
+                      color: Theme.of(context).textTheme.bodyText1?.color),
                 ),
               ),
               Container(
@@ -110,18 +113,19 @@ class ExecuteStrategyWanna extends StatelessWidget {
   }
 
   bool strategyCheck(Strategy strategy) {
-    if (checkedValue.isChecked(strategy.id)) {
-      checkedValue.unsetChecked(strategy.id);
+    int? strategyId = strategy.id;
+    if (strategyId == null) return false;
+    if (checkedValue.isChecked(strategyId)) {
+      checkedValue.unsetChecked(strategyId);
       return false;
     } else {
-      checkedValue.setChecked(strategy.id);
+      checkedValue.setChecked(strategyId);
       return true;
     }
   }
 
   Future<void> save(BuildContext ctx) async {
-    WantConfirmationArguments args = new WantConfirmationArguments();
-    args.checkedValue = checkedValue;
+    WantConfirmationArguments args = new WantConfirmationArguments(checkedValue);
     ApplicationRoutes.pushNamed('/want/confirmation', args);
   }
 }

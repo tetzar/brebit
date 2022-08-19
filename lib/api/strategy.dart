@@ -1,14 +1,13 @@
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+
 import '../../library/data-set.dart';
 import '../../model/category.dart';
 import '../../model/habit.dart';
 import '../../model/strategy.dart';
 import '../../model/tag.dart';
 import '../../model/user.dart';
-
-import 'package:http/http.dart' as http;
-
 import 'api.dart';
 
 class StrategyApi {
@@ -31,24 +30,16 @@ class StrategyApi {
 
   static Future<Map<String, List<Strategy>>> getRecommendStrategies(
       Category category) async {
-    final http.Response response = await Network.getData(Network.routeNormalize(
-        getRoutes['getRecommendStrategies'],
-        {'categoryId': category.id.toString()}));
-    if (response.statusCode == 200) {
-      Map received = jsonDecode(response.body);
-      Map<String, List<Strategy>> result = {};
-      result['recommend'] = (received['recommend'].length > 0)
-          ? StrategyFromJson(received['recommend'])
-          : [];
-      return result;
-    } else if (response.statusCode == 404) {
-      print(response.body);
-      print('user not found : save information');
-      return {'not-found': null};
-    } else {
-      print(response.body);
-      throw Exception('unexpected error in save information');
-    }
+    final http.Response response = await Network.getData(
+        Network.routeNormalize(getRoutes['getRecommendStrategies']!,
+            {'categoryId': category.id.toString()}),
+        'getRecommendStrategies@StrategyApi');
+    Map received = jsonDecode(response.body);
+    Map<String, List<Strategy>> result = {};
+    result['recommend'] = (received['recommend'].length > 0)
+        ? strategyFromJson(received['recommend'])
+        : [];
+    return result;
   }
 
   static Future<Map<String, dynamic>> storeHabitAndGetRecommendStrategies(
@@ -56,28 +47,17 @@ class StrategyApi {
     Map<String, dynamic> data = {'habit': habit.toJson()};
 
     final http.Response response = await Network.postData(
-      data,
-      postRoutes['storeHabitAndGetRecommendStrategies'],
-    );
-
-    if (response.statusCode == 200) {
-      Map received = jsonDecode(response.body);
-      Map<String, dynamic> result = {};
-      result['habit'] = (received['habit'] != null)
-          ? Habit.fromJson(received['habit'])
-          : null;
-      result['recommend'] = (received['recommend'].length > 0)
-          ? StrategyFromJson(received['recommend'])
-          : [];
-      return result;
-    } else if (response.statusCode == 404) {
-      print('user not found in storeHabitAndGetRecommendStrategy');
-      print(response.body);
-      throw Exception('user-not-found');
-    } else {
-      print(response.body);
-      throw Exception('Unknown exception');
-    }
+        data,
+        postRoutes['storeHabitAndGetRecommendStrategies'],
+        "storeHabitAndGetRecommendStrategies@StrategyApi");
+    Map received = jsonDecode(response.body);
+    Map<String, dynamic> result = {};
+    result['habit'] =
+        (received['habit'] != null) ? Habit.fromJson(received['habit']) : null;
+    result['recommend'] = (received['recommend'].length > 0)
+        ? strategyFromJson(received['recommend'])
+        : [];
+    return result;
   }
 
   static Future<Habit> storeStrategy(
@@ -86,19 +66,9 @@ class StrategyApi {
     sendData['habit_id'] = habit.id;
     sendData['data'] = data;
     final http.Response response = await Network.postData(
-      sendData,
-      postRoutes['storeStrategy'],
-    );
-    if (response.statusCode == 200) {
-      Map responseData = jsonDecode(response.body);
-      return Habit.fromJson(responseData);
-    } else if (response.statusCode == 404) {
-      print('habit not found');
-      return null;
-    } else {
-      print(response.body);
-      throw (Exception('error occurred when storing strategy'));
-    }
+        sendData, postRoutes['storeStrategy'], "storeStrategy@StrategyApi");
+    Map<String, String> responseData = jsonDecode(response.body);
+    return Habit.fromJson(responseData);
   }
 
   static Future<Map<String, dynamic>> changeStrategy(
@@ -107,10 +77,7 @@ class StrategyApi {
     sendData['habit_id'] = habit.id;
     sendData['data'] = data;
     final http.Response response = await Network.postData(
-      sendData,
-      postRoutes['changeStrategy'],
-    );
-    Network.hasErrorMessage(response, 'changeStrategy@StrategyApi');
+        sendData, postRoutes['changeStrategy'], 'changeStrategy@StrategyApi');
     Map responseData = jsonDecode(response.body);
     DataSet.dataSetConvert(responseData['data_set']);
     return {
@@ -124,10 +91,11 @@ class StrategyApi {
     List<int> tagIds = [];
     List<String> newTags = [];
     tags.forEach((tag) {
-      if (tag.id == null) {
+      int? id = tag.id;
+      if (id == null) {
         newTags.add(tag.name);
       } else {
-        tagIds.add(tag.id);
+        tagIds.add(id);
       }
     });
     Map<String, dynamic> data = {
@@ -135,32 +103,22 @@ class StrategyApi {
       'new_tags': newTags,
       'mental': mental
     };
-    http.Response response =
-        await Network.postData(data, postRoutes['getStrategiesFromCondition']);
-    if (response.statusCode == 201) {
-      List<Strategy> recommends = StrategyFromJson(jsonDecode(response.body));
-      return recommends;
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in StrategyApi@getRecommendStrategiesFromCondition');
-    }
+    http.Response response = await Network.postData(
+        data,
+        postRoutes['getStrategiesFromCondition'],
+        'getRecommendStrategiesFromCondition@StrategyApi');
+    List<Strategy> recommends = strategyFromJson(jsonDecode(response.body));
+    return recommends;
   }
 
   static Future<Habit> addStrategy(Strategy strategy, Habit habit) async {
     Map<String, dynamic> data = {
-      'strategy_id' : strategy.id,
-      'habit_id' : habit.id
+      'strategy_id': strategy.id,
+      'habit_id': habit.id
     };
-    http.Response response =
-    await Network.postData(data, postRoutes['addStrategy']);
-    if (response.statusCode == 201) {
-      return Habit.fromJson(jsonDecode(response.body));
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in StrategyApi@addStrategy');
-    }
+    http.Response response = await Network.postData(
+        data, postRoutes['addStrategy'], 'addStrategy@StrategyApi');
+    return Habit.fromJson(jsonDecode(response.body));
   }
 
   static Future<Habit> removeStrategies(
@@ -174,13 +132,8 @@ class StrategyApi {
       'strategyIds': strategyIdsFormatted
     };
     http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['removeStrategy'], data));
-    if (response.statusCode == 201) {
-      return Habit.fromJson(jsonDecode(response.body));
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in StrategyApi@removeStrategies');
-    }
+        Network.routeNormalizeDelete(deleteRoutes['removeStrategy']!, data),
+        'removeStrategies@StrategyApi');
+    return Habit.fromJson(jsonDecode(response.body));
   }
 }

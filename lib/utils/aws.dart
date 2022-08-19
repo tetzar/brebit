@@ -17,37 +17,26 @@ class AwsS3Manager {
       bucketId: BUCKET_ID,
       region: REGION);
   static Future<Uint8List> getImage(imageUrl) async {
-    try {
-      final response = await client.getObject(imageUrl);
-      return Uint8List.fromList(response.bodyBytes);
-    } catch (e) {
-      print(e);
-      return null;
-    }
+    final response = await client.getObject(imageUrl);
+    return Uint8List.fromList(response.bodyBytes);
   }
 
   static Future<Uint8List> getSvgBytes(imageUrl) async {
-    try {
-      final response = await client.getObject(imageUrl);
-      return Uint8List.fromList(response.bodyBytes);
-    } catch (e) {
-      print(e);
-      return null;
-    }
+    final response = await client.getObject(imageUrl);
+    return Uint8List.fromList(response.bodyBytes);
   }
 }
 
 class S3Image {
   String url;
   S3Image(this.url);
-  Uint8List image;
+  Uint8List? image;
   Future<Uint8List> getImage() async {
-    if (this.url == null) return null;
+    Uint8List? image = this.image;
     if (image == null) {
-      print('request image $url');
-      this.image = await AwsS3Manager.getImage(this.url);
+      image = await AwsS3Manager.getImage(this.url);
     }
-    return this.image;
+    return image;
   }
 
   Future<void> updateImage(String url) async {
@@ -59,21 +48,20 @@ class S3Image {
 
 class S3SvgImage {
   String url;
-  Uint8List bytes;
+  Uint8List? bytes;
   S3SvgImage(this.url);
   Future<Uint8List> getImage() async {
+    Uint8List? bytes = this.bytes;
     if (bytes == null) {
-      this.bytes = await AwsS3Manager.getSvgBytes(url);
+      bytes = await AwsS3Manager.getSvgBytes(url);
     }
-    return this.bytes;
+    return bytes;
   }
 }
 
 class S3ImageProvider extends ImageProvider<S3ImageProvider>{
 
-  const S3ImageProvider(this.image, { this.scale = 1.0 })
-      : assert(image != null),
-        assert(scale != null);
+  const S3ImageProvider(this.image, { this.scale = 1.0 });
 
   final S3Image image;
 

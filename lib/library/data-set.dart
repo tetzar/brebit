@@ -7,9 +7,9 @@ import 'package:brebit/model/user.dart';
 class DataSet{
   static void dataSetConvert(Map<String, dynamic> dataSet) {
     dataSet.cast<String, List>();
-    CategoryFromJson(dataSet['categories'].cast<Map>());
-    AuthUserFromJson(dataSet['users'].cast<Map>());
-    StrategyFromJson(dataSet['strategies'].cast<Map>());
-    HabitFromJson(dataSet['habits'].cast<Map>());
+    categoryFromJson(dataSet['categories'].cast<Map>());
+    authUserFromJson(dataSet['users'].cast<Map>());
+    strategyFromJson(dataSet['strategies'].cast<Map>());
+    habitFromJson(dataSet['habits'].cast<Map>());
   }
 }

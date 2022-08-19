@@ -1,4 +1,6 @@
 
+import 'dart:typed_data';
+
 import '../../../model/analysis.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -6,7 +8,7 @@ import 'package:flutter_svg/svg.dart';
 class AnalysisCard extends StatelessWidget {
 
   final Analysis analysis;
-  AnalysisCard({@required this.analysis});
+  AnalysisCard({required this.analysis});
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +41,11 @@ class AnalysisCard extends StatelessWidget {
               future: analysis.getImage(),
               builder: (context, snapshot) {
                 return (snapshot.connectionState == ConnectionState.done && snapshot.hasData) ? SvgPicture.memory(
-                  snapshot.data,
+                  snapshot.data as Uint8List,
                   semanticsLabel: 'A shark?!',
                   height: 20,
                   width: 20,
-                  color: Theme.of(context).textTheme.subtitle1.color,
+                  color: Theme.of(context).textTheme.subtitle1?.color,
                   placeholderBuilder: (BuildContext context) => Container(
                     color: Colors.transparent,
                     width: 20,
@@ -60,7 +62,7 @@ class AnalysisCard extends StatelessWidget {
             child: Text(
               analysis.name,
               style: TextStyle(
-                color: Theme.of(context).textTheme.subtitle1.color,
+                color: Theme.of(context).textTheme.subtitle1?.color,
                 fontSize: 13,
                 fontWeight: FontWeight.w400
               ),

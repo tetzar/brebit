@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 class BrightThemeData {
   static ThemeData getThemeData(BuildContext context) => ThemeData(
         backgroundColor: Color(0xFFF7F8F9),
-        accentColor: Color(0xFF65BDC0),
+        colorScheme: ColorScheme.light(
+          secondary: Color(0xFF65BDC0),
+        ),
+        iconTheme: IconThemeData(color: Color(0xFFEE777F), size: 18),
         primaryColorDark: Color(0xFFDBDBDB),
         primaryColorLight: Color(0xFFEDF7F9),
         primaryColor: Color(0xFFFFFFFF),
         disabledColor: Color(0xFFBEBEBE),
-        accentIconTheme: IconThemeData(color: Color(0xFFEE777F), size: 18),
         inputDecorationTheme: InputDecorationTheme(
             contentPadding: EdgeInsets.symmetric(vertical: 11, horizontal: 16),
             errorBorder: OutlineInputBorder(
@@ -50,7 +52,7 @@ class BrightThemeData {
                   fontWeight: FontWeight.w400,
                   fontSize: 13),
             ),
-        accentTextTheme: Theme.of(context).accentTextTheme.copyWith(
+        primaryTextTheme: Theme.of(context).primaryTextTheme.copyWith(
             subtitle1: TextStyle(
                 color: Color(0xFFEE777F),
                 fontSize: 13,
@@ -64,15 +66,15 @@ class BrightThemeData {
               IconThemeData(color: Color(0xFF05182e), opacity: 1, size: 32.0),
           actionsIconTheme:
               IconThemeData(color: Color(0xFF05182e), opacity: 1, size: 32.0),
-          textTheme: Theme.of(context).textTheme.apply(
-                bodyColor: Color(0xFF05182E),
+          titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.apply(
+                color: Color(0xFF05182E),
               ),
         ),
         buttonTheme: ButtonThemeData(
             colorScheme: Theme.of(context)
                 .buttonTheme
                 .colorScheme
-                .copyWith(primary: Color(0xFFFFFFFF))),
+                ?.copyWith(primary: Color(0xFFFFFFFF))),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: Color(0xFFFFFFFF),
             unselectedIconTheme:

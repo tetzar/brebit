@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class MySlider extends StatefulWidget {
-
   final int min;
   final int max;
   final int divisions;
@@ -9,23 +8,25 @@ class MySlider extends StatefulWidget {
   final int initialValue;
 
   MySlider(
-      {@required this.min,
-        @required this.max,
-        @required this.divisions,
-        @required this.onChanged,
-        @required this.initialValue});
+      {required this.min,
+      required this.max,
+      required this.divisions,
+      required this.onChanged,
+      required this.initialValue});
 
   @override
   _MySliderState createState() => _MySliderState();
 }
 
 class _MySliderState extends State<MySlider> {
-  int value;
+  late int value;
+
   @override
   void initState() {
     value = widget.initialValue;
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -35,14 +36,14 @@ class _MySliderState extends State<MySlider> {
         data: SliderTheme.of(context).copyWith(
           valueIndicatorColor: Colors.transparent,
           valueIndicatorTextStyle: TextStyle(
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
             fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
           trackHeight: 15,
           showValueIndicator: ShowValueIndicator.never,
-          activeTrackColor: Theme.of(context).accentColor,
-          thumbColor: Theme.of(context).accentColor,
+          activeTrackColor: Theme.of(context).colorScheme.secondary,
+          thumbColor: Theme.of(context).colorScheme.secondary,
           inactiveTrackColor: Theme.of(context).disabledColor,
           thumbShape: MySliderThumbShape(val: value),
           trackShape: MySliderTrackShape(),
@@ -72,7 +73,7 @@ class SliderConstants {
 }
 
 class MySliderThumbShape extends SliderComponentShape {
-  MySliderThumbShape({@required this.val});
+  MySliderThumbShape({required this.val});
 
   int val;
 
@@ -83,18 +84,18 @@ class MySliderThumbShape extends SliderComponentShape {
 
   @override
   void paint(PaintingContext context, Offset center,
-      {Animation<double> activationAnimation,
-      Animation<double> enableAnimation,
-      bool isDiscrete,
-      TextPainter labelPainter,
-      RenderBox parentBox,
-      SliderThemeData sliderTheme,
-      TextDirection textDirection,
-      double value,
-      double textScaleFactor,
-      Size sizeWithOverflow}) {
+      {required Animation<double> activationAnimation,
+      required Animation<double> enableAnimation,
+      required bool isDiscrete,
+      required TextPainter labelPainter,
+      required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required TextDirection textDirection,
+      required double value,
+      required double textScaleFactor,
+      required Size sizeWithOverflow}) {
     final paint = Paint()
-      ..color = sliderTheme.thumbColor //Thumb Background Color
+      ..color = sliderTheme.thumbColor ?? Colors.grey //Thumb Background Color
       ..style = PaintingStyle.fill;
     context.canvas.drawCircle(center, 7, paint);
 
@@ -112,39 +113,39 @@ class MySliderThumbShape extends SliderComponentShape {
 
 class MySliderTrackShape extends SliderTrackShape {
   @override
-  Rect getPreferredRect(
-      {RenderBox parentBox,
-      Offset offset = Offset.zero,
-      SliderThemeData sliderTheme,
-      bool isEnabled,
-      bool isDiscrete}) {
-    return parentBox.semanticBounds;
-  }
-
-  @override
   void paint(PaintingContext context, Offset offset,
-      {RenderBox parentBox,
-      SliderThemeData sliderTheme,
-      Animation<double> enableAnimation,
-      Offset thumbCenter,
-      bool isEnabled,
-      bool isDiscrete,
-      TextDirection textDirection}) {
+      {required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required Animation<double> enableAnimation,
+      required Offset thumbCenter,
+      bool isEnabled = true,
+      bool isDiscrete = true,
+      required TextDirection textDirection}) {
     context.canvas.drawLine(
         Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
         Offset(parentBox.size.width - SliderConstants.lineWidth / 2,
             parentBox.size.height / 2),
         Paint()
-          ..color = sliderTheme.inactiveTrackColor
+          ..color = sliderTheme.inactiveTrackColor ?? Colors.grey
           ..strokeCap = StrokeCap.round
           ..strokeWidth = SliderConstants.lineWidth);
     context.canvas.drawLine(
         Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
         thumbCenter,
         Paint()
-          ..color = sliderTheme.activeTrackColor
+          ..color = sliderTheme.activeTrackColor ?? Colors.grey
           ..strokeCap = StrokeCap.round
           ..strokeWidth = SliderConstants.lineWidth);
+  }
+
+  @override
+  Rect getPreferredRect(
+      {required RenderBox parentBox,
+      Offset offset = Offset.zero,
+      required SliderThemeData sliderTheme,
+      bool isEnabled = true,
+      bool isDiscrete = true}) {
+    return parentBox.semanticBounds;
   }
 }
 
@@ -156,18 +157,18 @@ class MySliderOverlayShape extends RoundSliderOverlayShape {
 
   @override
   void paint(PaintingContext context, Offset center,
-      {Animation<double> activationAnimation,
-      Animation<double> enableAnimation,
-      bool isDiscrete,
-      TextPainter labelPainter,
-      RenderBox parentBox,
-      SliderThemeData sliderTheme,
-      TextDirection textDirection,
-      double value,
-      double textScaleFactor,
-      Size sizeWithOverflow}) {
+      {required Animation<double> activationAnimation,
+      required Animation<double> enableAnimation,
+      required bool isDiscrete,
+      required TextPainter labelPainter,
+      required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required TextDirection textDirection,
+      required double value,
+      required double textScaleFactor,
+      required Size sizeWithOverflow}) {
     final paint = Paint()
-      ..color = sliderTheme.overlayColor //Thumb Background Color
+      ..color = sliderTheme.overlayColor ?? Colors.grey//Thumb Background Color
       ..style = PaintingStyle.fill;
     context.canvas.drawCircle(center, 15, paint);
   }

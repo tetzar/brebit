@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -26,22 +24,22 @@ final Map<CategoryName, String> _imagePath = {
   CategoryName.notCategorized: 'assets/icon/close.svg',
 };
 
-class ProfileCard extends StatefulWidget {
+class ProfileCard extends ConsumerStatefulWidget {
   final AuthUser user;
   final GlobalKey containerKey;
 
-  ProfileCard({@required this.containerKey, @required this.user});
+  ProfileCard({required this.containerKey, required this.user});
 
   @override
   _ProfileCardState createState() => _ProfileCardState();
 }
 
-class _ProfileCardState extends State<ProfileCard> {
-  String name;
+class _ProfileCardState extends ConsumerState<ProfileCard> {
+  late String name;
 
   @override
   void initState() {
-    name = context.read(profileProvider(widget.user.id).state).user.name;
+    name = ref.read(profileProvider(widget.user.id).notifier).user.name;
     super.initState();
   }
 
@@ -52,7 +50,7 @@ class _ProfileCardState extends State<ProfileCard> {
 
   @override
   Widget build(BuildContext context) {
-    AuthUser user = context.read(profileProvider(widget.user.id).state).user;
+    AuthUser user = ref.read(profileProvider(widget.user.id).notifier).user;
     return Container(
       key: widget.containerKey,
       color: Theme.of(context).primaryColor,
@@ -99,7 +97,7 @@ class _ProfileCardState extends State<ProfileCard> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText1
-                                      .copyWith(
+                                      ?.copyWith(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 17),
                                 ),
@@ -110,10 +108,10 @@ class _ProfileCardState extends State<ProfileCard> {
                 ],
               ),
             ),
-            HookBuilder(
-              builder: (BuildContext context) {
-                useProvider(authProvider.state);
-                if (context.read(authProvider.state).user.isBlocking(user)) {
+            Consumer(
+              builder: (BuildContext context, WidgetRef ref, Widget? child) {
+                ref.watch(authProvider);
+                if (ref.read(authProvider).user?.isBlocking(user) ?? true) {
                   return SizedBox(
                     height: 0,
                   );
@@ -132,15 +130,18 @@ class _ProfileCardState extends State<ProfileCard> {
                                 Row(
                                   children: [
                                     SvgPicture.asset(
-                                      _imagePath[category.name],
+                                      _imagePath[category.name]!,
                                       width: 14,
                                       height: 14,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
                                     ),
                                     Container(
                                       margin: EdgeInsets.only(left: 8),
                                       child: Text(
-                                          _categoryName[category.name] + 'をやめる',
+                                          _categoryName[category.name]! +
+                                              'をやめる',
                                           style: Theme.of(context)
                                               .textTheme
                                               .subtitle1),
@@ -154,10 +155,11 @@ class _ProfileCardState extends State<ProfileCard> {
                       );
               },
             ),
-            HookBuilder(
-              builder: (context) {
-                useProvider(authProvider.state);
-                if (context.read(authProvider.state).user.isBlocking(user)) {
+            Consumer(
+              builder: (context, ref, child) {
+                ref.watch(authProvider);
+                if (ref.read(authProvider.notifier).user?.isBlocking(user) ??
+                    true) {
                   return SizedBox(height: 0);
                 }
                 return user.bio.length > 0
@@ -168,7 +170,7 @@ class _ProfileCardState extends State<ProfileCard> {
                           user.bio,
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.subtitle1.color,
+                                  Theme.of(context).textTheme.subtitle1?.color,
                               fontSize: 12,
                               fontWeight: FontWeight.w400),
                         ) // child: null,
@@ -183,18 +185,18 @@ class _ProfileCardState extends State<ProfileCard> {
   }
 }
 
-class PartnerStateTag extends HookWidget {
+class PartnerStateTag extends ConsumerWidget {
   final AuthUser user;
 
-  PartnerStateTag({@required this.user});
+  PartnerStateTag({required this.user});
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(authProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
     Widget partnerStateTag = SizedBox(
       height: 21,
     );
-    Partner _partner = context.read(authProvider.state).user.getPartner(user);
+    Partner? _partner = ref.read(authProvider).user?.getPartner(user);
     if (_partner != null) {
       PartnerState _partnerState = _partner.getState();
       if (_partnerState == PartnerState.partner) {
@@ -203,7 +205,7 @@ class PartnerStateTag extends HookWidget {
           padding: EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
           ),
           alignment: Alignment.center,
           child: Text(
@@ -221,13 +223,13 @@ class PartnerStateTag extends HookWidget {
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               color: Theme.of(context).primaryColor,
-              border:
-                  Border.all(color: Theme.of(context).accentColor, width: 0.5)),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.secondary, width: 0.5)),
           alignment: Alignment.center,
           child: Text(
             'フレンド申請中',
             style: TextStyle(
-                color: Theme.of(context).accentColor,
+                color: Theme.of(context).colorScheme.secondary,
                 fontWeight: FontWeight.w400,
                 fontSize: 11),
           ),
@@ -238,7 +240,7 @@ class PartnerStateTag extends HookWidget {
           padding: EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).accentTextTheme.subtitle1.color,
+            color: Theme.of(context).primaryTextTheme.subtitle1?.color,
           ),
           alignment: Alignment.center,
           child: Text(

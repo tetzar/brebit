@@ -1,19 +1,20 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'model.dart';
+import 'package:image/image.dart' as Img;
 import 'package:image_size_getter/file_input.dart';
 import 'package:image_size_getter/image_size_getter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as Img;
+
+import 'model.dart';
 
 // ignore: non_constant_identifier_names
-List<Image> ImageFromJson(List<dynamic> decodedList) =>
-    List<Image>.from(decodedList.cast<Map>().map((x) => Image.fromJson(x)));
+List<Image> imageFromJson(List<dynamic> decodedList) => List<Image>.from(
+    decodedList.cast<Map<String, dynamic>>().map((x) => Image.fromJson(x)));
 
 // ignore: non_constant_identifier_names
-List<Map> ImageToJson(List<Image> data) =>
-    new List<dynamic>.from(data.map((x) => x.toJson()));
+List<Map> imageToJson(List<Image> data) =>
+    new List<Map>.from(data.map((x) => x.toJson()));
 
 class Image extends Model {
   int id;
@@ -24,12 +25,12 @@ class Image extends Model {
   DateTime updatedAt;
 
   Image({
-    this.id,
-    this.imageableId,
-    this.url,
-    this.imageableType,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.imageableId,
+    required this.url,
+    required this.imageableType,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Image.fromJson(Map<String, dynamic> json) => new Image(
@@ -50,20 +51,21 @@ class Image extends Model {
         "imageable_type": imageableType,
       };
 
-  static Future<File> resizeImage(File file, {int sizeLessThen}) async {
+  static Future<File> resizeImage(File file, {int? sizeLessThen}) async {
     if (sizeLessThen == null) {
-      sizeLessThen = (2 * pow(1024, 2));
+      sizeLessThen = (2 * pow(1024, 2)).toInt();
     }
     int num = Random().nextInt(500000);
     final tempDir = await getApplicationDocumentsDirectory();
-    Img.Image image = Img.decodeImage(file.readAsBytesSync());
-    if ( ! ImageSizeGetter.isJpg(FileInput(file))) {
+    Img.Image? image = Img.decodeImage(file.readAsBytesSync());
+    if (image == null) return file;
+    if (!ImageSizeGetter.isJpg(FileInput(file))) {
       file = new File(tempDir.path + '/$num.jpg')
         ..writeAsBytesSync(Img.encodeJpg(image));
     }
     while (file.lengthSync() > sizeLessThen) {
       Size size = ImageSizeGetter.getSize(FileInput(file));
-      image = Img.copyResize(image, height: (size.height ~/ 2));
+      image = Img.copyResize(image!, height: (size.height ~/ 2));
       file = new File(tempDir.path + '/$num.jpg')
         ..writeAsBytesSync(Img.encodeJpg(image));
     }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../model/partner.dart';
@@ -20,9 +19,10 @@ class Blocking extends StatelessWidget {
   }
 }
 
-class BlockingList extends HookWidget {
-  void redirectToProfile(BuildContext ctx, AuthUser user) {
-    if (ctx.read(authProvider.state).user.id == user.id) {
+class BlockingList extends ConsumerWidget {
+  void redirectToProfile(WidgetRef ref, AuthUser user) {
+    AuthUser? selfUser = ref.read(authProvider.notifier).user;
+    if (selfUser != null && selfUser.id == user.id) {
       Home.pushNamed('/profile');
     } else {
       Home.push(
@@ -31,17 +31,17 @@ class BlockingList extends HookWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(authProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
     List<Partner> partners =
-        context.read(authProvider.state).user.getBlockingList();
+        ref.read(authProvider.notifier).user?.getBlockingList() ?? [];
     return Container(
       child: ListView.builder(
         itemCount: partners.length,
         itemBuilder: (context, index) {
           return InkWell(
               onTap: () {
-                redirectToProfile(context, partners[index].user);
+                redirectToProfile(ref, partners[index].user);
               },
               child: UserCard(user: partners[index].user, isFriend: false));
         },

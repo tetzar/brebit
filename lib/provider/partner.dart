@@ -6,14 +6,16 @@ final partnerProvider =
     StateNotifierProvider((ref) => PartnerProvider(new PartnerProviderState()));
 
 class PartnerProviderState {
-  List<AuthUser> partnerSuggestions;
-  PartnerProviderState({this.partnerSuggestions});
+  late List<AuthUser> partnerSuggestions;
+  PartnerProviderState({List<AuthUser>? partnerSuggestions}) {
+    partnerSuggestions = partnerSuggestions ?? [];
+  }
 }
 
 class PartnerProvider extends StateNotifier<PartnerProviderState> {
   PartnerProvider(PartnerProviderState state) : super(state);
 
-  Future<void> getPartnerSuggestions([String text]) async{
+  Future<void> getPartnerSuggestions([String? text]) async{
     List<AuthUser> suggestions;
     if (text != null) {
       String textFormatted = '_';

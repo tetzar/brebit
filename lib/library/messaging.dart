@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:brebit/model/notification.dart';
 import 'package:brebit/api/auth.dart';
+import 'package:brebit/model/notification.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -14,11 +14,11 @@ import 'cache.dart';
 import 'notification.dart';
 
 class MyFirebaseMessaging {
-  static FlutterLocalNotificationsPlugin plugin;
+  static late FlutterLocalNotificationsPlugin plugin;
 
   static bool _hasInitialized = false;
 
-  static StreamController<FcmNotification> notificationStream;
+  static late StreamController<FcmNotification> notificationStream;
 
   static Future<void> init() async {
     NotificationSettings settings =
@@ -34,10 +34,12 @@ class MyFirebaseMessaging {
       WidgetsFlutterBinding.ensureInitialized();
       _hasInitialized = true;
     }
-    User firebaseUser = FirebaseAuth.instance.currentUser;
-    String fcmToken = await LocalManager.getFCMToken(firebaseUser.uid);
-    if (fcmToken == null) {
-      await setToken();
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      String? fcmToken = await LocalManager.getFCMToken(firebaseUser.uid);
+      if (fcmToken == null) {
+        await setToken();
+      }
     }
   }
 
@@ -46,8 +48,10 @@ class MyFirebaseMessaging {
   }
 
   static Future<void> setToken() async {
-    String token = await FirebaseMessaging.instance.getToken();
-    await saveTokenToDatabase(token);
+    String? token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      await saveTokenToDatabase(token);
+    }
     FirebaseMessaging.instance.onTokenRefresh.listen(saveTokenToDatabase);
   }
 
@@ -68,20 +72,22 @@ class MyFirebaseMessaging {
       switch (_notification.getType()) {
         case UserNotificationType.partnerRequested:
         case UserNotificationType.partnerAccepted:
-          if (!notificationSetting['friend']) {
+          if (!notificationSetting['friend']!) {
             shouldNotify = false;
           }
           break;
         case UserNotificationType.liked:
         case UserNotificationType.commented:
-          if (!notificationSetting['reply']) {
+          if (!notificationSetting['reply']!) {
             shouldNotify = false;
           }
           break;
         case UserNotificationType.information:
-          if (!notificationSetting['information']) {
+          if (!notificationSetting['information']!) {
             shouldNotify = false;
           }
+          break;
+        default:
           break;
       }
       if (shouldNotify) {
@@ -91,8 +97,8 @@ class MyFirebaseMessaging {
   }
 
   static Future<void> onForeground(RemoteMessage message) async {
-    RemoteNotification notification = message.notification;
-    AndroidNotification android = message.notification?.android;
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
 
     // If `onMessage` is triggered with a notification, construct our own
     // local notification to show to users using the created channel.
@@ -141,41 +147,35 @@ class MyFirebaseMessaging {
 }
 
 class FcmNotification {
-  Map data;
-  String type;
+  late Map data;
+  late String type;
 
   FcmNotification(Map data) {
     this.data = data;
     this.type = data.containsKey('type') ? data['type'] : '';
   }
 
-  int getNotificationCount() {
+  int? getNotificationCount() {
     return this.data.containsKey('notification_count')
         ? int.parse(this.data['notification_count'])
         : null;
   }
 
-  UserNotificationType getType() {
+  UserNotificationType? getType() {
     List<String> splitType = this.type.split('\\');
     switch (splitType.last) {
       case 'LikedNotification':
         return UserNotificationType.liked;
-        break;
       case 'CommentNotification':
         return UserNotificationType.commented;
-        break;
       case 'PartnerRequestNotification':
         return UserNotificationType.partnerRequested;
-        break;
       case 'PartnerAcceptedNotification':
         return UserNotificationType.partnerAccepted;
-        break;
       case 'InformationNotification':
         return UserNotificationType.information;
-        break;
       default:
         return null;
-        break;
     }
   }
 }

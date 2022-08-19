@@ -1,3 +1,6 @@
+import 'package:brebit/view/general/error-widget.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/category.dart';
 import '../../../model/habit.dart';
 import '../../../model/user.dart';
@@ -9,11 +12,9 @@ import '../widgets/app-bar.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChallengeSettings extends HookWidget {
+class ChallengeSettings extends ConsumerWidget {
   final Map<CategoryName, String> categoryTitle = {
     CategoryName.cigarette: 'たばこを減らす',
     CategoryName.alcohol: 'お酒を控える',
@@ -28,37 +29,34 @@ class ChallengeSettings extends HookWidget {
     CategoryName.sns: 'assets/icon/sns.svg',
   };
 
-
   @override
-  Widget build(BuildContext context) {
-    useProvider(authProvider.state);
-    AuthUser user = context
-        .read(authProvider.state)
-        .user;
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user == null) return ErrorToHomeWidget();
     List<Widget> columnChildren = <Widget>[];
-    List<CategoryName> activeCategories = user.getActiveHabitCategories().map(
-            (category) => category.name
-    ).toList();
+    List<CategoryName> activeCategories = user
+        .getActiveHabitCategories()
+        .map((category) => category.name)
+        .toList();
     List<CategoryName> suspendingCategories = user
-        .getSuspendingHabitCategories().map(
-            (category) => category.name
-    ).toList();
-    List<CategoryName> unStartedCategories = CategoryName.values.where(
-            (categoryName) =>
-        categoryName != CategoryName.notCategorized
-            && !activeCategories.contains(categoryName) &&
-            !suspendingCategories.contains(categoryName)).toList();
+        .getSuspendingHabitCategories()
+        .map((category) => category.name)
+        .toList();
+    List<CategoryName> unStartedCategories = CategoryName.values
+        .where((categoryName) =>
+            categoryName != CategoryName.notCategorized &&
+            !activeCategories.contains(categoryName) &&
+            !suspendingCategories.contains(categoryName))
+        .toList();
     if (activeCategories.isNotEmpty) {
       columnChildren.add(Text(
         '挑戦中のチャレンジ',
-        style: Theme
-            .of(context)
-            .textTheme
-            .subtitle1,
+        style: Theme.of(context).textTheme.subtitle1,
       ));
       for (CategoryName _categoryName in activeCategories) {
-        columnChildren.add(CategoryTile(categoryImageUrl[_categoryName],
-            categoryTitle[_categoryName], _categoryName));
+        columnChildren.add(CategoryTile(user, categoryImageUrl[_categoryName]!,
+            categoryTitle[_categoryName]!, _categoryName));
       }
     }
     if (suspendingCategories.isNotEmpty) {
@@ -66,15 +64,12 @@ class ChallengeSettings extends HookWidget {
         margin: EdgeInsets.only(top: 8),
         child: Text(
           '一時停止中のチャレンジ',
-          style: Theme
-              .of(context)
-              .textTheme
-              .subtitle1,
+          style: Theme.of(context).textTheme.subtitle1,
         ),
       ));
       for (CategoryName _categoryName in suspendingCategories) {
-        columnChildren.add(CategoryTile(categoryImageUrl[_categoryName],
-            categoryTitle[_categoryName], _categoryName));
+        columnChildren.add(CategoryTile(user, categoryImageUrl[_categoryName]!,
+            categoryTitle[_categoryName]!, _categoryName));
       }
     }
     if (unStartedCategories.isNotEmpty) {
@@ -82,15 +77,12 @@ class ChallengeSettings extends HookWidget {
         margin: EdgeInsets.only(top: 8),
         child: Text(
           '開始可能なチャレンジ',
-          style: Theme
-              .of(context)
-              .textTheme
-              .subtitle1,
+          style: Theme.of(context).textTheme.subtitle1,
         ),
       ));
       for (CategoryName _categoryName in unStartedCategories) {
-        columnChildren.add(CategoryTile(categoryImageUrl[_categoryName],
-            categoryTitle[_categoryName], _categoryName));
+        columnChildren.add(CategoryTile(user, categoryImageUrl[_categoryName]!,
+            categoryTitle[_categoryName]!, _categoryName));
       }
     }
     return Scaffold(
@@ -105,39 +97,37 @@ class ChallengeSettings extends HookWidget {
         ),
       ),
     );
-
   }
 
-  // Future<void> stop(BuildContext context) async {
-  //   Habit _habit = context.read(authProvider).stopHabit(
-  //       categoryName
-  //   );
-  //   context.read(homeProvider).setHabit(_habit);
-  // }
+// Future<void> stop(BuildContext context) async {
+//   Habit _habit = ref.read(authProvider).stopHabit(
+//       categoryName
+//   );
+//   ref.read(homeProvider).setHabit(_habit);
+// }
 }
 
-class CategoryTile extends StatelessWidget {
+class CategoryTile extends ConsumerWidget {
+  final AuthUser user;
   final String imageUrl;
   final String title;
   final CategoryName categoryName;
 
-  CategoryTile(this.imageUrl, this.title, this.categoryName);
+  CategoryTile(this.user, this.imageUrl, this.title, this.categoryName);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () async {
-          await startOrStop(context, categoryName);
+          await startOrStop(this.user, ref, context, categoryName);
         },
         child: Container(
           decoration: BoxDecoration(
-              color: Theme
-                  .of(context)
-                  .primaryColor,
+              color: Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(8)),
           padding: EdgeInsets.all(16),
           alignment: Alignment.center,
@@ -153,11 +143,8 @@ class CategoryTile extends StatelessWidget {
                 child: Container(
                   margin: EdgeInsets.only(left: 16),
                   child: Text(title,
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .bodyText1
-                          .copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
+                      style: Theme.of(context).textTheme.bodyText1?.copyWith(
+                          fontSize: 17, fontWeight: FontWeight.w700)),
                 ),
               )
             ],
@@ -167,18 +154,16 @@ class CategoryTile extends StatelessWidget {
     );
   }
 
-  Future<void> startOrStop(BuildContext ctx, CategoryName categoryName) async {
-    if (ctx
-        .read(authProvider.state)
-        .user
-        .isActiveHabitCategory(categoryName)) {
+  Future<void> startOrStop(AuthUser user, WidgetRef ref, BuildContext ctx,
+      CategoryName categoryName) async {
+    if (user.isActiveHabitCategory(categoryName)) {
       showCustomBottomSheet(
           items: [
             NormalBottomSheetItem(
                 context: ctx,
                 text: '“$title”チャレンジをやめる',
                 onSelect: () async {
-                  await suspend(ctx, categoryName);
+                  await suspend(ref, categoryName);
                   ApplicationRoutes.pop();
                 }),
             CancelBottomSheetItem(
@@ -187,10 +172,9 @@ class CategoryTile extends StatelessWidget {
                   ApplicationRoutes.pop();
                 })
           ],
-          hintText: 'チャレンジをやめても記録は保持され、\n再開することが可能です。\nスモールステップは\n直前のスモールステップからになります。',
-          backGroundColor: Theme
-              .of(ctx)
-              .primaryColor,
+          hintText:
+              'チャレンジをやめても記録は保持され、\n再開することが可能です。\nスモールステップは\n直前のスモールステップからになります。',
+          backGroundColor: Theme.of(ctx).primaryColor,
           context: ApplicationRoutes.materialKey.currentContext);
     } else {
       showCustomBottomSheet(
@@ -200,7 +184,7 @@ class CategoryTile extends StatelessWidget {
                 text: '“$title”チャレンジを開始する',
                 onSelect: () async {
                   ApplicationRoutes.pop();
-                  await start(ctx, categoryName);
+                  await start(user, ref, ctx, categoryName);
                 }),
             CancelBottomSheetItem(
                 context: ctx,
@@ -208,29 +192,27 @@ class CategoryTile extends StatelessWidget {
                   ApplicationRoutes.pop();
                 })
           ],
-          hintText: '現在のチャレンジから"$title"に変更します。\n現在のチャレンジの記録は保持され、\n再開することができます。',
-          backGroundColor: Theme
-              .of(ctx)
-              .primaryColor,
+          hintText:
+              '現在のチャレンジから"$title"に変更します。\n現在のチャレンジの記録は保持され、\n再開することができます。',
+          backGroundColor: Theme.of(ctx).primaryColor,
           context: ApplicationRoutes.materialKey.currentContext);
     }
   }
 
-  Future<void> start(BuildContext context, CategoryName categoryName) async {
+  Future<void> start(AuthUser user, WidgetRef ref, BuildContext context,
+      CategoryName categoryName) async {
     final Map<CategoryName, String> routeName = {
       CategoryName.cigarette: 'cigarette',
       CategoryName.alcohol: 'alcohol',
       CategoryName.sweets: 'sweets',
       CategoryName.sns: 'sns',
     };
-    if (context
-        .read(authProvider.state)
-        .user
-        .isSuspendingCategory(categoryName)) {
+    if (user.isSuspendingCategory(categoryName)) {
       try {
         MyLoading.startLoading();
-        Habit _habit = await context.read(authProvider).restartHabit(categoryName);
-        await context.read(homeProvider).restart(_habit);
+        Habit _habit =
+            await ref.read(authProvider.notifier).restartHabit(categoryName);
+        await ref.read(homeProvider.notifier).restart(_habit);
         await MyLoading.dismiss();
       } catch (e) {
         await MyLoading.dismiss();
@@ -241,13 +223,12 @@ class CategoryTile extends StatelessWidget {
     }
   }
 
-  Future<void> suspend(BuildContext context, CategoryName categoryName) async {
+  Future<void> suspend(WidgetRef ref, CategoryName categoryName) async {
     try {
       MyLoading.startLoading();
-      Habit habit = await context.read(authProvider).suspendHabit(
-          categoryName
-      );
-      await context.read(homeProvider).suspend(habit);
+      Habit habit =
+          await ref.read(authProvider.notifier).suspendHabit(categoryName);
+      await ref.read(homeProvider.notifier).suspend(habit);
       await MyLoading.dismiss();
     } catch (e) {
       await MyLoading.dismiss();

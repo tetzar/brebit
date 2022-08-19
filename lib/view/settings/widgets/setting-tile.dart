@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_switch/flutter_advanced_switch.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SettingProperty {
+  SettingProperty(this.name, this.func);
+
   String name;
-  Function func;
+  Future<void> Function(WidgetRef, BuildContext) func;
   bool arrow = true;
-  Color textColor;
+  Color? textColor;
 }
 
-class SettingListTileBox extends StatelessWidget {
+class SettingListTileBox extends ConsumerWidget {
   final List<SettingProperty> properties;
 
-  SettingListTileBox({@required this.properties});
+  SettingListTileBox({required this.properties});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     List<Widget> propertyTiles = <Widget>[];
     properties.forEach((property) {
       propertyTiles.add(new InkWell(
         onTap: () async {
-          await property.func(context);
+          await property.func(ref, context);
         },
         child: Container(
           height: 52,
@@ -42,8 +45,10 @@ class SettingListTileBox extends StatelessWidget {
                             ? TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 17,
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color)
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyText1
+                                    ?.color)
                             : TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 17,
@@ -51,10 +56,8 @@ class SettingListTileBox extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      child: SvgPicture.asset(
-                          'assets/icon/setting_arrow.svg',
-                          height: 32,
-                          width: 32),
+                      child: SvgPicture.asset('assets/icon/setting_arrow.svg',
+                          height: 32, width: 32),
                       padding: const EdgeInsets.symmetric(horizontal: 11.87),
                     )
                   ]
@@ -66,8 +69,10 @@ class SettingListTileBox extends StatelessWidget {
                             ? TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 17,
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color)
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyText1
+                                    ?.color)
                             : TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 17,
@@ -92,24 +97,26 @@ class SettingListTileBox extends StatelessWidget {
 }
 
 class AuthSettingProperty {
+  AuthSettingProperty(this.authorized, this.name, this.func);
+
   bool authorized;
-  Function func;
+  Future<void> Function(WidgetRef, BuildContext) func;
   String name;
-  Color textColor;
+  Color? textColor;
 }
 
-class AuthSettingListTileBox extends StatelessWidget {
+class AuthSettingListTileBox extends ConsumerWidget {
   final List<AuthSettingProperty> properties;
 
-  AuthSettingListTileBox({@required this.properties});
+  AuthSettingListTileBox({required this.properties});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     List<Widget> propertyTiles = <Widget>[];
     properties.forEach((property) {
       propertyTiles.add(new InkWell(
         onTap: () async {
-          await property.func(context);
+          await property.func(ref, context);
         },
         child: Container(
           height: 52,
@@ -130,7 +137,7 @@ class AuthSettingListTileBox extends StatelessWidget {
                       ? TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 17,
-                          color: Theme.of(context).textTheme.bodyText1.color)
+                          color: Theme.of(context).textTheme.bodyText1?.color)
                       : TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 17,
@@ -150,7 +157,7 @@ class AuthSettingListTileBox extends StatelessWidget {
                           '連携済み',
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.subtitle1.color,
+                                  Theme.of(context).textTheme.subtitle1?.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 12),
                         )
@@ -158,7 +165,7 @@ class AuthSettingListTileBox extends StatelessWidget {
                           '連携する',
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.subtitle1.color,
+                                  Theme.of(context).textTheme.subtitle1?.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 12),
                         ))
@@ -180,16 +187,18 @@ class AuthSettingListTileBox extends StatelessWidget {
 }
 
 class PrivacySettingProperty {
+  PrivacySettingProperty(this.hidden, this.name, this.func);
+
   bool hidden;
   Function func;
   String name;
-  Color textColor;
+  Color? textColor;
 }
 
 class PrivacySettingListTileBox extends StatelessWidget {
   final List<PrivacySettingProperty> properties;
 
-  PrivacySettingListTileBox({@required this.properties});
+  PrivacySettingListTileBox({required this.properties});
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +227,7 @@ class PrivacySettingListTileBox extends StatelessWidget {
                       ? TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 17,
-                          color: Theme.of(context).textTheme.bodyText1.color)
+                          color: Theme.of(context).textTheme.bodyText1?.color)
                       : TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 17,
@@ -239,7 +248,7 @@ class PrivacySettingListTileBox extends StatelessWidget {
                           '非公開',
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.subtitle1.color,
+                                  Theme.of(context).textTheme.subtitle1?.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 12),
                         )
@@ -247,7 +256,7 @@ class PrivacySettingListTileBox extends StatelessWidget {
                           '公開',
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.subtitle1.color,
+                                  Theme.of(context).textTheme.subtitle1?.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 12),
                         ))
@@ -269,16 +278,18 @@ class PrivacySettingListTileBox extends StatelessWidget {
 }
 
 class NotificationSettingProperty {
+  NotificationSettingProperty(this.enable, this.name, this.onSwitch);
+
   bool enable;
   NotificationToggleOnSwitch onSwitch;
   String name;
-  Color textColor;
+  Color? textColor;
 }
 
 class NotificationSettingListTileBox extends StatelessWidget {
   final List<NotificationSettingProperty> properties;
 
-  NotificationSettingListTileBox({@required this.properties});
+  NotificationSettingListTileBox({required this.properties});
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +314,7 @@ class NotificationSettingListTileBox extends StatelessWidget {
                     ? TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 17,
-                        color: Theme.of(context).textTheme.bodyText1.color)
+                        color: Theme.of(context).textTheme.bodyText1?.color)
                     : TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 17,
@@ -341,16 +352,13 @@ class NotificationToggleSwitch extends StatefulWidget {
 }
 
 class _NotificationToggleSwitchState extends State<NotificationToggleSwitch> {
-  AdvancedSwitchController _controller;
+  late ValueNotifier<bool> _controller;
 
   @override
   void initState() {
-    _controller = new AdvancedSwitchController();
-    _controller.value = widget.initialValue;
+    _controller = new ValueNotifier(widget.initialValue);
     _controller.addListener(() async {
-      await widget.onSwitch(
-        _controller.value
-      );
+      await widget.onSwitch(_controller.value);
     });
     super.initState();
   }
@@ -371,7 +379,7 @@ class _NotificationToggleSwitchState extends State<NotificationToggleSwitch> {
   Widget build(BuildContext context) {
     return AdvancedSwitch(
       controller: _controller,
-      activeColor: Theme.of(context).accentColor,
+      activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).primaryColorDark,
       width: 51,
       height: 30,

@@ -6,16 +6,18 @@ import '../../../../provider/auth.dart';
 import '../../home/navigation.dart';
 import '../others-profile.dart';
 
-class FriendCard extends StatelessWidget {
+class FriendCard extends ConsumerWidget {
   final AuthUser user;
 
-  FriendCard({@required this.user});
+  FriendCard({required this.user});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () {
-        if (context.read(authProvider.state).user.id != user.id) {
+        AuthUser? user = ref.read(authProvider.notifier).user;
+        if (user == null) return;
+        if (user.id != user.id) {
           Home.push(MaterialPageRoute(
               builder: (context) => OtherProfile(user: user)));
         } else {
@@ -58,11 +60,12 @@ class FriendCard extends StatelessWidget {
                           user.name,
                           style: TextStyle(
                               color:
-                                  Theme.of(context).textTheme.bodyText1.color,
+                                  Theme.of(context).textTheme.bodyText1?.color,
                               fontWeight: FontWeight.w700,
                               fontSize: 15),
                         ),
-                        context.read(authProvider.state).user.isFriend(user)
+                        ref.read(authProvider.notifier).user?.isFriend(user) ??
+                                false
                             ? Container(
                                 padding: EdgeInsets.only(
                                   left: 8,
@@ -73,7 +76,8 @@ class FriendCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius:
                                         BorderRadius.all(Radius.circular(8)),
-                                    color: Theme.of(context).accentColor,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                   ),
                                   child: Text(
                                     'フレンド',
@@ -99,7 +103,7 @@ class FriendCard extends StatelessWidget {
                       child: Text(
                         '@' + user.customId,
                         style: TextStyle(
-                            color: Theme.of(context).textTheme.subtitle1.color,
+                            color: Theme.of(context).textTheme.subtitle1?.color,
                             fontWeight: FontWeight.w400,
                             fontSize: 15),
                       ),
@@ -113,7 +117,7 @@ class FriendCard extends StatelessWidget {
                       child: Text(
                         user.bio,
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyText1.color,
+                          color: Theme.of(context).textTheme.bodyText1?.color,
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
                         ),

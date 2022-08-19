@@ -43,7 +43,10 @@ class Resolver {
         case 'array(strategy)':
           List<Strategy> v = <Strategy>[];
           val.forEach((strategyId) {
-            v.add(Strategy.find(strategyId));
+            Strategy? st = Strategy.find(strategyId);
+            if (st != null) {
+              v.add(st);
+            }
           });
           result[key] = v;
           break;
@@ -122,7 +125,6 @@ class Resolver {
                 break;
               default:
                 return null;
-                break;
             }
           }
         }

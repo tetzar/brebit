@@ -12,29 +12,27 @@ import '../../api/partner.dart';
 import '../../api/profile.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-Map<int, StreamController<FcmNotification>> _notificationStreamControllers;
+Map<int, StreamController<FcmNotification>> _notificationStreamControllers
+ = {};
 
 var profileProvider =
-    StateNotifierProvider.family<ProfileProvider, int>((ref, id) {
-  if (_notificationStreamControllers == null) {
-    _notificationStreamControllers = <int, StreamController<FcmNotification>>{};
-  }
+    StateNotifierProvider.family<ProfileProvider, ProfileProviderState, int>((ref, id) {
   _notificationStreamControllers[id] = MyFirebaseMessaging.notificationStream;
   ref.onDispose(() {
-    _notificationStreamControllers[id].close();
+    _notificationStreamControllers[id]?.close();
   });
   return ProfileProvider(new ProfileProviderState(), id);
 });
 
 class ProfileProviderState {
-  AuthUser user;
-  List<HabitLog> logs;
-  Habit habit;
+  late AuthUser user;
+  late List<HabitLog> logs;
+  late Habit habit;
 
-  ProfileProviderState({this.user, this.logs, this.habit});
+  ProfileProviderState();
 
   ProfileProviderState copyWith(
-      {AuthUser user, List<HabitLog> logs, Habit habit}) {
+      {AuthUser? user, List<HabitLog>? logs, Habit? habit}) {
     ProfileProviderState newState = ProfileProviderState();
     newState.user = user ?? this.user;
     newState.logs = logs ?? this.logs;
@@ -48,7 +46,7 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
 
   ProfileProvider(ProfileProviderState state, this.userId) : super(state) {
     _notificationStreamControllers[this.userId]
-        .stream
+        ?.stream
         .listen((receivedNotification) async {
       if (['PartnerRequestNotification', 'PartnerAcceptedNotification']
           .contains(receivedNotification.data['type'])) {
@@ -72,13 +70,15 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
     return false;
   }
 
+  get habit => state.habit;
+
+  List<HabitLog> get logs => state.logs;
+
   void setUser(AuthUser user) {
-    if (state == null) {
-      state = ProfileProviderState(user: user);
-    } else {
-      state.user = user;
-    }
+    state.user = user;
   }
+
+  AuthUser get user => state.user;
 
   // --------------------------------
   // users profile posts
@@ -115,43 +115,37 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
   }
 
   Future<void> reloadTimeLine() async {
-    if (state.user.posts != null) {
-      if (state.user.posts.length > 0) {
-        List<Post> newPosts = await ProfileApi.getProfilePosts(
-            state.user, state.user.posts.first.createdAt);
-        newPosts.addAll(state.user.posts);
-        AuthUser user = state.user;
-        user.posts = newPosts;
-        await LocalManager.setProfilePosts(this.state.user, newPosts);
-        state = state.copyWith(user: user);
-        return;
-      }
+    if (state.user.posts.length > 0) {
+      List<Post> newPosts = await ProfileApi.getProfilePosts(
+          state.user, state.user.posts.first.createdAt);
+      newPosts.addAll(state.user.posts);
+      AuthUser user = state.user;
+      user.posts = newPosts;
+      await LocalManager.setProfilePosts(this.state.user, newPosts);
+      state = state.copyWith(user: user);
+      return;
     }
     await this.getProfilePosts();
   }
 
   Future<bool> reloadOlderTimeLine() async {
-    if (state.user.posts != null) {
-      if (state.user.posts.length > 0) {
-        List<Post> newPosts = await ProfileApi.getProfilePosts(
-            state.user, state.user.posts.last.createdAt, true);
-        if (newPosts.length == 0) {
-          this.noMoreContent = true;
-          return true;
-        }
-        state.user.posts.addAll(newPosts);
-        await LocalManager.setProfilePosts(this.state.user, state.user.posts);
-        state = state.copyWith(user: state.user);
+    if (state.user.posts.length > 0) {
+      List<Post> newPosts = await ProfileApi.getProfilePosts(
+          state.user, state.user.posts.last.createdAt, true);
+      if (newPosts.length == 0) {
+        this.noMoreContent = true;
+        return true;
       }
+      state.user.posts.addAll(newPosts);
+      await LocalManager.setProfilePosts(this.state.user, state.user.posts);
+      state = state.copyWith(user: state.user);
     }
     return false;
   }
 
   void removePost(Post post) {
-    if (this.state != null && this.state.user != null) {
-      this.state.user.removePost(post);
-      state = state;
-    }
+    this.state.user.removePost(post);
+    state = state;
   }
 
   // --------------------------------
@@ -159,15 +153,10 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
   // --------------------------------
 
   Future<bool> getPartners() async {
-    try {
-      List<Partner> partners = await PartnerApi.getPartners(state.user);
-      state.user.partners = partners;
-      this.state = state.copyWith(user: state.user);
-      return true;
-    } catch (e) {
-      print(e.toString());
-      return false;
-    }
+    List<Partner> partners = await PartnerApi.getPartners(state.user);
+    state.user.partners = partners;
+    this.state = state.copyWith(user: state.user);
+    return true;
   }
 
   void setPartner(Partner partner) {
@@ -176,28 +165,21 @@ class ProfileProvider extends StateNotifier<ProfileProviderState> {
   }
 
   void removePartner(AuthUser user) {
-    state.user.removePartner(state.user.getPartner(user));
+    Partner? partner = state.user.getPartner(user);
+    if (partner == null) return;
+    state.user.removePartner(partner);
     this.state = state.copyWith(user: state.user);
   }
 
   Future<Partner> getProfile() async {
-    try {
-      Map<String, dynamic> result = await ProfileApi.getProfile(state.user);
-      if (result == null) {
-        state = state;
-        return null;
-      }
-      AuthUser _user = state.user;
-      _user.partners = result['partners'];
-      _user.posts = result['posts'];
-      if (result['posts'].length < 10) noMoreContent = true;
-      state = state.copyWith(
-          user: _user, habit: result['habit'], logs: result['logs']);
-      return result['partner'];
-    } catch (e) {
-      print(e);
-      throw e;
-    }
+    Map<String, dynamic> result = await ProfileApi.getProfile(state.user);
+    AuthUser _user = state.user;
+    _user.partners = result['partners'];
+    _user.posts = result['posts'];
+    if (result['posts'].length < 10) noMoreContent = true;
+    state = state.copyWith(
+        user: _user, habit: result['habit'], logs: result['logs']);
+    return result['partner'];
   }
 
   Future<void> getLogs(DateTime time) async {

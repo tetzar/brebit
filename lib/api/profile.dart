@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+
 import '../../library/data-set.dart';
-import '../../model/post.dart';
 import '../../model/habit.dart';
 import '../../model/habit_log.dart';
 import '../../model/partner.dart';
+import '../../model/post.dart';
 import '../../model/user.dart';
 import 'api.dart';
-import 'package:http/http.dart' as http;
 
 class ProfileApi {
   static final Map<String, String> postRoutes = {
@@ -31,142 +32,90 @@ class ProfileApi {
   static Future<Map<String, dynamic>> getProfile(AuthUser user) async {
     Map<String, String> data = {'userId': user.id.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getProfile'], data));
-    if (response.statusCode == 200) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      DataSet.dataSetConvert(body['data_set']);
-      Habit _habit = Habit.fromJson(body['habit']);
-      List<HabitLog> _logs = HabitLogFromJson(body['logs']);
-      List<Post> _posts = Post.sortByCreatedAt(PostFromJson(body['posts']));
-      List<Partner> _partners = PartnerFromJson(body['partners']);
-      Partner _partner =
-          body['partner'] != null ? Partner.fromJson(body['partner']) : null;
-      Map<String, dynamic> result = <String, dynamic>{
-        'habit': _habit,
-        'logs': _logs,
-        'posts': _posts,
-        'partners': _partners,
-        'partner': _partner
-      };
-      return result;
-    } else {
-      print(response.body);
-      throw Exception('error occurred in ProfileApi@getProfile');
-    }
+        Network.routeNormalize(getRoutes['getProfile']!, data),
+        'getProfile@ProfileApi');
+    Map<String, dynamic> body = jsonDecode(response.body);
+    DataSet.dataSetConvert(body['data_set']);
+    Habit _habit = Habit.fromJson(body['habit']);
+    List<HabitLog> _logs = habitLogFromJson(body['logs']);
+    List<Post> _posts = Post.sortByCreatedAt(postFromJson(body['posts']));
+    List<Partner> _partners = partnerFromJson(body['partners']);
+    Partner? _partner =
+        body['partner'] != null ? Partner.fromJson(body['partner']) : null;
+    Map<String, dynamic> result = <String, dynamic>{
+      'habit': _habit,
+      'logs': _logs,
+      'posts': _posts,
+      'partners': _partners,
+      'partner': _partner
+    };
+    return result;
   }
 
   static Future<List<Post>> getProfilePosts(AuthUser user,
-      [DateTime t, bool older = false]) async {
+      [DateTime? t, bool older = false]) async {
     String route;
     Map<String, String> data;
     if (t == null) {
-      route = getRoutes['getProfilePosts'];
+      route = getRoutes['getProfilePosts']!;
       data = {'userId': user.id.toString()};
     } else {
       if (!older) {
-        route = getRoutes['reloadProfilePosts'];
+        route = getRoutes['reloadProfilePosts']!;
         data = {'userId': user.id.toString(), 'dateTime': t.toString()};
       } else {
-        route = getRoutes['reloadOlderProfilePosts'];
+        route = getRoutes['reloadOlderProfilePosts']!;
         data = {'userId': user.id.toString(), 'dateTime': t.toString()};
       }
     }
-    final http.Response response =
-        await Network.getData(Network.routeNormalize(route, data));
-    print(response.body);
-    if (response.statusCode == 200) {
-      try {
-        Map body = jsonDecode(response.body);
-        if (body.containsKey('count')) {
-          user.postCount = body['count'];
-        }
-        return Post.sortByCreatedAt(PostFromJson(body['posts']));
-      } catch (e) {
-        print(e.toString());
-        throw e;
-      }
-    } else if (response.statusCode == 404) {
-      print('not found user : get profile user');
-      return null;
-    } else {
-      throw Exception('Failed to get user');
+    final http.Response response = await Network.getData(
+        Network.routeNormalize(route, data), "getProfilePosts@ProfileApi");
+    Map body = jsonDecode(response.body);
+    if (body.containsKey('count')) {
+      user.postCount = body['count'];
     }
+    return Post.sortByCreatedAt(postFromJson(body['posts']));
   }
 
   static Future<String> saveProfileImage(File imageFile) async {
     List<File> fileList = [imageFile];
-    http.Response response = await Network.postDataWithImage(
-        {}, fileList, postRoutes['profileImageSave']);
-    if (response.statusCode == 201) {
-      return jsonDecode(response.body)['image_url'];
-    } else if (response.statusCode == 404) {
-      print(response.body);
-      return null;
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in ProfileApi@saveProfileImage');
-    }
+    http.Response response = await Network.postDataWithImage({}, fileList,
+        postRoutes['profileImageSave'], 'saveProfileImage@ProfileApi');
+    return jsonDecode(response.body)['image_url'];
   }
 
   static Future<bool> customIdAvailable(String text) async {
     Map<String, String> data = {'id': text};
     http.Response response = await Network.getWithoutToken(
-        Network.routeNormalize(getRoutes['customIdAvailable'], data));
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body)['available'];
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in ProfileApi@customIdAvailable');
-    }
+        Network.routeNormalize(getRoutes['customIdAvailable']!, data),
+        'customIdAvailable@ProfileApi');
+    return jsonDecode(response.body)['available'];
   }
 
   static Future<AuthUser> saveProfile(Map<String, dynamic> data,
-      {File imageFile}) async {
+      {File? imageFile}) async {
     http.Response response;
-    Map<String, String> stringData = <String, String>{
-      'data': jsonEncode(data)
-    };
+    Map<String, String> stringData = <String, String>{'data': jsonEncode(data)};
     if (imageFile != null) {
-      response = await Network.postDataWithImage(
-          stringData, [imageFile], postRoutes['profileSave']);
+      response = await Network.postDataWithImage(stringData, [imageFile],
+          postRoutes['profileSave'], 'saveProfile@ProfileApi');
     } else {
-      response = await Network.postData(stringData, postRoutes['profileSave']);
+      response = await Network.postData(
+          stringData, postRoutes['profileSave'], 'saveProfile@ProfileApi');
     }
-    if (response.statusCode == 201) {
-      print(response.body);
-      return AuthUser.fromJson(jsonDecode(response.body));
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in ProfileApi@saveProfile');
-    }
+    return AuthUser.fromJson(jsonDecode(response.body));
   }
 
   static Future<Map<String, dynamic>> getHabitLogs(AuthUser user) async {
     Map<String, String> data = <String, String>{'userId': user.id.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getHabitLogs'], data));
-    if (response.statusCode == 200) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      } else {
-        Map<String, dynamic> result = <String, dynamic>{};
-        DataSet.dataSetConvert(body['data_set']);
-        result['hasMore'] = body['has_more'];
-        result['logs'] = HabitLogFromJson(body['logs']);
-        return result;
-      }
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in ProfileApi@getHabit');
-    }
+        Network.routeNormalize(getRoutes['getHabitLogs']!, data), 'getHabitLogs@ProfileApi');
+    Map<String, dynamic> body = jsonDecode(response.body);
+    Map<String, dynamic> result = <String, dynamic>{};
+    DataSet.dataSetConvert(body['data_set']);
+    result['hasMore'] = body['has_more'];
+    result['logs'] = habitLogFromJson(body['logs']);
+    return result;
   }
 
   static Future<List<HabitLog>> getLogsInAMonth(
@@ -176,19 +125,9 @@ class ProfileApi {
       'month': month.toString()
     };
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['logsInAMonth'], data));
-    if (response.statusCode == 200) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      DataSet.dataSetConvert(body['data_set']);
-      return HabitLogFromJson(body['logs']);
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in ProfileApi@getLogsInAMonth');
-    }
+        Network.routeNormalize(getRoutes['logsInAMonth']!, data), "getLogsInAMonth@ProfileApi");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    DataSet.dataSetConvert(body['data_set']);
+    return habitLogFromJson(body['logs']);
   }
 }

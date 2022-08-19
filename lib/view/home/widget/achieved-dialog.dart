@@ -12,19 +12,22 @@ import '../../../../provider/home.dart';
 class AchievedDialog {
   static bool isShowing = false;
 
-  static Future<void> show(BuildContext context, Function(BuildContext) onAimDateUpdated) async {
-    if (isShowing) {
-      return;
-    }
-    int toAimMin =
-        context.read(homeProvider.state).habit.getStartToAimDate().inMinutes;
+  static Future<void> show(BuildContext context, WidgetRef ref,
+      Function(WidgetRef) onAimDateUpdated) async {
+    if (isShowing) return;
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return;
+    int toAimMin = habit
+        .getStartToAimDate()
+        .inMinutes;
     int toAimDay = (toAimMin / 1440).round();
     if (toAimDay > 0) {
-      int next;
       List<int> days = Habit.getDayList();
-      int step = context.read(homeProvider).getHabit().getNowStep();
-      next = days.firstWhere((d) => d > toAimDay);
-      if (next == null) {
+      int step = habit.getNowStep();
+      int next;
+      try {
+        next = days.firstWhere((d) => d > toAimDay);
+      } on StateError {
         next = days.last;
       }
       showDialog(
@@ -45,7 +48,9 @@ class AchievedDialog {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: Theme.of(context).primaryColor,
+                      color: Theme
+                          .of(context)
+                          .primaryColor,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -53,19 +58,28 @@ class AchievedDialog {
                         Text(
                           'スモールステップ${step + 1}を\n達成しました${Emojis.partyPopper}',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyText1.copyWith(
+                          style: Theme
+                              .of(context)
+                              .textTheme
+                              .bodyText1
+                              ?.copyWith(
                               fontWeight: FontWeight.w700, fontSize: 20),
                         ),
                         Container(
                           margin: EdgeInsets.symmetric(vertical: 16),
                           child: SvgPicture.asset(
-                            'assets/steps/step${(step + 2 > 8) ? '8plus' : (step + 2)}.svg',
+                            'assets/steps/step${(step + 2 > 8)
+                                ? '8plus'
+                                : (step + 2)}.svg',
                             fit: BoxFit.contain,
                           ),
                         ),
                         Text(
                           '次の目標は$next日です',
-                          style: Theme.of(context).textTheme.bodyText1,
+                          style: Theme
+                              .of(context)
+                              .textTheme
+                              .bodyText1,
                         ),
                         SizedBox(
                           height: 40,
@@ -74,11 +88,11 @@ class AchievedDialog {
                           child: InkWell(
                             onTap: () async {
                               try {
-                                await context
-                                    .read(homeProvider)
+                                await ref
+                                    .read(homeProvider.notifier)
                                     .updateAimDate(next);
                                 Navigator.pop(context);
-                                onAimDateUpdated(context);
+                                onAimDateUpdated(ref);
                               } catch (e) {
                                 MyErrorDialog.show(e);
                               }
@@ -88,12 +102,16 @@ class AchievedDialog {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(28),
-                                  color: Theme.of(context).accentColor),
+                                  color: Theme
+                                      .of(context)
+                                      .colorScheme.secondary),
                               alignment: Alignment.center,
                               child: Text(
                                 '目標日数を更新する',
                                 style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
+                                    color: Theme
+                                        .of(context)
+                                        .primaryColor,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 17),
                               ),

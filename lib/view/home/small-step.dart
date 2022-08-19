@@ -1,3 +1,4 @@
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,9 +10,13 @@ import '../../../route/route.dart';
 import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
 
-class SmallStep extends StatelessWidget {
+class SmallStep extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) {
+      return ErrorToHomeWidget();
+    }
     return Scaffold(
       appBar: getMyAppBar(
           context: context,
@@ -19,15 +24,21 @@ class SmallStep extends StatelessWidget {
           backButton: AppBarBackButton.none,
           background: AppBarBackground.gray,
           actions: [MyBackButtonX()]),
-      body: SmallStepContent(),
+      body: SmallStepContent(
+        habit: habit,
+      ),
     );
   }
 }
 
 class SmallStepContent extends StatelessWidget {
+  final Habit habit;
+
+  SmallStepContent({required this.habit});
+
   @override
   Widget build(BuildContext context) {
-    Habit _habit = context.read(homeProvider).getHabit();
+    Habit _habit = this.habit;
     int _nowStep = _habit.getNowStep();
     int _allSteps = Habit.getStepCount();
     int _aimDays = _habit.getStartToAimDate().inDays;
@@ -55,7 +66,7 @@ class SmallStepContent extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyText1
-                        .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                        ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   Container(
                       padding: EdgeInsets.symmetric(vertical: 8),
@@ -73,7 +84,7 @@ class SmallStepContent extends StatelessWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyText1
-                                .copyWith(fontSize: 36),
+                                ?.copyWith(fontSize: 36),
                           ),
                           SizedBox(
                             width: 8,
@@ -83,7 +94,7 @@ class SmallStepContent extends StatelessWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .subtitle1
-                                .copyWith(
+                                ?.copyWith(
                                     fontSize: 17, fontWeight: FontWeight.w700),
                           )
                         ],
@@ -91,15 +102,18 @@ class SmallStepContent extends StatelessWidget {
                   RichText(
                       text: TextSpan(
                           text: '目標日数：',
-                          style: Theme.of(context).textTheme.subtitle1.copyWith(
-                                fontSize: 13,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.subtitle1?.copyWith(
+                                    fontSize: 13,
+                                  ),
                           children: [
                         TextSpan(
                             text: _aimDays.toString(),
                             style: TextStyle(
-                                color:
-                                    Theme.of(context).textTheme.bodyText1.color,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyText1
+                                    ?.color,
                                 fontWeight: FontWeight.w700))
                       ]))
                 ],
@@ -119,7 +133,7 @@ class SmallStepContent extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontSize: 13, fontWeight: FontWeight.w400),
+                          ?.copyWith(fontSize: 13, fontWeight: FontWeight.w400),
                       children: [
                         TextSpan(
                             text: _remainingDays.toString(),
@@ -140,7 +154,7 @@ class SmallStepContent extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyText1
-                        .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                        ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(
                     height: 16,
@@ -159,7 +173,8 @@ class SmallStepContent extends StatelessWidget {
                                         '/explanation/small-step');
                                   },
                                 style: TextStyle(
-                                    color: Theme.of(context).accentColor,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                     decoration: TextDecoration.underline))
                           ])),
                   Container(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../model/post.dart';
@@ -17,29 +16,32 @@ import 'widget/tab-bar.dart';
 final friendProviderName = 'friend';
 final challengeProviderName = 'challenge';
 
-class TimeLine extends StatelessWidget {
+class TimeLine extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    context.read(timelineProvider(friendProviderName)).getTimeLine(context);
-    context.read(timelineProvider(challengeProviderName)).getTimeLine(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.read(timelineProvider(friendProviderName).notifier).getTimeLine(ref);
+    ref.read(timelineProvider(challengeProviderName).notifier).getTimeLine(ref);
     return TimelineWidget();
   }
 }
 
-class TimelineWidget extends StatefulHookWidget {
+class TimelineWidget extends ConsumerStatefulWidget {
   @override
   _TimelineWidgetState createState() => _TimelineWidgetState();
 }
 
-class _TimelineWidgetState extends State<TimelineWidget>
+class _TimelineWidgetState extends ConsumerState<TimelineWidget>
     with SingleTickerProviderStateMixin {
-  TabController _tabController;
+  late TabController _tabController;
 
   @override
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
-    _tabController.animation.addListener(() {
-      context.read(tabProvider).set(_tabController.animation.value);
+    _tabController.animation?.addListener(() {
+      Animation? animation = _tabController.animation;
+      if (animation != null) {
+        ref.read(tabProvider.notifier).set(animation.value);
+      }
     });
     super.initState();
   }
@@ -65,19 +67,19 @@ class _TimelineWidgetState extends State<TimelineWidget>
   }
 }
 
-class TimelineTab extends StatefulHookWidget {
+class TimelineTab extends ConsumerStatefulWidget {
   final String providerName;
 
-  TimelineTab({@required this.providerName});
+  TimelineTab({required this.providerName});
 
   @override
   _TimelineTabState createState() => _TimelineTabState();
 }
 
-class _TimelineTabState extends State<TimelineTab> {
-  ScrollController _scrollController;
+class _TimelineTabState extends ConsumerState<TimelineTab> {
+  late ScrollController _scrollController;
 
-  bool nowLoading;
+  bool nowLoading = false;
 
   @override
   void initState() {
@@ -96,7 +98,7 @@ class _TimelineTabState extends State<TimelineTab> {
   }
 
   Future<void> reloadOlder() async {
-    if (context.read(timelineProvider(widget.providerName)).noMoreContent)
+    if (ref.read(timelineProvider(widget.providerName).notifier).noMoreContent)
       return;
     if ((_scrollController.position.maxScrollExtent -
                 _scrollController.position.pixels) <
@@ -104,9 +106,9 @@ class _TimelineTabState extends State<TimelineTab> {
         !nowLoading) {
       print("reload older");
       nowLoading = true;
-      await context
-          .read(timelineProvider(widget.providerName))
-          .reloadPosts(context, true);
+      await ref
+          .read(timelineProvider(widget.providerName).notifier)
+          .reloadPosts(ref, true);
       nowLoading = false;
       setState(() {});
     }
@@ -114,16 +116,14 @@ class _TimelineTabState extends State<TimelineTab> {
 
   @override
   Widget build(BuildContext context) {
-    final _timelineProviderState =
-        useProvider(timelineProvider(widget.providerName).state);
-    if (_timelineProviderState.posts == null) {
-      return Center(child: CircularProgressIndicator());
-    }
+    ref.watch(timelineProvider(widget.providerName));
+    List<Post> posts =
+        ref.read(timelineProvider(widget.providerName).notifier).posts;
     return RefreshIndicator(
       onRefresh: () async {
-        await context
-            .read(timelineProvider(widget.providerName))
-            .reloadPosts(context);
+        await ref
+            .read(timelineProvider(widget.providerName).notifier)
+            .reloadPosts(ref);
       },
       child: ListView.builder(
         key: PageStorageKey('timeline/friend'),
@@ -132,11 +132,11 @@ class _TimelineTabState extends State<TimelineTab> {
         physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics()),
         shrinkWrap: true,
-        itemCount: _timelineProviderState.posts.length + 1,
+        itemCount: posts.length + 1,
         itemBuilder: (BuildContext context, int index) {
-          if (index == (_timelineProviderState.posts.length)) {
-            if (context
-                .read(timelineProvider(widget.providerName))
+          if (index == (posts.length)) {
+            if (ref
+                .read(timelineProvider(widget.providerName).notifier)
                 .noMoreContent) {
               return Container(
                 height: 0,
@@ -151,35 +151,36 @@ class _TimelineTabState extends State<TimelineTab> {
               ),
             );
           }
-          if (_timelineProviderState.posts[index].hide) {
+          if (posts[index].hide) {
             return SizedBox(
               height: 0,
             );
           }
           return InkWell(
             onTap: () async {
-              Post _post = _timelineProviderState.posts[index];
-              bool reported = await Home.pushNamed('/post',
-                  args: PostArguments(post: _post));
+              Post _post = posts[index];
+              bool? reported = await Home.pushNamed('/post',
+                  args: PostArguments(post: _post)) as bool?;
               if (reported != null && reported) {
                 if (_post.isMine()) {
-                  bool deleteSuccess = await context
-                      .read(timelineProvider(widget.providerName))
-                      .deletePost(_post);
-                  if (!deleteSuccess) {
-                    await context
-                        .read(timelineProvider(challengeProviderName))
+                  try {
+                    await ref
+                        .read(timelineProvider(widget.providerName).notifier)
+                        .deletePost(_post);
+                  } catch (e) {
+                    await ref
+                        .read(timelineProvider(challengeProviderName).notifier)
                         .deletePost(_post);
                   }
                 }
-                await removePostFromAllProvider(_post, context);
+                await removePostFromAllProvider(_post, ref);
               }
             },
             onLongPress: () {
-              _showActions(context, _timelineProviderState.posts[index]);
+              _showActions(ref, context, posts[index]);
             },
             child: PostCard(
-              post: _timelineProviderState.posts[index],
+              post: posts[index],
               index: index,
             ),
           );
@@ -188,16 +189,18 @@ class _TimelineTabState extends State<TimelineTab> {
     );
   }
 
-  Future<void> reloadPosts(BuildContext ctx) async {
+  Future<void> reloadPosts(WidgetRef ref) async {
     try {
-      await ctx.read(timelineProvider(widget.providerName)).reloadPosts(ctx);
+      await ref
+          .read(timelineProvider(widget.providerName).notifier)
+          .reloadPosts(ref);
     } catch (e) {
       MyErrorDialog.show(e);
     }
   }
 }
 
-void _showActions(BuildContext context, Post post) {
+void _showActions(WidgetRef ref, BuildContext context, Post post) {
   List<BottomSheetItem> items;
   if (post.isMine()) {
     items = [
@@ -208,19 +211,21 @@ void _showActions(BuildContext context, Post post) {
             ApplicationRoutes.pop(context);
             try {
               MyLoading.startLoading();
-              bool deleted = await context
-                  .read(timelineProvider(friendProviderName))
+              await ref
+                  .read(timelineProvider(friendProviderName).notifier)
                   .deletePost(post);
-              if (!deleted) {
-                await context
-                    .read(timelineProvider(challengeProviderName))
-                    .deletePost(post);
-              }
-              await removePostFromAllProvider(post, context);
+              await removePostFromAllProvider(post, ref);
               await MyLoading.dismiss();
             } catch (e) {
-              await MyLoading.dismiss();
-              MyErrorDialog.show(e);
+              try {
+                await ref
+                    .read(timelineProvider(challengeProviderName).notifier)
+                    .deletePost(post);
+                await MyLoading.dismiss();
+              } catch (e) {
+                await MyLoading.dismiss();
+                MyErrorDialog.show(e);
+              }
             }
           }),
       CancelBottomSheetItem(
@@ -237,10 +242,10 @@ void _showActions(BuildContext context, Post post) {
           text: 'ポストを報告',
           onSelect: () async {
             ApplicationRoutes.pop();
-            bool result = await ApplicationRoutes.push(
+            bool? result = await ApplicationRoutes.push(
                 MaterialPageRoute(builder: (context) => ReportView(post)));
             if (result != null && result) {
-              await removePostFromAllProvider(post, context);
+              await removePostFromAllProvider(post, ref);
             }
           }),
       CancelBottomSheetItem(

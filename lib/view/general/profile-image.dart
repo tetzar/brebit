@@ -1,11 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:brebit/utils/aws.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class ProfileImageWithS3 extends StatefulWidget {
 
   final S3Image s3image;
-  const ProfileImageWithS3(this.s3image, {Key key}) : super(key: key);
+  const ProfileImageWithS3(this.s3image, {Key? key}) : super(key: key);
 
   @override
   State<ProfileImageWithS3> createState() => _ProfileImageWithS3State();
@@ -24,7 +25,7 @@ class _ProfileImageWithS3State extends State<ProfileImageWithS3> {
             height: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                  image: MemoryImage(snapshot.data),
+                  image: MemoryImage(snapshot.data as Uint8List),
                   fit: BoxFit.cover),
             ))
             : Container(

@@ -1,9 +1,8 @@
 import 'dart:convert';
 
-import '../../model/analysis.dart';
-import '../../model/habit.dart';
-import 'api.dart';
 import 'package:http/http.dart' as http;
+
+import 'api.dart';
 
 class SystemApi {
   static final Map<String, String> postRoutes = {};
@@ -15,9 +14,8 @@ class SystemApi {
   static final Map<String, String> deleteRoutes = {};
 
   static Future<String> getLatestVersion() async {
-    http.Response response =
-        await Network.getData(getRoutes['getLatestApplicationVersion']);
-    Network.hasErrorMessage(response, 'getLatestVersion@SystemApi');
+    http.Response response = await Network.getData(
+        getRoutes['getLatestApplicationVersion'], 'getLatestVersion@SystemApi');
     return jsonDecode(response.body)['version'];
   }
 }

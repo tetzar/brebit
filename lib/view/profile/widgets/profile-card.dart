@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -25,23 +23,23 @@ final Map<CategoryName, String> _imagePath = {
   CategoryName.notCategorized: 'assets/icon/close.svg',
 };
 
-class ProfileCard extends StatefulHookWidget {
+class ProfileCard extends ConsumerStatefulWidget {
   final GlobalKey containerKey;
 
-  ProfileCard({@required this.containerKey});
+  ProfileCard({required this.containerKey});
 
   @override
   _ProfileCardState createState() => _ProfileCardState();
 }
 
-class _ProfileCardState extends State<ProfileCard> {
-  String name;
-  String currentName;
-  TextEditingController _textEditingController;
+class _ProfileCardState extends ConsumerState<ProfileCard> {
+  String name = '';
+  String currentName = '';
+  late TextEditingController _textEditingController;
 
   @override
   void initState() {
-    name = context.read(authProvider.state).user.name;
+    name = ref.read(authProvider.notifier).user?.name ?? name;
     currentName = name;
     _textEditingController = new TextEditingController();
     _textEditingController.text = currentName;
@@ -56,10 +54,13 @@ class _ProfileCardState extends State<ProfileCard> {
 
   @override
   Widget build(BuildContext context) {
-    AuthUser user = useProvider(authProvider.state).user;
-    if (currentName != user.name) {
-      currentName = user.name;
-      _textEditingController.text = currentName;
+    ref.watch(authProvider);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user != null) {
+      if (currentName != user.name) {
+        currentName = user.name;
+        _textEditingController.text = currentName;
+      }
     }
     return Container(
       key: widget.containerKey,
@@ -84,7 +85,9 @@ class _ProfileCardState extends State<ProfileCard> {
                       },
                       child: Center(
                         child: CircleAvatar(
-                          child: ClipOval(child: user.getImageWidget()),
+                          child: ClipOval(
+                              child: user?.getImageWidget() ??
+                                  AuthUser.getDefaultImage()),
                           radius: 40,
                           // backgroundImage: NetworkImage('https://via.placeholder.com/300'),
                           backgroundColor: Colors.transparent,
@@ -105,7 +108,9 @@ class _ProfileCardState extends State<ProfileCard> {
                             onFocusChange: (bool focus) async {
                               if (!focus) {
                                 if (currentName != name && name.length > 0) {
-                                  context.read(authProvider).saveName(name);
+                                  ref
+                                      .read(authProvider.notifier)
+                                      .saveName(name);
                                 }
                               }
                             },
@@ -117,7 +122,7 @@ class _ProfileCardState extends State<ProfileCard> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText1
-                                  .copyWith(
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 17,
                                   ),
@@ -135,7 +140,7 @@ class _ProfileCardState extends State<ProfileCard> {
                 ],
               ),
             ),
-            user.habitCategories.length > 0
+            (user != null && user.habitCategories.length > 0)
                 ? Container(
                     padding: EdgeInsets.only(
                       top: 16,
@@ -149,15 +154,16 @@ class _ProfileCardState extends State<ProfileCard> {
                             Row(
                               children: [
                                 SvgPicture.asset(
-                                  _imagePath[category.name],
+                                  _imagePath[category.name]!,
                                   width: 14,
                                   height: 14,
-                                  color: Theme.of(context).accentColor,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
                                 ),
                                 Container(
                                   margin: EdgeInsets.only(left: 8),
                                   child: Text(
-                                      _categoryName[category.name] + 'をやめる',
+                                      _categoryName[category.name]! + 'をやめる',
                                       style: Theme.of(context)
                                           .textTheme
                                           .subtitle1),
@@ -169,14 +175,14 @@ class _ProfileCardState extends State<ProfileCard> {
                 : SizedBox(
                     height: 0,
                   ),
-            user.bio.length > 0
+            (user != null && user.bio.length > 0)
                 ? Container(
                     padding: EdgeInsets.only(bottom: 8),
                     alignment: Alignment.centerLeft,
                     child: Text(
                       user.bio,
                       style: TextStyle(
-                          color: Theme.of(context).textTheme.subtitle1.color,
+                          color: Theme.of(context).textTheme.subtitle1?.color,
                           fontSize: 12,
                           fontWeight: FontWeight.w400),
                     ) // child: null,

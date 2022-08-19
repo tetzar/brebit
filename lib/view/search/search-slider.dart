@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final tabProvider = StateNotifierProvider.autoDispose((ref) => TabProvider(0));
 
 class TabProvider extends StateNotifier<double> {
   TabProvider(double state) : super(state);
+
+  double get position => state;
 
   void set(double s) {
     state = s;
@@ -14,17 +15,17 @@ class TabProvider extends StateNotifier<double> {
 
 enum ShowingTab { progress, analytics, pileUp }
 
-class SearchTabBarContent extends StatefulHookWidget {
+class SearchTabBarContent extends ConsumerStatefulWidget {
   final TabController tabController;
 
-  SearchTabBarContent({@required this.tabController});
+  SearchTabBarContent({required this.tabController});
 
   @override
   _SearchTabBarContentState createState() => _SearchTabBarContentState();
 }
 
-class _SearchTabBarContentState extends State<SearchTabBarContent> {
-  ShowingTab _showingTab;
+class _SearchTabBarContentState extends ConsumerState<SearchTabBarContent> {
+  late ShowingTab _showingTab;
 
   @override
   void initState() {
@@ -34,7 +35,8 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
 
   @override
   Widget build(BuildContext context) {
-    double position = useProvider(tabProvider.state);
+    ref.watch(tabProvider);
+    double position = ref.read(tabProvider.notifier).position;
     if (position < 0.1) {
       _showingTab = ShowingTab.progress;
     }
@@ -77,11 +79,11 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               )
                             ],
                           ),
@@ -104,11 +106,11 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               ),
                             ],
                           ),
@@ -131,11 +133,11 @@ class _SearchTabBarContentState extends State<SearchTabBarContent> {
                                         ? Theme.of(context)
                                             .textTheme
                                             .bodyText1
-                                            .color
+                                            ?.color
                                         : Theme.of(context)
                                             .textTheme
                                             .subtitle1
-                                            .color),
+                                            ?.color),
                               ),
                             ],
                           ),
@@ -178,7 +180,7 @@ class TabBarLinePainter extends CustomPainter {
   double position;
   BuildContext context;
 
-  TabBarLinePainter({this.position, this.context});
+  TabBarLinePainter({required this.position, required this.context});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -193,7 +195,7 @@ class TabBarLinePainter extends CustomPainter {
     double start = center - lineLength / 2;
     double end = center + lineLength / 2;
     Paint line = new Paint()
-      ..color = Theme.of(context).accentColor
+      ..color = Theme.of(context).colorScheme.secondary
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill
       ..strokeWidth = strokeWidth;

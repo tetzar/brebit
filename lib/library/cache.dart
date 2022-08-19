@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:core';
-import 'dart:async';
 
 import 'package:brebit/model/draft.dart';
 import 'package:brebit/model/habit.dart';
@@ -26,10 +25,7 @@ enum _Key {
   analysisLanguage,
 }
 
-class
-LocalManager {
-  static SharedPreferences _prefs;
-
+class LocalManager {
   static final Map<_Key, String> _keyList = <_Key, String>{
     _Key.posts: 'posts/{userId}/{name}',
     _Key.started: 'started',
@@ -46,28 +42,22 @@ LocalManager {
     _Key.analysisLanguage: 'analysis-language/{userId}',
   };
 
-  static String _getKey(_Key key, [Map<String, String> data]) {
-    if (_keyList.containsKey(key)) {
-      String _key = _keyList[key];
-      if (data != null) {
-        data.forEach((k, v) {
-          _key = _key.replaceAll('{$k}', v);
-        });
-      }
-      return _key;
+  static String _getKey(_Key key, [Map<String, String>? data]) {
+    String _key = _keyList[key]!;
+    if (data != null) {
+      data.forEach((k, v) {
+        _key = _key.replaceAll('{$k}', v);
+      });
     }
-    return null;
+    return _key;
   }
 
   static Future<SharedPreferences> get preferences async {
-    if (_prefs == null) {
-      _prefs = await SharedPreferences.getInstance();
-    }
-    return _prefs;
+    return await SharedPreferences.getInstance();
   }
 
   static Future<void> _storeExpires(String key,
-      [Duration storeDuration]) async {
+      [Duration? storeDuration]) async {
     var prefs = await preferences;
     if (storeDuration != null ? storeDuration.isNegative : false) {
       return;
@@ -83,12 +73,15 @@ LocalManager {
     if (!prefs.containsKey(_key)) {
       return false;
     }
-    String iso6801Time = prefs.getString(key + '/expires-at');
-    return DateTime.now().isAfter(DateTime.parse(iso6801Time).toLocal());
+    String? iso6801Time = prefs.getString(key + '/expires-at');
+    if (iso6801Time != null) {
+      return DateTime.now().isAfter(DateTime.parse(iso6801Time).toLocal());
+    }
+    return true;
   }
 
   static Future<void> _set(String key, dynamic value,
-      {Duration storeDuration, bool expires = true}) async {
+      {Duration? storeDuration, bool expires = true}) async {
     assert(value is int ||
         value is double ||
         value is String ||
@@ -121,6 +114,7 @@ LocalManager {
   static Future<dynamic> _get(String key) async {
     SharedPreferences prefs = await preferences;
     if (await _expired(key)) {
+      print('expire');
       return null;
     }
     if (prefs.containsKey(key)) {
@@ -128,6 +122,7 @@ LocalManager {
       if (value is List<dynamic>) {
         value = value.cast<String>();
       }
+      print('value: $value');
       return value;
     }
     return null;
@@ -148,7 +143,7 @@ LocalManager {
   //---------------------------------
   static Future<String> getToken(String firebaseUid) async {
     String key = _getKey(_Key.token, {'firebaseUid': firebaseUid});
-    List<String> tokenData = await _get(key);
+    List<String>? tokenData = await _get(key);
     if (tokenData != null) {
       String token = tokenData[0];
       DateTime expireAt = DateTime.parse(tokenData[1]);
@@ -178,14 +173,13 @@ LocalManager {
   //  fcm token
   //---------------------------------
 
-  static Future<String> getFCMToken(String firebaseUid) async {
+  static Future<String?> getFCMToken(String firebaseUid) async {
     String key = _getKey(_Key.FCMToken, {'firebaseUid': firebaseUid});
-    String token = await _get(key);
+    String? token = await _get(key);
     return token;
   }
 
-  static Future<void> setFCMToken(
-      String token, String firebaseUid) async {
+  static Future<void> setFCMToken(String token, String firebaseUid) async {
     String key = _getKey(_Key.FCMToken, {'firebaseUid': firebaseUid});
     await _set(key, token, expires: false);
   }
@@ -200,13 +194,15 @@ LocalManager {
   //---------------------------------
 
   static Future<void> setHasStarted() async {
+    print("has started");
     String _key = _getKey(_Key.started);
     await _set(_key, true, expires: false);
   }
 
   static Future<bool> getHasStarted() async {
     String _key = _getKey(_Key.started);
-    bool started = await _get(_key);
+    bool? started = await _get(_key);
+    print("has started: $started");
     return started ?? false;
   }
 
@@ -215,14 +211,14 @@ LocalManager {
   //---------------------------------
 
   static Future<void> setRegisterInformation(
-      User firebaseUser,
-      String email,
-      String userName,
-      String nickName,
-      ) async {
+    User firebaseUser,
+    String email,
+    String userName,
+    String nickName,
+  ) async {
     String _key = _getKey(_Key.register, {'firebaseUid': firebaseUser.uid});
     print(_key);
-    Map<String, String> data =  {
+    Map<String, String> data = {
       'email': email,
       'userName': userName,
       'nickName': nickName,
@@ -230,10 +226,11 @@ LocalManager {
     await _set(_key, jsonEncode(data), storeDuration: Duration(minutes: -1));
   }
 
-  static Future<Map<String, String>> getRegisterInformation(User firebaseUser) async {
+  static Future<Map<String, String>?> getRegisterInformation(
+      User firebaseUser) async {
     String _key = _getKey(_Key.register, {'firebaseUid': firebaseUser.uid});
     print(_key);
-    String encoded = await _get(_key);
+    String? encoded = await _get(_key);
     if (encoded == null) {
       return null;
     }
@@ -242,23 +239,24 @@ LocalManager {
   }
 
   static Future<void> deleteRegisterInformation(User firebaseUser) async {
-    await _remove(
-      _getKey(_Key.register, {'firebaseUid': firebaseUser.uid})
-    );
+    await _remove(_getKey(_Key.register, {'firebaseUid': firebaseUser.uid}));
   }
 
   //---------------------------------
   //  posts
   //---------------------------------
 
-  static Future<void> setPosts(AuthUser user, List<Post> posts, String name) async {
-    final String _key = _getKey(_Key.posts, {'userId': user.id.toString() ,'name': name});
-    List<String> encodedList = await _get(_key);
+  static Future<void> setPosts(
+      AuthUser user, List<Post> posts, String name) async {
+    final String _key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    List<String>? encodedList = await _get(_key);
     List<Map> _decodedList = encodedList != null
         ? encodedList.map((encoded) => jsonDecode(encoded)).toList().cast<Map>()
         : <Map>[];
     posts.forEach((post) {
-      int index = _decodedList.indexWhere((decoded) => decoded['id'] == post.id);
+      int index =
+          _decodedList.indexWhere((decoded) => decoded['id'] == post.id);
       if (index < 0) {
         _decodedList.add(post.toJson());
       } else {
@@ -273,8 +271,9 @@ LocalManager {
   }
 
   static Future<List<Post>> getPosts(AuthUser user, String name) async {
-    String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    String _key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       if (encodedPosts.length == 0) {
         return [];
@@ -289,8 +288,9 @@ LocalManager {
   }
 
   static Future<void> setPost(AuthUser user, Post post, String name) async {
-    String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    String _key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       int index = encodedPosts.indexWhere((encoded) {
         Map decoded = jsonDecode(encoded);
@@ -308,10 +308,11 @@ LocalManager {
   }
 
   static Future<void> updatePost(AuthUser user, Post post, String name) async {
-    String key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(key);
+    String key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    List<String>? encodedPosts = await _get(key);
     if (encodedPosts != null) {
-      int index = encodedPosts.indexWhere((encoded){
+      int index = encodedPosts.indexWhere((encoded) {
         return jsonDecode(encoded)['id'] == post.id;
       });
       if (!(index < 0)) {
@@ -322,13 +323,15 @@ LocalManager {
   }
 
   static Future<void> deletePosts(AuthUser user, String name) async {
-    String key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    String key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
     await _remove(key);
   }
 
   static Future deletePost(AuthUser user, Post post, String name) async {
-    String _key = _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
-    List<String> encodedPosts = await _get(_key);
+    String _key =
+        _getKey(_Key.posts, {'userId': user.id.toString(), 'name': name});
+    List<String>? encodedPosts = await _get(_key);
     if (encodedPosts != null) {
       int index = encodedPosts.indexWhere((encoded) {
         Map decoded = jsonDecode(encoded);
@@ -347,14 +350,15 @@ LocalManager {
   //---------------------------------
 
   static Future<void> setHabit(Habit habit) async {
-    String key = _getKey(_Key.habit, {'userId': habit.user.id.toString()});
+    AuthUser? user = habit.user;
+    String key = _getKey(_Key.habit, {'userId': user.id.toString()});
     String encodedJson = jsonEncode(habit.toJson());
     await _set(key, encodedJson);
   }
 
-  static Future<Habit> getHabit(AuthUser user) async {
+  static Future<Habit?> getHabit(AuthUser user) async {
     String key = _getKey(_Key.habit, {'userId': user.id.toString()});
-    String encodedHabit = await _get(key);
+    String? encodedHabit = await _get(key);
     return encodedHabit != null
         ? Habit.fromJson(jsonDecode(encodedHabit))
         : null;
@@ -373,10 +377,11 @@ LocalManager {
     try {
       String key =
           _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-      List<String> encodedPosts = await _get(key);
+      List<String>? encodedPosts = await _get(key);
       if (encodedPosts != null) {
         return encodedPosts
-            .map((encoded) => Post.fromJson(jsonDecode(encoded))).toList();
+            .map((encoded) => Post.fromJson(jsonDecode(encoded)))
+            .toList();
       } else {
         return [];
       }
@@ -385,22 +390,19 @@ LocalManager {
     }
   }
 
-  static Future<void> setProfilePosts(
-      AuthUser user, List<Post> posts) async {
+  static Future<void> setProfilePosts(AuthUser user, List<Post> posts) async {
     try {
       String key =
           _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-      await _set(
-          key, posts.map((post) => jsonEncode(post.toJson())).toList());
+      await _set(key, posts.map((post) => jsonEncode(post.toJson())).toList());
     } catch (e) {
       throw e;
     }
   }
 
   static Future<void> updateProfilePost(AuthUser user, Post post) async {
-    String key =
-    _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-    List<String> _encodedPosts = await _get(key);
+    String key = _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
+    List<String>? _encodedPosts = await _get(key);
     if (_encodedPosts != null) {
       int index = _encodedPosts.indexWhere((_encodedPost) {
         Map decoded = jsonDecode(_encodedPost);
@@ -414,9 +416,8 @@ LocalManager {
   }
 
   static Future<void> deleteProfilePost(AuthUser user, Post post) async {
-    String key =
-    _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
-    List<String> _encodedPosts = await _get(key);
+    String key = _getKey(_Key.profileTimeLine, {'userId': user.id.toString()});
+    List<String>? _encodedPosts = await _get(key);
     if (_encodedPosts != null) {
       int index = _encodedPosts.indexWhere((_encodedPost) {
         Map decoded = jsonDecode(_encodedPost);
@@ -429,6 +430,7 @@ LocalManager {
       }
     }
   }
+
   //---------------------------------
   //  notification
   //---------------------------------
@@ -459,31 +461,30 @@ LocalManager {
             .toList());
   }
 
-  static Future<List<UserNotification>> getNotifications(AuthUser user) async {
+  static Future<List<UserNotification>?> getNotifications(AuthUser user) async {
     String key = _getKey(_Key.notifications, {'userId': user.id.toString()});
-    List<String> encodedNotifications = await _get(key);
+    List<String>? encodedNotifications = await _get(key);
     if (encodedNotifications != null) {
       List<UserNotification> notifications = encodedNotifications
           .map((notificationJson) =>
               UserNotification.fromJson(jsonDecode(notificationJson)))
           .where((notification) => !notification.expired)
           .toList()
-            ..sort((UserNotification a, UserNotification b) {
-              if (a.createdAt.isBefore(b.createdAt)) {
-                return -1;
-              } else {
-                return 1;
-              }
-            });
+        ..sort((UserNotification a, UserNotification b) {
+          if (a.createdAt.isBefore(b.createdAt)) {
+            return -1;
+          } else {
+            return 1;
+          }
+        });
       await _set(
           key,
           notifications
               .map((notification) => jsonEncode(notification.toJson()))
               .toList());
       return notifications;
-    } else {
-      return null;
     }
+    return null;
   }
 
   static Future<void> deleteNotifications(AuthUser user) async {
@@ -493,10 +494,9 @@ LocalManager {
 
 //  settings
 
-  static Future<Map<String, bool>> getNotificationSetting() async {
-    String key =
-        _getKey(_Key.notificationSetting, {});
-    String allowed = await _get(key);
+  static Future<Map<String, bool>?> getNotificationSetting() async {
+    String key = _getKey(_Key.notificationSetting, {});
+    String? allowed = await _get(key);
     if (allowed == null) {
       return null;
     }
@@ -505,8 +505,7 @@ LocalManager {
   }
 
   static Future<void> setNotificationSetting(Map<String, bool> state) async {
-    String key =
-    _getKey(_Key.notificationSetting, {});
+    String key = _getKey(_Key.notificationSetting, {});
     await _set(key, jsonEncode(state), storeDuration: Duration(minutes: -1));
   }
 
@@ -514,9 +513,9 @@ LocalManager {
   //  recent search
   //---------------------------------
 
-  static Future<void> setRecentSearch(AuthUser user, String text) async {
-    String key =
-    _getKey(_Key.recentSearch, {'userId': user.id.toString()});
+  static Future<void> setRecentSearch(AuthUser? user, String text) async {
+    if (user == null) return;
+    String key = _getKey(_Key.recentSearch, {'userId': user.id.toString()});
     List<String> remaining = await _get(key) ?? <String>[];
     remaining.remove(text);
     remaining.add(text);
@@ -524,14 +523,13 @@ LocalManager {
   }
 
   static Future<List<String>> getRecentSearch(AuthUser user) async {
-    String key =
-    _getKey(_Key.recentSearch, {'userId': user.id.toString()});
+    String key = _getKey(_Key.recentSearch, {'userId': user.id.toString()});
     return await _get(key) ?? <String>[];
   }
 
-  static Future<void> deleteRecentSearch(AuthUser user) async {
-    String key =
-    _getKey(_Key.recentSearch, {'userId': user.id.toString()});
+  static Future<void> deleteRecentSearch(AuthUser? user) async {
+    if (user == null) return;
+    String key = _getKey(_Key.recentSearch, {'userId': user.id.toString()});
     await _remove(key);
   }
 
@@ -540,9 +538,8 @@ LocalManager {
   //---------------------------------
 
   static Future<void> setDraft(AuthUser user, Draft draft) async {
-    String key =
-    _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    String key = _getKey(_Key.draft, {'userId': user.id.toString()});
+    List<String>? encodedDrafts = await _get(key);
     if (encodedDrafts != null) {
       int index = encodedDrafts.indexWhere((data) {
         Map<String, dynamic> dataMap = jsonDecode(data);
@@ -560,9 +557,8 @@ LocalManager {
   }
 
   static Future<List<Draft>> getDrafts(AuthUser user) async {
-    String key =
-    _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    String key = _getKey(_Key.draft, {'userId': user.id.toString()});
+    List<String>? encodedDrafts = await _get(key);
     List<Draft> drafts = <Draft>[];
     if (encodedDrafts == null) {
       return drafts;
@@ -574,9 +570,8 @@ LocalManager {
   }
 
   static Future<void> removeDraft(AuthUser user, Draft draft) async {
-    String key =
-    _getKey(_Key.draft, {'userId': user.id.toString()});
-    List<String> encodedDrafts = await _get(key);
+    String key = _getKey(_Key.draft, {'userId': user.id.toString()});
+    List<String>? encodedDrafts = await _get(key);
     if (encodedDrafts != null) {
       encodedDrafts.removeWhere((d) {
         Map<String, dynamic> decoded = jsonDecode(d);
@@ -595,7 +590,7 @@ LocalManager {
     await _set(key, v);
   }
 
-  static Future<String> getAnalysisVersion() async {
+  static Future<String?> getAnalysisVersion() async {
     String key = _getKey(_Key.analysisLanguage);
     return await _get(key);
   }
@@ -603,6 +598,5 @@ LocalManager {
   static Future<void> removeAnalysisVersion() async {
     String key = _getKey(_Key.analysisLanguage);
     await _remove(key);
-
   }
 }

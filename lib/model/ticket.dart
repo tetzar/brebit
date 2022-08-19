@@ -1,13 +1,11 @@
 
 import 'model.dart';
 
-// ignore: non_constant_identifier_names
-List<Ticket> TicketFromJson(List<dynamic> decodedList) =>
-    new List<Ticket>.from(decodedList.cast<Map>().map((x) => Ticket.fromJson(x)));
+List<Ticket> ticketFromJson(List<dynamic> decodedList) =>
+    new List<Ticket>.from(decodedList.cast<Map<String, dynamic>>().map((x) => Ticket.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> TicketToJson(List<Ticket> remaining) =>
-    new List<dynamic>.from(remaining.map((x) => x.toJson()));
+List<Map> ticketToJson(List<Ticket> remaining) =>
+    new List<Map>.from(remaining.map((x) => x.toJson()));
 
 class Ticket extends Model {
   int id;
@@ -18,12 +16,12 @@ class Ticket extends Model {
   DateTime updatedAt;
 
   Ticket({
-    this.id,
-    this.setNumber,
-    this.remaining,
-    this.habitId,
-    this.createdAt,
-    this.updatedAt,
+    required this.id,
+    required this.setNumber,
+    required this.remaining,
+    required this.habitId,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) => new Ticket(

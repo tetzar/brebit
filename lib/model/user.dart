@@ -13,19 +13,17 @@ import 'model.dart';
 import 'partner.dart';
 import 'post.dart';
 
-// ignore: non_constant_identifier_names
-List<AuthUser> AuthUserFromJson(List<dynamic> decodedList) =>
+List<AuthUser> authUserFromJson(List<dynamic> decodedList) =>
     new List<AuthUser>.from(
-        decodedList.cast<Map>().map((x) => AuthUser.fromJson(x)));
+        decodedList.cast<Map<String, dynamic>>().map((x) => AuthUser.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> AuthUserToJson(List<AuthUser> data) =>
+List<Map> authUserToJson(List<AuthUser> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 enum AdminType { general, administrator, defaultUser, hidden }
 
 class AuthUser extends Model {
-  static AuthUser selfUser;
+  static AuthUser? selfUser;
 
   static List<AuthUser> userList = <AuthUser>[];
 
@@ -43,9 +41,9 @@ class AuthUser extends Model {
   int admin;
   DateTime createdAt;
   DateTime updatedAt;
-  DateTime softDeletedAt;
+  DateTime? softDeletedAt;
   S3Image image;
-  int postCount;
+  int? postCount;
   List<Post> posts = [];
   List<Partner> partners = [];
   List<Category> habitCategories = [];
@@ -54,19 +52,19 @@ class AuthUser extends Model {
   List<int> likedCommentIds = <int>[];
 
   AuthUser({
-    this.name,
-    this.id,
-    this.bio,
-    this.customId,
-    this.admin,
-    this.image,
-    this.createdAt,
-    this.updatedAt,
+    required this.name,
+    required this.id,
+    required this.bio,
+    required this.customId,
+    required this.admin,
+    required this.image,
+    required this.createdAt,
+    required this.updatedAt,
     this.softDeletedAt,
-    this.habitCategories,
-    this.suspendingHabitCategories,
-    this.likedPostIds,
-    this.likedCommentIds,
+    required this.habitCategories,
+    required this.suspendingHabitCategories,
+    required this.likedPostIds,
+    required this.likedCommentIds,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -87,9 +85,9 @@ class AuthUser extends Model {
         admin: json["admin"],
         name: json['name'],
         image: S3Image(json['image_url']),
-        habitCategories: CategoryFromJson(json['habit_categories'] ?? []),
+        habitCategories: categoryFromJson(json['habit_categories'] ?? []),
         suspendingHabitCategories:
-            CategoryFromJson(json['suspending_habit_categories'] ?? []),
+            categoryFromJson(json['suspending_habit_categories'] ?? []),
         likedPostIds: json['liked_post_ids'].length > 0
             ? json['liked_post_ids'].cast<int>() as List<int>
             : <int>[],
@@ -145,38 +143,28 @@ class AuthUser extends Model {
         "custom_id": customId,
         "admin": admin,
         "name": name,
-        "habit_categories": CategoryToJson(this.habitCategories),
+        "habit_categories": categoryToJson(this.habitCategories),
         "suspending_habit_categories":
-            CategoryToJson(this.suspendingHabitCategories),
+            categoryToJson(this.suspendingHabitCategories),
         'liked_post_ids': likedPostIds,
         'liked_comment_ids': likedCommentIds,
       };
 
   static AuthUser find(int searchId) {
     int userIndex = AuthUser.userList.indexWhere((u) => u.id == searchId);
-    if (userIndex < 0) {
-      return null;
-    } else {
-      return AuthUser.userList[userIndex];
-    }
+    return AuthUser.userList[userIndex];
   }
 
-  static String getSelfUid() {
-    FirebaseAuth auth = FirebaseAuth.instance;
-    if (auth.currentUser != null) {
-      return auth.currentUser.uid;
-    } else {
-      return null;
+  static String? getSelfUid() {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      return currentUser.uid;
     }
+    return null;
   }
 
-  static User getSelfUser() {
-    FirebaseAuth auth = FirebaseAuth.instance;
-    if (auth.currentUser != null) {
-      return auth.currentUser;
-    } else {
-      return null;
-    }
+  static User? getSelfUser() {
+    return FirebaseAuth.instance.currentUser;
   }
 
   Future<void> setProfileImageUrl(String url) async{
@@ -184,19 +172,23 @@ class AuthUser extends Model {
   }
 
   String getImageUrl() {
-    return this.image.url ?? '';
+    return this.image.url;
   }
 
   bool hasImage() {
     return this.getImageUrl().length > 0;
   }
 
+  static Widget getDefaultImage() {
+    return Image.asset(
+      'assets/icon/default.png',
+      fit: BoxFit.cover,
+    );
+  }
+
   Widget getImageWidget() {
     if (this.getImageUrl() == "") {
-      return Image.asset(
-        'assets/icon/default.png',
-        fit: BoxFit.cover,
-      );
+      return getDefaultImage();
     }
     return ProfileImageWithS3(this.image);
   }
@@ -274,7 +266,7 @@ class AuthUser extends Model {
     }
   }
 
-  Partner getPartner(AuthUser user) {
+  Partner? getPartner(AuthUser user) {
     int index =
         this.partners.indexWhere((partner) => partner.user.id == user.id);
     if (index < 0) {
@@ -294,9 +286,7 @@ class AuthUser extends Model {
   }
 
   void removePartner(Partner partner) {
-    if (partner != null) {
-      this.partners.removeWhere((p) => p.id == partner.id);
-    }
+    this.partners.removeWhere((p) => p.id == partner.id);
   }
 
   int getPartnerCount() {
@@ -345,15 +335,11 @@ class AuthUser extends Model {
   //---------------------------------
 
   int getPostCount() {
-    if (this.postCount != null) {
-      return this.postCount;
+    int? postCount = this.postCount;
+    if (postCount != null) {
+      return postCount;
     }
-    if (this.posts == null) {
-      this.posts = <Post>[];
-      return 0;
-    } else {
-      return this.posts.length;
-    }
+    return this.posts.length;
   }
 
   Future<bool> deletePost(Post post) async {
@@ -386,7 +372,6 @@ class AuthUser extends Model {
   }
 
   void removePost(Post post) {
-    if (this.posts == null) return;
     this.posts.removeWhere((_post) => _post.id == post.id);
   }
 }

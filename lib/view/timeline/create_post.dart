@@ -12,12 +12,12 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../api/post.dart';
 import '../../../library/cache.dart';
 import '../../../model/draft.dart';
 import '../../../model/habit_log.dart';
 import '../../../model/image.dart' as ImageModel;
 import '../../../model/user.dart';
-import '../../../api/post.dart';
 import '../../../provider/auth.dart';
 import '../../../route/route.dart';
 import '../general/loading.dart';
@@ -37,9 +37,9 @@ class FormValue {
   String _inputData = '';
   List<AssetEntity> _images = <AssetEntity>[];
   List<File> _imageFiles = <File>[];
-  HabitLog _log;
+  HabitLog? _log;
 
-  void setInput(String text) {
+  void setInput(String? text) {
     if (text == null) {
       text = '';
     }
@@ -47,14 +47,12 @@ class FormValue {
   }
 
   String getInput() {
-    if (this._inputData != null) {
-      return this._inputData;
-    }
-    return '';
+    return this._inputData;
   }
 
   Future<bool> setImage(AssetEntity image) async {
-    File imageFile = await getFileFromAssetEntity(image);
+    File? imageFile = await getFileFromAssetEntity(image);
+    if (imageFile == null) return false;
     int index = getSameImageIndex(imageFile);
     if (index >= 0) return false;
     _images.add(image);
@@ -72,16 +70,17 @@ class FormValue {
     return added;
   }
 
-  Future<File> getFileFromAssetEntity(AssetEntity image) async {
-    File imageFile = await image.file;
-    if (!imageFile.isAbsolute) {
+  Future<File?> getFileFromAssetEntity(AssetEntity image) async {
+    File? imageFile = await image.file;
+    if (imageFile != null && !imageFile.isAbsolute) {
       imageFile = imageFile.absolute;
     }
     return imageFile;
   }
 
   Future<bool> unsetImage(AssetEntity image) async {
-    File imageFile = await getFileFromAssetEntity(image);
+    File? imageFile = await getFileFromAssetEntity(image);
+    if (imageFile == null) return false;
     int index = getSameImageIndex(imageFile);
     if (index < 0) return false;
     _images.removeAt(index);
@@ -105,14 +104,16 @@ class FormValue {
   }
 
   Future<bool> isSetImage(AssetEntity image) async {
-    return getSameImageIndex(await getFileFromAssetEntity(image)) >= 0;
+    File? file = await getFileFromAssetEntity(image);
+    if (file == null) return false;
+    return getSameImageIndex(file) >= 0;
   }
 
-  void setLog(HabitLog setLog) {
+  void setLog(HabitLog? setLog) {
     this._log = setLog;
   }
 
-  HabitLog getLog() {
+  HabitLog? getLog() {
     return this._log;
   }
 
@@ -130,7 +131,7 @@ class FormValue {
         this._log != null;
   }
 
-  Draft toDraft([Draft draft]) {
+  Draft toDraft([Draft? draft]) {
     Draft _draft;
     if (draft == null) {
       _draft = Draft();
@@ -146,61 +147,60 @@ class FormValue {
 }
 
 class CreatePostArguments {
-  HabitLog log;
+  HabitLog? log;
 }
 
-FormValue _formValue;
+late FormValue _formValue;
 
-FocusNode _focusNode;
+late FocusNode _focusNode;
 
-PanelController _panelController;
+late PanelController _panelController;
 
-Future<List<AssetEntity>> _futureFiles;
+late Future<List<AssetEntity>?> _futureFiles;
 
-Future<List<AssetEntity>> _getImages() async {
+Future<List<AssetEntity>?> _getImages() async {
   bool result = await Permission.storage.isGranted;
   if (result) {
     List<AssetPathEntity> list =
-    await PhotoManager.getAssetPathList(type: RequestType.image);
-    if (list == null) {
-      return <AssetEntity>[];
-    }
+        await PhotoManager.getAssetPathList(type: RequestType.image);
     if (list.length == 0) {
       return <AssetEntity>[];
     }
-    AssetPathEntity allPath =
-    list.firstWhere((path) => path.isAll, orElse: null);
+    AssetPathEntity? allPath;
+    try {
+      allPath = list.firstWhere((path) => path.isAll);
+    } on StateError {
+      allPath = null;
+    }
     if (allPath == null) {
       list.sort((a, b) => a.assetCount > b.assetCount ? -1 : 1);
       allPath = list.first;
     }
-    final assetList = await allPath.getAssetListRange(start: 0, end: 100);
-    if (assetList == null) {
-      return <AssetEntity>[];
-    }
-    return assetList;
+    return await allPath.getAssetListRange(start: 0, end: 100);
   } else {
     return null;
   }
 }
 
-Future<List<Draft>> _futureDraft;
+late Future<List<Draft>>? _futureDraft;
 
 Future<List<Draft>> _getDrafts(AuthUser user) async {
   List<Draft> drafts = await LocalManager.getDrafts(user);
   return drafts;
 }
 
-bool bottomSheetShowing;
+bool bottomSheetShowing = false;
 //---------------------------------
 //  providers
 //---------------------------------
 
 final _savableProvider =
-StateNotifierProvider.autoDispose((ref) => SavableProvider(false));
+    StateNotifierProvider.autoDispose((ref) => SavableProvider(false));
 
 class SavableProvider extends StateNotifier<bool> {
   SavableProvider(bool state) : super(state);
+
+  bool get savable => state;
 
   void set(bool s) {
     if (state != s) state = s;
@@ -208,12 +208,14 @@ class SavableProvider extends StateNotifier<bool> {
 }
 
 final imageSelectProvider = StateNotifierProvider.autoDispose(
-        (ref) => ImageSelectProvider(<AssetEntity>[]));
+    (ref) => ImageSelectProvider(<AssetEntity>[]));
 
 class ImageSelectProvider extends StateNotifier<List<AssetEntity>> {
   ImageSelectProvider(List<AssetEntity> state) : super(state);
 
   final int maxImages = 4;
+
+  get images => [...state];
 
   Future<void> set(AssetEntity image) async {
     if ((state.length) < maxImages && await _formValue.setImage(image))
@@ -236,16 +238,19 @@ class ImageSelectProvider extends StateNotifier<List<AssetEntity>> {
   }
 
   Future<int> getIndex(AssetEntity image) async {
-    File imageFile = await _formValue.getFileFromAssetEntity(image);
+    File? imageFile = await _formValue.getFileFromAssetEntity(image);
+    if (imageFile == null) return -1;
     return _formValue.getSameImageIndex(imageFile);
   }
 }
 
 final _draftProvider =
-StateNotifierProvider.autoDispose((ref) => DraftProvider(null));
+    StateNotifierProvider.autoDispose((ref) => DraftProvider(null));
 
-class DraftProvider extends StateNotifier<Draft> {
-  DraftProvider(Draft state) : super(state);
+class DraftProvider extends StateNotifier<Draft?> {
+  DraftProvider(Draft? state) : super(state);
+
+  get draft => state;
 
   void set(Draft draft) {
     _formValue.setInput(draft.text);
@@ -257,10 +262,12 @@ class DraftProvider extends StateNotifier<Draft> {
 enum InputState { text, image, disabled }
 
 final _inputScopeProvider = StateNotifierProvider.autoDispose(
-        (ref) => InputScopeProvider(InputState.text));
+    (ref) => InputScopeProvider(InputState.text));
 
 class InputScopeProvider extends StateNotifier<InputState> {
   InputScopeProvider(InputState state) : super(state);
+
+  InputState get inputState => state;
 
   void set(InputState s) {
     if (s == InputState.text) {
@@ -300,10 +307,12 @@ class InputScopeProvider extends StateNotifier<InputState> {
 }
 
 final _showLibraryButtonProvider = StateNotifierProvider.autoDispose(
-        (ref) => ShowLibraryButtonProvider(false));
+    (ref) => ShowLibraryButtonProvider(false));
 
 class ShowLibraryButtonProvider extends StateNotifier<bool> {
   ShowLibraryButtonProvider(bool state) : super(state);
+
+  bool get shown => state;
 
   void show() {
     if (!state) {
@@ -322,19 +331,19 @@ class ShowLibraryButtonProvider extends StateNotifier<bool> {
 //  build
 //---------------------------------
 
-class CreatePost extends StatelessWidget {
+class CreatePost extends ConsumerWidget {
   final CreatePostArguments args;
 
-  CreatePost({@required this.args});
+  CreatePost({required this.args});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       color: Theme.of(context).primaryColor,
       child: SafeArea(
         child: WillPopScope(
           onWillPop: () async {
-            await onBack(context);
+            await onBack(context, ref);
             return false;
           },
           child: Scaffold(
@@ -344,16 +353,21 @@ class CreatePost extends StatelessWidget {
                 actions: [
                   InkWell(
                       onTap: () async {
-                        context.read(_inputScopeProvider).set(InputState.disabled);
-                        Draft draft = await ApplicationRoutes.push(
+                        ref
+                            .read(_inputScopeProvider.notifier)
+                            .set(InputState.disabled);
+                        Draft? draft = await ApplicationRoutes.push(
                             MaterialPageRoute(
-                                builder: (BuildContext context) => DraftScreen()));
+                                builder: (BuildContext context) =>
+                                    DraftScreen()));
                         if (draft != null) {
-                          context.read(_draftProvider).set(draft);
-                          context
-                              .read(imageSelectProvider)
-                              .setAll(draft.imageAssets);
-                          context.read(_savableProvider).set(_formValue.savable());
+                          ref.read(_draftProvider.notifier).set(draft);
+                          ref
+                              .read(imageSelectProvider.notifier)
+                              .setAll(draft.imageAssets ?? []);
+                          ref
+                              .read(_savableProvider.notifier)
+                              .set(_formValue.savable());
                         }
                       },
                       child: Container(
@@ -362,9 +376,7 @@ class CreatePost extends StatelessWidget {
                         child: Text(
                           '下書き',
                           style: TextStyle(
-                              color: Theme
-                                  .of(context)
-                                  .accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w700),
                         ),
@@ -377,9 +389,11 @@ class CreatePost extends StatelessWidget {
                         onTap: () async {
                           await save();
                         },
-                        child: HookBuilder(
-                          builder: (BuildContext context) {
-                            bool savable = useProvider(_savableProvider.state);
+                        child: Consumer(
+                          builder: (BuildContext context, ref, child) {
+                            ref.watch(_savableProvider);
+                            bool savable =
+                                ref.read(_savableProvider.notifier).savable;
                             return Container(
                               margin: EdgeInsets.only(right: 16),
                               width: 84,
@@ -387,20 +401,16 @@ class CreatePost extends StatelessWidget {
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(17),
                                   color: savable
-                                      ? Theme
-                                      .of(context)
-                                      .accentColor
-                                      : Theme
-                                      .of(context)
-                                      .accentColor
-                                      .withOpacity(0.4)),
+                                      ? Theme.of(context).colorScheme.secondary
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .secondary
+                                          .withOpacity(0.4)),
                               alignment: Alignment.center,
                               child: Text(
                                 'ポスト',
                                 style: TextStyle(
-                                    color: Theme
-                                        .of(context)
-                                        .primaryColor,
+                                    color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12),
                               ),
@@ -412,7 +422,7 @@ class CreatePost extends StatelessWidget {
                   ),
                 ],
                 onBack: () async {
-                  await onBack(context);
+                  await onBack(context, ref);
                 },
                 background: AppBarBackground.white),
             body: InputForm(
@@ -434,7 +444,8 @@ class CreatePost extends StatelessWidget {
         MyLoading.startLoading();
         List<File> files = [];
         for (AssetEntity asset in _formValue.getImages()) {
-          File file = await asset.file;
+          File? file = await asset.file;
+          if (file == null) continue;
           file = await ImageModel.Image.resizeImage(file);
           files.add(file);
         }
@@ -449,13 +460,13 @@ class CreatePost extends StatelessWidget {
     }
   }
 
-  Future<void> onBack(BuildContext context) async {
+  Future<void> onBack(BuildContext context, WidgetRef ref) async {
     if (!_formValue.savable()) {
       _focusNode.unfocus();
       ApplicationRoutes.pop();
       return;
     }
-    context.read(_inputScopeProvider).set(InputState.disabled);
+    ref.read(_inputScopeProvider.notifier).set(InputState.disabled);
     Timer(Duration(milliseconds: 300), () {
       if (bottomSheetShowing) {
         return;
@@ -465,40 +476,40 @@ class CreatePost extends StatelessWidget {
           items: <BottomSheetItem>[
             BottomSheetItem(
                 onTap: () {
-                  if (context.read(_draftProvider.state) != null) {
+                  AuthUser? user = ref.read(authProvider.notifier).user;
+                  if (user != null &&
+                      ref.read(_draftProvider.notifier).draft != null) {
                     LocalManager.removeDraft(
-                        context
-                            .read(authProvider.state)
-                            .user,
-                        context.read(_draftProvider.state));
+                        user, ref.read(_draftProvider.notifier).draft);
                   }
                   Navigator.pop(context);
                   Navigator.pop(context);
                 },
                 child: Text(
                   '投稿を破棄',
-                  style: Theme
-                      .of(context)
-                      .accentTextTheme
+                  style: Theme.of(context)
+                      .primaryTextTheme
                       .subtitle1
-                      .copyWith(fontSize: 18),
+                      ?.copyWith(fontSize: 18),
                 )),
             BottomSheetItem(
                 onTap: () {
-                  LocalManager.setDraft(context
-                      .read(authProvider.state)
-                      .user,
-                      _formValue.toDraft(context.read(_draftProvider.state)));
+                  AuthUser? user = ref.read(authProvider.notifier).user;
+                  if (user != null) {
+                    LocalManager.setDraft(
+                        user,
+                        _formValue
+                            .toDraft(ref.read(_draftProvider.notifier).draft));
+                  }
                   Navigator.pop(context);
                   Navigator.pop(context);
                 },
                 child: Text(
                   '下書きに保存',
-                  style: Theme
-                      .of(context)
+                  style: Theme.of(context)
                       .textTheme
                       .bodyText1
-                      .copyWith(fontWeight: FontWeight.w700, fontSize: 18),
+                      ?.copyWith(fontWeight: FontWeight.w700, fontSize: 18),
                 )),
             BottomSheetItem(
                 onTap: () {
@@ -507,16 +518,12 @@ class CreatePost extends StatelessWidget {
                 child: Text(
                   'キャンセル',
                   style: TextStyle(
-                      color: Theme
-                          .of(context)
-                          .disabledColor,
+                      color: Theme.of(context).disabledColor,
                       fontSize: 18,
                       fontWeight: FontWeight.w700),
                 ))
           ],
-          backGroundColor: Theme
-              .of(context)
-              .primaryColor,
+          backGroundColor: Theme.of(context).primaryColor,
           context: context,
           onClosed: () {
             bottomSheetShowing = false;
@@ -525,19 +532,19 @@ class CreatePost extends StatelessWidget {
   }
 }
 
-class InputForm extends StatefulHookWidget {
-  final CreatePostArguments args;
+class InputForm extends ConsumerStatefulWidget {
+  final CreatePostArguments? args;
 
-  InputForm({@required this.args});
+  InputForm({this.args});
 
   @override
   _InputFormState createState() => _InputFormState();
 }
 
-class _InputFormState extends State<InputForm> {
-  bool keyboardVisible;
-  TextEditingController _controller;
-  ImageChangedNotifier imageChangedNotifier;
+class _InputFormState extends ConsumerState<InputForm> {
+  bool keyboardVisible = false;
+  late TextEditingController _controller;
+  late ImageChangedNotifier imageChangedNotifier;
 
   @override
   void initState() {
@@ -545,12 +552,11 @@ class _InputFormState extends State<InputForm> {
     bottomSheetShowing = false;
     _futureFiles = _getImages();
     _formValue = new FormValue();
-    if (widget.args != null) {
-      if (widget.args.log != null) {
-        _formValue.setLog(widget.args.log);
-      }
+    CreatePostArguments? args = widget.args;
+    if (args != null && args.log != null) {
+      _formValue.setLog(args.log);
     }
-    context.read(_showLibraryButtonProvider).hide();
+    ref.read(_showLibraryButtonProvider.notifier).hide();
     var keyboardVisibilityController = KeyboardVisibilityController();
     keyboardVisibilityController.onChange.listen((bool visible) {
       if (!visible) {
@@ -560,19 +566,20 @@ class _InputFormState extends State<InputForm> {
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
-        context.read(_inputScopeProvider).set(InputState.text);
+        ref.read(_inputScopeProvider.notifier).set(InputState.text);
       } else {
-        if (!context.read(_inputScopeProvider).isImage()) {
-          context.read(_inputScopeProvider).set(InputState.disabled);
+        if (!ref.read(_inputScopeProvider.notifier).isImage()) {
+          ref.read(_inputScopeProvider.notifier).set(InputState.disabled);
         }
       }
     });
-    _futureDraft = _getDrafts(context
-        .read(authProvider.state)
-        .user);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user != null) {
+      _futureDraft = _getDrafts(user);
+    }
     _controller = TextEditingController();
     _panelController = new PanelController();
-    context.read(_savableProvider).set(_formValue.savable());
+    ref.read(_savableProvider.notifier).set(_formValue.savable());
     imageChangedNotifier = new ImageChangedNotifier();
   }
 
@@ -584,7 +591,7 @@ class _InputFormState extends State<InputForm> {
 
   @override
   Widget build(BuildContext context) {
-    useProvider(_draftProvider.state);
+    ref.watch(_draftProvider);
     List<Widget> _formWidgets = <Widget>[];
     String text = _formValue.getInput();
     _controller.text = text;
@@ -592,16 +599,12 @@ class _InputFormState extends State<InputForm> {
       // controller: _controller,
       onChanged: (String value) {
         _formValue.setInput(value);
-        context.read(_savableProvider).set(_formValue.savable());
+        ref.read(_savableProvider.notifier).set(_formValue.savable());
       },
-      style: Theme
-          .of(context)
-          .textTheme
-          .bodyText1
-          .copyWith(
-        fontWeight: FontWeight.w400,
-        fontSize: 15,
-      ),
+      style: Theme.of(context).textTheme.bodyText1?.copyWith(
+            fontWeight: FontWeight.w400,
+            fontSize: 15,
+          ),
       autofocus: true,
       focusNode: _focusNode,
       maxLines: null,
@@ -611,13 +614,9 @@ class _InputFormState extends State<InputForm> {
           fillColor: Colors.transparent,
           hintText: '日記・ひとことメモ',
           hintStyle:
-          Theme
-              .of(context)
-              .textTheme
-              .subtitle1
-              .copyWith(fontSize: 15)),
+              Theme.of(context).textTheme.subtitle1?.copyWith(fontSize: 15)),
     ));
-    HabitLog log = _formValue.getLog();
+    HabitLog? log = _formValue.getLog();
     if (log != null) {
       _formWidgets.add(LogCard(
         log: log,
@@ -626,7 +625,9 @@ class _InputFormState extends State<InputForm> {
     _formWidgets.add(SelectedImages(changeNotifier: imageChangedNotifier));
     _formWidgets.add(HookBuilder(
       builder: (BuildContext context) {
-        InputState _inputState = useProvider(_inputScopeProvider.state);
+        ref.watch(_inputScopeProvider);
+        InputState _inputState =
+            ref.read(_inputScopeProvider.notifier).inputState;
         return SizedBox(
           width: double.infinity,
           height: _inputState == InputState.image ? 310 : 50,
@@ -643,9 +644,7 @@ class _InputFormState extends State<InputForm> {
     return Stack(
       children: [
         Container(
-          color: Theme
-              .of(context)
-              .primaryColor,
+          color: Theme.of(context).primaryColor,
           height: double.infinity,
           padding: EdgeInsets.symmetric(horizontal: 24),
           child: SingleChildScrollView(
@@ -658,32 +657,28 @@ class _InputFormState extends State<InputForm> {
             minHeight: 44,
             boxShadow: [BoxShadow(color: Colors.transparent)],
             maxHeight: 304,
-            color: Theme
-                .of(context)
-                .primaryColor,
+            color: Theme.of(context).primaryColor,
             isDraggable: false,
             controller: _panelController,
             defaultPanelState: PanelState.CLOSED,
             onPanelOpened: () {
-              context.read(_showLibraryButtonProvider).show();
+              ref.read(_showLibraryButtonProvider.notifier).show();
             },
             onPanelClosed: () {
-              context.read(_showLibraryButtonProvider).hide();
+              ref.read(_showLibraryButtonProvider.notifier).hide();
             },
             panel: Container(
-                width: MediaQuery
-                    .of(context)
-                    .size
-                    .width,
+                width: MediaQuery.of(context).size.width,
                 child: Column(
                   children: widgets,
                 ))),
         Positioned(
           left: 16,
           bottom: 16,
-          child: HookBuilder(
-            builder: (BuildContext context) {
-              bool _show = useProvider(_showLibraryButtonProvider.state);
+          child: Consumer(
+            builder: (BuildContext context, ref, child) {
+              ref.watch(_showLibraryButtonProvider);
+              bool _show = ref.read(_showLibraryButtonProvider.notifier).shown;
               if (_show) {
                 return InkWell(
                   onTap: () async {
@@ -698,14 +693,10 @@ class _InputFormState extends State<InputForm> {
                           padding: EdgeInsets.symmetric(horizontal: 24),
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(17),
-                              color: Theme
-                                  .of(context)
-                                  .primaryColor,
+                              color: Theme.of(context).primaryColor,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme
-                                      .of(context)
-                                      .shadowColor,
+                                  color: Theme.of(context).shadowColor,
                                   spreadRadius: 1,
                                   blurRadius: 4,
                                   offset: Offset(0, 0),
@@ -721,17 +712,15 @@ class _InputFormState extends State<InputForm> {
                                 child: Icon(
                                   Icons.photo_library_rounded,
                                   size: 12,
-                                  color: Theme
-                                      .of(context)
-                                      .accentColor,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
                                 ),
                               ),
                               Text(
                                 'ライブラリ',
                                 style: TextStyle(
-                                    color: Theme
-                                        .of(context)
-                                        .accentColor,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700),
                               )
@@ -758,34 +747,38 @@ class _InputFormState extends State<InputForm> {
   Future<void> pickImage(BuildContext context) async {
     try {
       List<AssetEntity> assets = await MyMultiImagePicker.pickImages(
-          max: 4, selected: context.read(imageSelectProvider.state).toList(growable: true));
-      if (assets == null) return;
-      List<File> currentSelected = await ImageManager.assetEntitiesToFiles(context.read(
-          imageSelectProvider.state).toList(growable: false));
-      await context.read(imageSelectProvider).setAll(assets);
-      imageChangedNotifier.notify(
-        currentSelected.map((f) => f.path).toList(growable: false)
-      );
-      await imageChangedNotifier.notifyToSelected(context);
+          max: 4,
+          selected: ref
+              .read(imageSelectProvider.notifier)
+              .images
+              .toList(growable: true));
+      List<File> currentSelected = await ImageManager.assetEntitiesToFiles(ref
+          .read(imageSelectProvider.notifier)
+          .images
+          .toList(growable: false));
+      await ref.read(imageSelectProvider.notifier).setAll(assets);
+      imageChangedNotifier
+          .notify(currentSelected.map((f) => f.path).toList(growable: false));
+      await imageChangedNotifier.notifyToSelected(ref);
     } on Exception catch (e) {
       throw e;
     }
   }
 }
 
-class InputSwitcher extends StatefulHookWidget {
+class InputSwitcher extends ConsumerStatefulWidget {
   final double switcherHeight;
 
-  InputSwitcher({@required this.switcherHeight});
+  InputSwitcher({required this.switcherHeight});
 
   @override
   _InputSwitcherState createState() => _InputSwitcherState();
 }
 
-class _InputSwitcherState extends State<InputSwitcher> {
+class _InputSwitcherState extends ConsumerState<InputSwitcher> {
   @override
   Widget build(BuildContext context) {
-    useProvider(_inputScopeProvider.state);
+    ref.watch(_inputScopeProvider);
     return Container(
       margin: EdgeInsets.only(left: 14),
       child: Row(
@@ -793,20 +786,20 @@ class _InputSwitcherState extends State<InputSwitcher> {
         children: [
           getButton(
               icon: Icons.keyboard,
-              selected: context.read(_inputScopeProvider).isText(),
+              selected: ref.read(_inputScopeProvider.notifier).isText(),
               context: context,
               onTap: () {
-                if (!context.read(_inputScopeProvider).isText()) {
+                if (!ref.read(_inputScopeProvider.notifier).isText()) {
                   showKeyboard(context);
                 }
               },
               iconSize: 24),
           getButton(
               icon: Icons.image,
-              selected: context.read(_inputScopeProvider).isImage(),
+              selected: ref.read(_inputScopeProvider.notifier).isImage(),
               context: context,
               onTap: () {
-                if (!context.read(_inputScopeProvider).isImage()) {
+                if (!ref.read(_inputScopeProvider.notifier).isImage()) {
                   showImagePicker(context);
                 }
               },
@@ -816,18 +809,15 @@ class _InputSwitcherState extends State<InputSwitcher> {
     );
   }
 
-  Widget getButton({@required IconData icon,
-    @required bool selected,
-    @required BuildContext context,
-    @required Function onTap,
-    @required double iconSize}) {
+  Widget getButton(
+      {required IconData icon,
+      required bool selected,
+      required BuildContext context,
+      required void Function() onTap,
+      required double iconSize}) {
     Color color = selected
-        ? Theme
-        .of(context)
-        .accentColor
-        : Theme
-        .of(context)
-        .disabledColor;
+        ? Theme.of(context).colorScheme.secondary
+        : Theme.of(context).disabledColor;
     return InkWell(
         onTap: onTap,
         child: Container(
@@ -867,11 +857,11 @@ class _InputSwitcherState extends State<InputSwitcher> {
   }
 
   void showImagePicker(BuildContext context) {
-    context.read(_inputScopeProvider).set(InputState.image);
+    ref.read(_inputScopeProvider.notifier).set(InputState.image);
   }
 
   void showKeyboard(BuildContext context) {
-    context.read(_inputScopeProvider).set(InputState.text);
+    ref.read(_inputScopeProvider.notifier).set(InputState.text);
   }
 }
 
@@ -884,29 +874,34 @@ class ImageChangedNotifier {
 
   void notify(List<String> paths) {
     for (String path in paths) {
-      VoidCallback callback = listeners[path];
+      VoidCallback? callback = listeners[path];
       if (callback != null) callback();
     }
   }
 
-  Future<void> notifyToSelected(BuildContext context) async {
-    await notifyChangeToCardWithAssets(context.read(imageSelectProvider.state));
+  Future<void> notifyToSelected(WidgetRef ref) async {
+    await notifyChangeToCardWithAssets(
+        ref.read(imageSelectProvider.notifier).images);
   }
 
   Future<void> notifyChangeToCardWithAssets(List<AssetEntity> assets) async {
-    notify((await ImageManager.assetEntitiesToFiles(assets.toList(growable: false)))
-        .map((f) => f.path).toList(growable: false));
+    notify((await ImageManager.assetEntitiesToFiles(
+            assets.toList(growable: false)))
+        .map((f) => f.path)
+        .toList(growable: false));
   }
 }
 
-class SelectedImages extends HookWidget {
+class SelectedImages extends ConsumerWidget {
   final ImageChangedNotifier changeNotifier;
 
-  SelectedImages({@required this.changeNotifier});
+  SelectedImages({required this.changeNotifier});
 
   @override
-  Widget build(BuildContext context) {
-    List<AssetEntity> imageAssets = useProvider(imageSelectProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(imageSelectProvider);
+    List<AssetEntity> imageAssets =
+        ref.read(imageSelectProvider.notifier).images;
     List<ImageCard> images = <ImageCard>[];
     int i = 0;
     imageAssets.forEach((asset) {
@@ -929,29 +924,31 @@ class SelectedImages extends HookWidget {
   }
 }
 
-class ImageCard extends StatefulWidget {
+class ImageCard extends ConsumerStatefulWidget {
   final AssetEntity imageAsset;
   final bool isFirst;
   final ImageChangedNotifier changeNotifier;
 
-  ImageCard({@required this.imageAsset,
-    @required this.isFirst,
-    @required this.changeNotifier});
+  ImageCard(
+      {required this.imageAsset,
+      required this.isFirst,
+      required this.changeNotifier});
 
   @override
   _ImageCardState createState() => _ImageCardState();
 }
 
-class _ImageCardState extends State<ImageCard> {
-  Uint8List _image;
+class _ImageCardState extends ConsumerState<ImageCard> {
+  Uint8List? _image;
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.imageAsset
-          .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
-          quality: ThumbSize.QUALITY)
-          .then((Uint8List _data) {
+          .thumbnailDataWithSize(
+              ThumbnailSize(ThumbSize.WIDTH, ThumbSize.HEIGHT),
+              quality: ThumbSize.QUALITY)
+          .then((Uint8List? _data) {
         setState(() {
           _image = _data;
         });
@@ -963,9 +960,9 @@ class _ImageCardState extends State<ImageCard> {
   @override
   void didUpdateWidget(covariant ImageCard oldWidget) {
     widget.imageAsset
-        .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
-        quality: ThumbSize.QUALITY)
-        .then((Uint8List _data) {
+        .thumbnailDataWithSize(ThumbnailSize(ThumbSize.WIDTH, ThumbSize.HEIGHT),
+            quality: ThumbSize.QUALITY)
+        .then((Uint8List? _data) {
       setState(() {
         _image = _data;
       });
@@ -976,20 +973,19 @@ class _ImageCardState extends State<ImageCard> {
   @override
   Widget build(BuildContext context) {
     Widget child;
-    if (_image == null) {
+    Uint8List? image = this._image;
+    if (image == null) {
       child = Container(
         width: double.infinity,
         height: double.infinity,
-        color: Theme
-            .of(context)
-            .disabledColor,
+        color: Theme.of(context).disabledColor,
       );
     } else {
       child = Container(
         width: double.infinity,
         height: double.infinity,
         child: Image.memory(
-          _image,
+          image,
           fit: BoxFit.cover,
         ),
       );
@@ -997,9 +993,7 @@ class _ImageCardState extends State<ImageCard> {
     return Container(
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: Theme
-              .of(context)
-              .disabledColor),
+          color: Theme.of(context).disabledColor),
       width: 100,
       height: 100,
       margin: EdgeInsets.only(left: widget.isFirst ? 0 : 8),
@@ -1011,16 +1005,14 @@ class _ImageCardState extends State<ImageCard> {
             top: 6,
             child: InkWell(
                 onTap: () {
-                  removeImage(context);
+                  removeImage(ref);
                 },
                 child: Container(
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Theme
-                          .of(context)
-                          .primaryColor),
+                      color: Theme.of(context).primaryColor),
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.clear,
@@ -1033,17 +1025,17 @@ class _ImageCardState extends State<ImageCard> {
     );
   }
 
-  void removeImage(BuildContext context) {
-    context.read(imageSelectProvider).unset(widget.imageAsset);
-    context.read(_savableProvider).set(_formValue.savable());
-    widget.changeNotifier.notifyToSelected(context);
+  void removeImage(WidgetRef ref) {
+    ref.read(imageSelectProvider.notifier).unset(widget.imageAsset);
+    ref.read(_savableProvider.notifier).set(_formValue.savable());
+    widget.changeNotifier.notifyToSelected(ref);
   }
 }
 
 class ImagePick extends StatefulWidget {
   final ImageChangedNotifier changeNotifier;
 
-  ImagePick({@required this.changeNotifier});
+  ImagePick({required this.changeNotifier});
 
   @override
   _ImagePickState createState() => _ImagePickState();
@@ -1077,11 +1069,10 @@ class _ImagePickState extends State<ImagePick>
                   children: [
                     Text(
                       'ポストに写真を追加するには、Brebitによる写真へのアクセスを許可してください。',
-                      style: Theme
-                          .of(context)
+                      style: Theme.of(context)
                           .textTheme
                           .subtitle1
-                          .copyWith(fontSize: 12, fontWeight: FontWeight.w400),
+                          ?.copyWith(fontSize: 12, fontWeight: FontWeight.w400),
                     ),
                     SizedBox(
                       height: 32,
@@ -1090,9 +1081,7 @@ class _ImagePickState extends State<ImagePick>
                       child: Text(
                         '写真へのアクセスを許可',
                         style: TextStyle(
-                            color: Theme
-                                .of(context)
-                                .accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                             fontWeight: FontWeight.w700,
                             fontSize: 12),
                       ),
@@ -1128,9 +1117,7 @@ class _ImagePickState extends State<ImagePick>
   }
 
   Future<void> requestLibraryPermission() async {
-    if (await Permission.storage
-        .request()
-        .isGranted) {
+    if (await Permission.storage.request().isGranted) {
       setState(() {
         _futureFiles = _getImages();
       });
@@ -1140,31 +1127,32 @@ class _ImagePickState extends State<ImagePick>
   }
 }
 
-class ImageTile extends StatefulWidget {
+class ImageTile extends ConsumerStatefulWidget {
   final AssetEntity imageAsset;
   final ImageChangedNotifier changeNotifier;
 
   ImageTile({
-    @required this.imageAsset,
-    @required this.changeNotifier,
+    required this.imageAsset,
+    required this.changeNotifier,
   });
 
   @override
   _ImageTileState createState() => _ImageTileState();
 }
 
-class _ImageTileState extends State<ImageTile> {
-  Uint8List image;
+class _ImageTileState extends ConsumerState<ImageTile> {
+  Uint8List? image;
   int index = -1;
-  VoidCallback changeIndexListener;
+  late VoidCallback changeIndexListener;
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.imageAsset
-          .thumbDataWithSize(ThumbSize.WIDTH, ThumbSize.HEIGHT,
-          quality: ThumbSize.QUALITY)
-          .then((Uint8List data) {
+          .thumbnailDataWithSize(
+              ThumbnailSize(ThumbSize.WIDTH, ThumbSize.HEIGHT),
+              quality: ThumbSize.QUALITY)
+          .then((Uint8List? data) {
         if (mounted) {
           setState(() {
             image = data;
@@ -1173,17 +1161,22 @@ class _ImageTileState extends State<ImageTile> {
       });
     });
     changeIndexListener = () {
-      getIndex(context);
+      getIndex(ref);
     };
     ImageManager.assetEntityToFile(widget.imageAsset).then((file) {
-      widget.changeNotifier.addListener(changeIndexListener, file.path);
+      if (file != null) {
+        widget.changeNotifier.addListener(changeIndexListener, file.path);
+      }
     });
-    getIndex(context);
+    getIndex(ref);
     super.initState();
   }
 
-  void getIndex(BuildContext context) {
-    context.read(imageSelectProvider).getIndex(widget.imageAsset).then((i) {
+  void getIndex(WidgetRef ref) {
+    ref
+        .read(imageSelectProvider.notifier)
+        .getIndex(widget.imageAsset)
+        .then((i) {
       this.setIndex(i);
     });
   }
@@ -1199,13 +1192,12 @@ class _ImageTileState extends State<ImageTile> {
   Widget build(BuildContext context) {
     bool isSelected = index >= 0;
     Widget child;
+    Uint8List? image = this.image;
     if (image == null) {
       child = Container(
         width: double.infinity,
         height: double.infinity,
-        color: Theme
-            .of(context)
-            .disabledColor,
+        color: Theme.of(context).disabledColor,
       );
     } else {
       child = Container(
@@ -1222,13 +1214,15 @@ class _ImageTileState extends State<ImageTile> {
     return InkWell(
         onTap: () async {
           if (isSelected) {
-            await context.read(imageSelectProvider).unset(widget.imageAsset);
+            await ref
+                .read(imageSelectProvider.notifier)
+                .unset(widget.imageAsset);
           } else {
-            await context.read(imageSelectProvider).set(widget.imageAsset);
+            await ref.read(imageSelectProvider.notifier).set(widget.imageAsset);
           }
-          context.read(_savableProvider).set(_formValue.savable());
-          await widget.changeNotifier.notifyToSelected(context);
-          getIndex(context);
+          ref.read(_savableProvider.notifier).set(_formValue.savable());
+          await widget.changeNotifier.notifyToSelected(ref);
+          getIndex(ref);
         },
         child: Container(
           width: 129,
@@ -1244,30 +1238,27 @@ class _ImageTileState extends State<ImageTile> {
               ),
               isSelected
                   ? Positioned(
-                  right: 4,
-                  top: 4,
-                  height: 20,
-                  width: 20,
-                  child: Container(
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme
-                            .of(context)
-                            .primaryColor),
-                    alignment: Alignment.center,
-                    child: Text(
-                      (index + 1).toString(),
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .bodyText1
-                          .copyWith(fontSize: 10),
-                    ),
-                  ))
+                      right: 4,
+                      top: 4,
+                      height: 20,
+                      width: 20,
+                      child: Container(
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).primaryColor),
+                        alignment: Alignment.center,
+                        child: Text(
+                          (index + 1).toString(),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyText1
+                              ?.copyWith(fontSize: 10),
+                        ),
+                      ))
                   : Container(
-                width: 0,
-                height: 0,
-              )
+                      width: 0,
+                      height: 0,
+                    )
             ],
           ),
         ));
@@ -1296,13 +1287,8 @@ class DraftList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: double.infinity,
-      width: MediaQuery
-          .of(context)
-          .size
-          .width,
-      color: Theme
-          .of(context)
-          .primaryColor,
+      width: MediaQuery.of(context).size.width,
+      color: Theme.of(context).primaryColor,
       child: FutureBuilder(
         future: _futureDraft,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -1330,14 +1316,14 @@ class DraftList extends StatelessWidget {
 class DraftTile extends StatefulWidget {
   final Draft draft;
 
-  DraftTile({@required this.draft});
+  DraftTile({required this.draft});
 
   @override
   _DraftTileState createState() => _DraftTileState();
 }
 
 class _DraftTileState extends State<DraftTile> {
-  List<Uint8List> _imageData;
+  List<Uint8List>? _imageData;
 
   @override
   void initState() {
@@ -1354,18 +1340,16 @@ class _DraftTileState extends State<DraftTile> {
     List<Widget> rowChildren = <Widget>[];
     List<Widget> columnChildren = <Widget>[];
     rowChildren.add(Expanded(
-      child: Text(widget.draft.text ?? '',
-          style: Theme
-              .of(context)
-              .textTheme
-              .bodyText1
-              .copyWith(fontSize: 15)),
+      child: Text(widget.draft.text,
+          style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 15)),
     ));
-    if (widget.draft.imageAssets != null) {
-      if (widget.draft.imageAssets.length > 0) {
+    List<AssetEntity>? imageAssets = widget.draft.imageAssets;
+    if (imageAssets != null) {
+      if (imageAssets.length > 0) {
         Duration duration = Duration(milliseconds: 200);
         Widget images;
-        switch (widget.draft.imageAssets.length) {
+        List<Uint8List>? _imageData = this._imageData;
+        switch (imageAssets.length) {
           case 1:
             images = AnimatedContainer(
               duration: duration,
@@ -1373,15 +1357,13 @@ class _DraftTileState extends State<DraftTile> {
               height: 60,
               width: 60,
               decoration: BoxDecoration(
-                  color: Theme
-                      .of(context)
-                      .disabledColor,
+                  color: Theme.of(context).disabledColor,
                   borderRadius: BorderRadius.circular(8),
                   image: _imageData == null
                       ? null
                       : DecorationImage(
-                      image: MemoryImage(_imageData[0]),
-                      fit: BoxFit.cover)),
+                          image: MemoryImage(_imageData[0]),
+                          fit: BoxFit.cover)),
             );
             break;
           case 2:
@@ -1402,24 +1384,24 @@ class _DraftTileState extends State<DraftTile> {
                           image: _imageData == null
                               ? null
                               : DecorationImage(
-                              image: MemoryImage(_imageData[0]),
-                              fit: BoxFit.cover)),
+                                  image: MemoryImage(_imageData[0]),
+                                  fit: BoxFit.cover)),
                     ),
                   ),
                   Expanded(
                       child: AnimatedContainer(
-                        duration: duration,
-                        margin: EdgeInsets.only(left: 0.5),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                                topRight: Radius.circular(8),
-                                bottomRight: Radius.circular(8)),
-                            image: _imageData == null
-                                ? null
-                                : DecorationImage(
+                    duration: duration,
+                    margin: EdgeInsets.only(left: 0.5),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8)),
+                        image: _imageData == null
+                            ? null
+                            : DecorationImage(
                                 image: MemoryImage(_imageData[1]),
                                 fit: BoxFit.cover)),
-                      ))
+                  ))
                 ],
               ),
             );
@@ -1442,46 +1424,46 @@ class _DraftTileState extends State<DraftTile> {
                           image: _imageData == null
                               ? null
                               : DecorationImage(
-                              image: MemoryImage(_imageData[0]),
-                              fit: BoxFit.cover)),
+                                  image: MemoryImage(_imageData[0]),
+                                  fit: BoxFit.cover)),
                     ),
                   ),
                   Expanded(
                       child: Container(
-                        margin: EdgeInsets.only(left: 0.5),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(bottom: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        topRight: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                    margin: EdgeInsets.only(left: 0.5),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(bottom: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[1]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(top: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        bottomRight: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                          ),
+                        ),
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(top: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    bottomRight: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[2]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ))
+                      ],
+                    ),
+                  ))
                 ],
               ),
             );
@@ -1495,76 +1477,76 @@ class _DraftTileState extends State<DraftTile> {
                 children: [
                   Expanded(
                       child: Container(
-                        margin: EdgeInsets.only(right: 0.5),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(bottom: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                    margin: EdgeInsets.only(right: 0.5),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(bottom: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[0]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(top: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        bottomLeft: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                          ),
+                        ),
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(top: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[1]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      )),
+                      ],
+                    ),
+                  )),
                   Expanded(
                       child: Container(
-                        margin: EdgeInsets.only(left: 0.5),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(bottom: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        topRight: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                    margin: EdgeInsets.only(left: 0.5),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(bottom: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[2]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                            Expanded(
-                              child: AnimatedContainer(
-                                duration: duration,
-                                margin: EdgeInsets.only(top: 0.5),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                        bottomRight: Radius.circular(8)),
-                                    image: _imageData == null
-                                        ? null
-                                        : DecorationImage(
+                          ),
+                        ),
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: duration,
+                            margin: EdgeInsets.only(top: 0.5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                    bottomRight: Radius.circular(8)),
+                                image: _imageData == null
+                                    ? null
+                                    : DecorationImage(
                                         image: MemoryImage(_imageData[3]),
                                         fit: BoxFit.cover)),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ))
+                      ],
+                    ),
+                  ))
                 ],
               ),
             );
@@ -1593,13 +1575,13 @@ class _DraftTileState extends State<DraftTile> {
   }
 
   Future<List<Uint8List>> getImageData() async {
-    List<AssetEntity> assets = widget.draft.imageAssets;
+    List<AssetEntity> assets = widget.draft.imageAssets ?? [];
     List<Uint8List> data = <Uint8List>[];
     for (AssetEntity asset in assets) {
-      Uint8List d = await asset.thumbDataWithSize(
-          ThumbSize.WIDTH, ThumbSize.HEIGHT,
+      Uint8List? d = await asset.thumbnailDataWithSize(
+          ThumbnailSize(ThumbSize.WIDTH, ThumbSize.HEIGHT),
           quality: ThumbSize.QUALITY);
-      data.add(d);
+      if (d != null) data.add(d);
     }
     return data;
   }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:brebit/view/general/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../../../api/habit.dart';
 import '../../../../model/category.dart';
@@ -19,7 +18,7 @@ class SNSInformation extends StatefulWidget {
 }
 
 class _SNSInformationState extends State<SNSInformation> {
-  final Category _category = Category.findWhereNameIs('sns');
+  final Category _category = Category.findFromCategoryName(CategoryName.sns);
 
   Map<String, int> data = <String, int>{'target-minutes': 0, 'target-hours': 0};
 
@@ -69,7 +68,6 @@ class _SNSInformationState extends State<SNSInformation> {
                 if (!data.containsKey('minutes') &&
                     !data.containsKey('hours')) {
                   ApplicationRoutes.pop();
-                  return true;
                 }
               }
               showDialog(
@@ -206,7 +204,7 @@ class _SNSInformationState extends State<SNSInformation> {
       return false;
     }
     if (data.containsKey('hours') && data.containsKey('minutes')) {
-      if (!(data['hours'] > 0.0) && !(data['minutes'] > 0.0)) {
+      if (!(data['hours']! > 0.0) && !(data['minutes']! > 0.0)) {
         return false;
       }
     } else {
@@ -219,8 +217,8 @@ class _SNSInformationState extends State<SNSInformation> {
     if (savable()) {
       Map<String, double> _data = <String, double>{};
       _data['limit'] =
-          (data['target-hours'] * 60 + data['target-minutes']).toDouble();
-      _data['average'] = (data['hours'] * 60 + data['minutes']).toDouble();
+          (data['target-hours']! * 60 + data['target-minutes']!).toDouble();
+      _data['average'] = (data['hours']! * 60 + data['minutes']!).toDouble();
       MyLoading.startLoading();
       try {
         Map<String, dynamic> result =

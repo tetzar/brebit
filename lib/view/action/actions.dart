@@ -1,11 +1,12 @@
+import 'package:brebit/view/general/error-widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/habit.dart';
 import '../../../provider/home.dart';
 import '../../../route/route.dart';
 import '../widgets/back-button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class HabitActionParams {
   String systemName;
@@ -14,14 +15,14 @@ class HabitActionParams {
   String enduredText;
 
   HabitActionParams({
-    @required this.systemName,
-    @required this.wantToDoText,
-    @required this.didText,
-    @required this.enduredText,
+    required this.systemName,
+    required this.wantToDoText,
+    required this.didText,
+    required this.enduredText,
   });
 }
 
-class HabitActions extends StatelessWidget {
+class HabitActions extends ConsumerWidget {
   final List<HabitActionParams> params = <HabitActionParams>[
     HabitActionParams(
       systemName: 'cigarette',
@@ -50,78 +51,75 @@ class HabitActions extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    Habit habit = context.read(homeProvider.state).habit;
-    HabitActionParams param = params.firstWhere((param){
+  Widget build(BuildContext context, WidgetRef ref) {
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit == null) return ErrorToHomeWidget();
+    HabitActionParams param = params.firstWhere((param) {
       return param.systemName == habit.category.systemName;
     });
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [MyBackButtonX()],
-        backgroundColor: Theme.of(context).backgroundColor,
-      ),
-      body: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 24,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          actions: [MyBackButtonX()],
+          backgroundColor: Theme.of(context).backgroundColor,
         ),
-        child: Column(
-          children: [
-            ActionBox(
-              picturePath: 'assets/icon/wanna_do.svg',
-              title: param.wantToDoText,
-              onTap: () {
-                ApplicationRoutes.pushNamed('/want/condition');
-              },
-            ),
-            ActionBox(
-              picturePath: 'assets/icon/did.svg',
-              title: param.didText,
-              onTap: () {
-                ApplicationRoutes.pushNamed('/did/condition');
-              },
-            ),
-            ActionBox(
-              picturePath: 'assets/icon/endured.svg',
-              title: param.enduredText,
-              onTap: () {
-                ApplicationRoutes.pushNamed('/endured/condition');
-              },
-            )
-          ],
-        ),
-      )
-    );
+        body: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 24,
+          ),
+          child: Column(
+            children: [
+              ActionBox(
+                picturePath: 'assets/icon/wanna_do.svg',
+                title: param.wantToDoText,
+                onTap: () {
+                  ApplicationRoutes.pushNamed('/want/condition');
+                },
+              ),
+              ActionBox(
+                picturePath: 'assets/icon/did.svg',
+                title: param.didText,
+                onTap: () {
+                  ApplicationRoutes.pushNamed('/did/condition');
+                },
+              ),
+              ActionBox(
+                picturePath: 'assets/icon/endured.svg',
+                title: param.enduredText,
+                onTap: () {
+                  ApplicationRoutes.pushNamed('/endured/condition');
+                },
+              )
+            ],
+          ),
+        ));
   }
 }
 
 class ActionBox extends StatelessWidget {
   final String title;
-  final Function onTap;
+  final void Function() onTap;
   final String picturePath;
+
   ActionBox({
-    @required this.title,
-    @required this.onTap,
-    @required this.picturePath,
+    required this.title,
+    required this.onTap,
+    required this.picturePath,
   });
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(
-          top: 16
-      ),
+      margin: EdgeInsets.only(top: 16),
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 16),
           width: double.infinity,
           height: 72,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(6)),
-            color: Theme.of(context).primaryColor
-          ),
+              borderRadius: BorderRadius.all(Radius.circular(6)),
+              color: Theme.of(context).primaryColor),
           child: Row(
             children: [
               Container(
@@ -130,9 +128,7 @@ class ActionBox extends StatelessWidget {
                   height: 40,
                   width: 40,
                 ),
-                margin: EdgeInsets.only(
-                  right: 16
-                ),
+                margin: EdgeInsets.only(right: 16),
               ),
               Expanded(
                 child: Align(
@@ -140,10 +136,9 @@ class ActionBox extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyText1.color,
+                        color: Theme.of(context).textTheme.bodyText1?.color,
                         fontWeight: FontWeight.w700,
-                        fontSize: 17
-                    ),
+                        fontSize: 17),
                   ),
                 ),
               ),
@@ -163,5 +158,3 @@ class ActionBox extends StatelessWidget {
     );
   }
 }
-
-

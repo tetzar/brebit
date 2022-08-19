@@ -17,13 +17,14 @@ class ConditionProvider extends StateNotifier<List<Tag>> {
 
   void setToList(Tag condition) {
     if (!this.isSet(condition.name)) {
-      state = state..add(condition);
+      state = [...state..add(condition)];
+
     }
   }
 
   void unsetFromList(Tag condition) {
     if (this.isSet(condition.name)) {
-      state = state..remove(condition);
+      state = [...state..remove(condition)];
     }
   }
 
@@ -91,7 +92,7 @@ class CircumstanceSuggestionProvider extends StateNotifier<List<Tag>> {
   Future<void> getSuggestions(String text) async {
     Map<String, dynamic> result = await HabitApi.getConditionSuggestions(text);
     List<Tag> suggestions = result['tags'];
-    Tag inputTag = result['hit'];
+    Tag? inputTag = result['hit'];
     if (text.length == 0) {
       recommendations = suggestions;
     }
@@ -99,6 +100,10 @@ class CircumstanceSuggestionProvider extends StateNotifier<List<Tag>> {
       suggestions.insert(0, inputTag);
     }
     this.state = suggestions;
+  }
+
+  List<Tag> getState() {
+    return state;
   }
 }
 
@@ -151,7 +156,7 @@ class MentalValue{
   String name;
   String picturePath;
 
-  MentalValue({this.id, this.name, this.picturePath});
+  MentalValue({required this.id, required this.name, required this.picturePath});
 
   static MentalValue find(String id){
     return mentalValues.firstWhere((val) => val.id == id);
@@ -163,17 +168,19 @@ final conditionValueProvider = StateNotifierProvider.autoDispose(
 
 class ConditionValueState {
   double desire = 0;
-  MentalValue mental;
-  List<Tag> tags = <Tag>[];
+  MentalValue? mental;
+  List<Tag> tags = [];
 
-  ConditionValueState({this.desire, this.mental, this.tags});
+  ConditionValueState({this.desire = 0, this.mental, List<Tag>? tags}) {
+    this.tags = tags ?? [];
+  }
 
   ConditionValueState copyWith(
-      {double desire, MentalValue mental, List<Tag> tags}) {
+      {double? desire, MentalValue? mental, List<Tag>? tags}) {
     return ConditionValueState(
-        desire: desire != null ? desire : this.desire,
-        mental: mental != null ? mental : this.mental,
-        tags: tags != null ? tags : this.tags);
+        desire: desire ?? this.desire,
+        mental: mental ?? this.mental,
+        tags: tags ?? this.tags);
   }
 
   void initialize() {
@@ -200,10 +207,11 @@ class ConditionValueProvider extends StateNotifier<ConditionValueState> {
   }
 
   bool mentalIs(MentalValue m) {
-    if (this.state.mental == null) {
+    MentalValue? mentalValue = state.mental;
+    if (mentalValue == null) {
       return false;
     }
-    return this.state.mental.id == m.id;
+    return mentalValue.id == m.id;
   }
 
   void setTags(List<Tag> t) {
@@ -215,7 +223,9 @@ class ConditionValueProvider extends StateNotifier<ConditionValueState> {
   }
 
   void removeTag(Tag tag) {
-    state = state..tags.removeWhere((t) => tag.name == t.name);
+    state = state.copyWith(
+      tags: state.tags..removeWhere((t) => tag.name == t.name)
+    );
   }
 
   bool savable() {
@@ -223,4 +233,22 @@ class ConditionValueProvider extends StateNotifier<ConditionValueState> {
         state.mental != null &&
         state.tags.length > 0);
   }
+
+  ConditionValueState getState() {
+    return state;
+  }
+
+  List<Tag> getTags() {
+    return state.tags;
+  }
+
+  MentalValue? getMental() {
+    return state.mental;
+  }
+
+  double getDesire() {
+    return state.desire;
+  }
+
+
 }

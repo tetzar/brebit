@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../api/partner.dart';
@@ -25,12 +24,12 @@ class FriendRequestScreen extends StatelessWidget {
   }
 }
 
-class RequestTiles extends HookWidget {
+class RequestTiles extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    useProvider(authProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
     List<Partner> requestedList =
-        context.read(authProvider.state).user.getRequestedPartners();
+        ref.read(authProvider.notifier).user?.getRequestedPartners() ?? [];
     return Container(
       height: double.infinity,
       width: MediaQuery.of(context).size.width,
@@ -43,7 +42,7 @@ class RequestTiles extends HookWidget {
   }
 }
 
-class RequestTile extends StatefulWidget {
+class RequestTile extends ConsumerStatefulWidget {
   final Partner partner;
 
   RequestTile(this.partner);
@@ -52,8 +51,8 @@ class RequestTile extends StatefulWidget {
   _RequestTileState createState() => _RequestTileState();
 }
 
-class _RequestTileState extends State<RequestTile> {
-  AuthUser _user;
+class _RequestTileState extends ConsumerState<RequestTile> {
+  late AuthUser _user;
 
   @override
   void initState() {
@@ -76,7 +75,9 @@ class _RequestTileState extends State<RequestTile> {
         children: [
           InkWell(
             onTap: () {
-              if (context.read(authProvider.state).user.id == this._user.id) {
+              AuthUser? selfUser = ref.read(authProvider.notifier).user;
+              if (selfUser == null) return;
+              if (selfUser.id == this._user.id) {
                 Home.pushNamed('/profile');
               } else {
                 Home.push(MaterialPageRoute(
@@ -110,7 +111,7 @@ class _RequestTileState extends State<RequestTile> {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyText1
-                                .copyWith(
+                                ?.copyWith(
                                     fontWeight: FontWeight.w700, fontSize: 15),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -122,7 +123,7 @@ class _RequestTileState extends State<RequestTile> {
                             style: Theme.of(context)
                                 .textTheme
                                 .subtitle1
-                                .copyWith(fontSize: 15),
+                                ?.copyWith(fontSize: 15),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -130,7 +131,7 @@ class _RequestTileState extends State<RequestTile> {
                     ),
                     InkWell(
                       onTap: () async {
-                        await acceptRequest(context);
+                        await acceptRequest(ref);
                       },
                       child: Container(
                         margin: EdgeInsets.only(left: 4),
@@ -138,7 +139,7 @@ class _RequestTileState extends State<RequestTile> {
                         width: 72,
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(17),
-                            color: Theme.of(context).accentColor),
+                            color: Theme.of(context).colorScheme.secondary),
                         alignment: Alignment.center,
                         child: Text(
                           '承認',
@@ -151,7 +152,7 @@ class _RequestTileState extends State<RequestTile> {
                     ),
                     InkWell(
                       onTap: () async {
-                        await dennyRequest(context);
+                        await dennyRequest(ref);
                       },
                       child: Container(
                         margin: EdgeInsets.only(left: 4),
@@ -161,13 +162,13 @@ class _RequestTileState extends State<RequestTile> {
                             borderRadius: BorderRadius.circular(17),
                             color: Theme.of(context).primaryColor,
                             border: Border.all(
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                                 width: 1)),
                         alignment: Alignment.center,
                         child: Text(
                           '削除',
                           style: TextStyle(
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                               fontWeight: FontWeight.w700,
                               fontSize: 12),
                         ),
@@ -194,16 +195,19 @@ class _RequestTileState extends State<RequestTile> {
     );
   }
 
-  Future<void> acceptRequest(BuildContext context) async {
+  Future<void> acceptRequest(WidgetRef ref) async {
     try {
       MyLoading.startLoading();
-      Map<String, Partner> result = await PartnerApi.acceptPartnerRequest(
-          context.read(authProvider.state).user.getPartner(this._user));
-      context.read(authProvider).setPartner(result['self_relation']);
-      if (context.read(profileProvider(this._user.id)).hasListeners) {
-        context
-            .read(profileProvider(this._user.id))
-            .setPartner(result['other_relation']);
+      Partner? partner =
+          ref.read(authProvider.notifier).user?.getPartner(this._user);
+      if (partner == null) return;
+      Map<String, Partner> result =
+          await PartnerApi.acceptPartnerRequest(partner);
+      ref.read(authProvider.notifier).setPartner(result['self_relation']!);
+      if (ref.read(profileProvider(this._user.id).notifier).hasListeners) {
+        ref
+            .read(profileProvider(this._user.id).notifier)
+            .setPartner(result['other_relation']!);
       }
       MyLoading.dismiss();
     } catch (e) {
@@ -212,11 +216,11 @@ class _RequestTileState extends State<RequestTile> {
     }
   }
 
-  Future<void> dennyRequest(BuildContext context) async {
+  Future<void> dennyRequest(WidgetRef ref) async {
     try {
       MyLoading.startLoading();
       await PartnerApi.cancelPartnerRequest(widget.partner);
-      context.read(authProvider).breakOffWithFriend(widget.partner);
+      ref.read(authProvider.notifier).breakOffWithFriend(widget.partner);
       await MyLoading.dismiss();
     } catch (e) {
       await MyLoading.dismiss();

@@ -29,7 +29,7 @@ class AboutApplication extends StatelessWidget {
                 builder: (context, snapshot) {
                   String message = 'バージョンを確認中';
                   if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.data) {
+                    if (snapshot.data as bool) {
                       message = '最新バージョンです';
                     } else {
                       message = 'アップデートがあります';
@@ -55,7 +55,7 @@ class AboutApplication extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
                   border: Border.all(
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     width: 1
                   ),
                   color: Theme.of(context).primaryColor
@@ -64,7 +64,7 @@ class AboutApplication extends StatelessWidget {
                 child: Text(
                   'アプリストアで表示',
                   style: TextStyle(
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     fontWeight: FontWeight.w400,
                     fontSize: 12
                   ),

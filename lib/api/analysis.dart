@@ -25,22 +25,11 @@ class AnalysisApi {
     };
     http.Response response = await Network.postData(
         data,
-        postRoutes['addAnalysis']
+        postRoutes['addAnalysis'],
+        "addAnalysis@AnalysisApi"
     );
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      return Habit.fromJson(body);
-    } else if (response.statusCode == 200) {
-      print(jsonDecode(response.body)['message']);
-      return null;
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in AnalysisApi@addAnalysis');
-    }
+    Map<String, dynamic> body = jsonDecode(response.body);
+    return Habit.fromJson(body);
   }
 
   static Future<Habit> removeAnalysis(Habit habit, Analysis analysis) async {
@@ -49,19 +38,11 @@ class AnalysisApi {
       'habitId': habit.id.toString()
     };
     http.Response response = await Network.deleteData(
-      Network.routeNormalizeDelete(deleteRoutes['removeAnalysis'], data)
+      Network.routeNormalizeDelete(deleteRoutes['removeAnalysis']!, data)
+          ,"removeAnalysis@AnalysisApi"
     );
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      if (body.containsKey('message')) {
-        print(body['message']);
-        return null;
-      }
-      return Habit.fromJson(body);
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in AnalysisApi@addAnalysis');
-    }
+    Map<String, dynamic> body = jsonDecode(response.body);
+    return Habit.fromJson(body);
   }
 
 }

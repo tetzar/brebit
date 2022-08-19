@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../library/notification.dart';
 import '../home/navigation.dart';
-import 'notification/push.dart';
 import '../widgets/app-bar.dart';
-import 'package:flutter/material.dart';
-
+import 'notification/push.dart';
 import 'widgets/setting-tile.dart';
 
 class NotificationSettings extends StatefulWidget {
@@ -24,12 +25,8 @@ class _NotificationSettingsState extends State<NotificationSettings> {
           child: Column(
             children: [
               SettingListTileBox(properties: <SettingProperty>[
-                SettingProperty()
-                  ..name = 'プッシュ通知'
-                  ..func = showPush,
-                SettingProperty()
-                  ..name = 'デバイスの通知設定'
-                  ..func = showDevice
+                SettingProperty('プッシュ通知', showPush),
+                SettingProperty('デバイスの通知設定', showDevice)
                   ..arrow = false,
               ]),
             ],
@@ -39,20 +36,20 @@ class _NotificationSettingsState extends State<NotificationSettings> {
     );
   }
 
-  Future<void> showPush(BuildContext ctx) async {
-    PushNotificationParam param = new PushNotificationParam();
+  Future<void> showPush(WidgetRef ref, BuildContext ctx) async {
     Map<String, bool> notificationPermission =
         await MyNotification.getSetting();
-    param.challenge = notificationPermission['challenge'];
-    param.information = notificationPermission['information'];
-    param.reply = notificationPermission['reply'];
-    param.friend = notificationPermission['friend'];
-    Home.navKey.currentState.push(MaterialPageRoute(
+    PushNotificationParam param = new PushNotificationParam(
+        challenge: notificationPermission['challenge']!,
+        information: notificationPermission['information']!,
+        reply: notificationPermission['reply']!,
+        friend: notificationPermission['friend']!);
+    Home.push(MaterialPageRoute(
         builder: (BuildContext context) =>
             PushNotificationSetting(param: param)));
   }
 
-  Future<void> showDevice(BuildContext ctx) async {
+  Future<void> showDevice(WidgetRef ref, BuildContext ctx) async {
     await MyNotification.setPermission();
   }
 }

@@ -1,15 +1,14 @@
-
-// ignore: non_constant_identifier_names
 import 'package:brebit/library/data-set.dart';
 import 'package:brebit/model/user.dart';
 
 import 'model.dart';
 
-List<Favorite> FavoriteFromJson(List<dynamic> decodedList) =>
-    List<Favorite>.from(decodedList.cast<Map>().map((x) => Favorite.fromJson(x)));
+List<Favorite> favoriteFromJson(List<dynamic> decodedList) =>
+    List<Favorite>.from(decodedList
+        .cast<Map<String, dynamic>>()
+        .map((x) => Favorite.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> FavoriteToJson(List<Favorite> data) =>
+List<Map> favoriteToJson(List<Favorite> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 class Favorite extends Model {
@@ -18,9 +17,9 @@ class Favorite extends Model {
   int type;
 
   Favorite({
-    this.id,
-    this.user,
-    this.type,
+    required this.id,
+    required this.user,
+    required this.type,
   });
 
   factory Favorite.fromJson(Map<String, dynamic> json) {

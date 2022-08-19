@@ -1,21 +1,20 @@
 import 'dart:ui';
 
 import 'package:brebit/view/widgets/app-bar.dart';
-
-import '../../../provider/auth.dart';
-import '../../../provider/posts.dart';
-import '../../../provider/home.dart';
-import '../../../route/route.dart';
-import '../home/navigation.dart';
-import 'notification.dart';
-import '../timeline/posts.dart';
-import '../widgets/back-button.dart';
-import '../widgets/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../provider/auth.dart';
+import '../../../provider/home.dart';
+import '../../../provider/posts.dart';
+import '../../../route/route.dart';
+import '../home/navigation.dart';
+import '../timeline/posts.dart';
+import '../widgets/back-button.dart';
+import '../widgets/dialog.dart';
 import 'account.dart';
+import 'notification.dart';
 import 'widgets/setting-tile.dart';
 
 class Settings extends StatelessWidget {
@@ -36,33 +35,19 @@ class Settings extends StatelessWidget {
           child: Column(
             children: [
               SettingListTileBox(properties: <SettingProperty>[
-                SettingProperty()
-                  ..name = 'チャレンジ'
-                  ..func = showChallenge,
-                SettingProperty()
-                  ..name = 'アカウント'
-                  ..func = showAccount,
-                SettingProperty()
-                  ..name = '通知'
-                  ..func = showNotification,
+                SettingProperty('チャレンジ', showChallenge),
+                SettingProperty('アカウント', showAccount),
+                SettingProperty('通知', showNotification)
               ]),
               SettingListTileBox(properties: <SettingProperty>[
-                SettingProperty()
-                  ..name = 'ヘルプ'
-                  ..func = showHelp
+                SettingProperty('ヘルプ', showHelp)
                   ..arrow = false,
-                SettingProperty()
-                  ..name = 'Brebitを評価する'
-                  ..func = showReview
+                SettingProperty('Brebitを評価する', showReview)
                   ..arrow = false,
-                SettingProperty()
-                  ..name = 'Brebitについて'
-                  ..func = showAbout,
+                SettingProperty('Brebitについて', showAbout),
               ]),
               SettingListTileBox(properties: <SettingProperty>[
-                SettingProperty()
-                  ..name = 'サインアウト'
-                  ..func = logout
+                SettingProperty('サインアウト', logout)
                   ..arrow = false,
               ]),
             ],
@@ -72,37 +57,38 @@ class Settings extends StatelessWidget {
     );
   }
 
-  Future<void> showNotification(BuildContext ctx) async {
-    Home.navKey.currentState.push(MaterialPageRoute(
+  Future<void> showNotification(WidgetRef ref, BuildContext ctx) async {
+    Home.push(MaterialPageRoute(
         builder: (BuildContext context) => NotificationSettings()));
   }
 
-  Future<void> showChallenge(BuildContext ctx) async {
+  Future<void> showChallenge(WidgetRef ref, BuildContext ctx) async {
     Home.pushNamed('/settings/challenge');
   }
 
-  Future<void> showAccount(BuildContext ctx) async {
+  Future<void> showAccount(WidgetRef ref, BuildContext ctx) async {
     List<CredentialProviders> providers = AuthProvider.getProviders();
-    ctx.read(accountSettingProvider).set(
-      appleAuthorized:providers.contains(CredentialProviders.apple),
-      googleAuthorized: providers.contains(CredentialProviders.google),
-      passwordAuthorized: providers.contains(CredentialProviders.password)
-    );
+    ref.read(accountSettingProvider.notifier).set(
+        appleAuthorized: providers.contains(CredentialProviders.apple),
+        googleAuthorized: providers.contains(CredentialProviders.google),
+        passwordAuthorized: providers.contains(CredentialProviders.password));
     Home.pushNamed('/settings/account');
   }
 
-  Future<void> showHelp(BuildContext ctx) async {
-    String _url = 'https://www.instagram.com/brebitapp/';
-    await canLaunch(_url) ? await launch(_url) : throw 'Could not launch $_url';
+  Future<void> showHelp(WidgetRef ref, BuildContext ctx) async {
+    Uri _url = Uri.parse('https://www.instagram.com/brebitapp/');
+    await canLaunchUrl(_url)
+        ? await launchUrl(_url)
+        : throw 'Could not launch $_url';
   }
 
-  Future<void> showReview(BuildContext ctx) async {}
+  Future<void> showReview(WidgetRef ref, BuildContext ctx) async {}
 
-  Future<void> showAbout(BuildContext ctx) async {
+  Future<void> showAbout(WidgetRef ref, BuildContext ctx) async {
     Home.pushNamed('/settings/about');
   }
 
-  Future<void> logout(BuildContext ctx) async {
+  Future<void> logout(WidgetRef ref, BuildContext ctx) async {
     showDialog(
         context: ctx,
         builder: (context) {
@@ -111,7 +97,7 @@ class Settings extends StatelessWidget {
               'サインアウト',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyText1.color,
+                  color: Theme.of(context).textTheme.bodyText1?.color,
                   fontWeight: FontWeight.w700,
                   fontSize: 18),
             ),
@@ -123,17 +109,20 @@ class Settings extends StatelessWidget {
                   text: '本当にBrebitから\n'
                       'サインアウトしますか？',
                   style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyText1.color,
+                      color: Theme.of(context).textTheme.bodyText1?.color,
                       fontSize: 17,
                       fontWeight: FontWeight.w400),
                 ),
               ),
             ),
             action: () async {
-              bool logoutSuccess = await ctx.read(authProvider).logout();
-              ctx.read(homeProvider).logout();
-              ctx.read(timelineProvider(friendProviderName)).logout();
-              ctx.read(timelineProvider(challengeProviderName)).logout();
+              bool logoutSuccess =
+                  await ref.read(authProvider.notifier).logout();
+              ref.read(homeProvider.notifier).logout();
+              ref.read(timelineProvider(friendProviderName).notifier).logout();
+              ref
+                  .read(timelineProvider(challengeProviderName).notifier)
+                  .logout();
               if (logoutSuccess) {
                 ApplicationRoutes.popUntil('/home');
                 ApplicationRoutes.pushReplacementNamed('/title');

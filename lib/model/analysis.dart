@@ -1,11 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:brebit/library/data-set.dart';
-import 'package:brebit/model/user.dart';
-import 'package:brebit/api/api.dart';
 import 'package:brebit/utils/aws.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:time_machine/time_machine.dart';
 
 import 'category.dart';
@@ -14,12 +11,10 @@ import 'habit.dart';
 import 'habit_log.dart';
 import 'model.dart';
 
-// ignore: non_constant_identifier_names
-List<Analysis> AnalysisFromJson(List<dynamic> list) =>
-    new List<Analysis>.from(list.cast<Map>().map((x) => Analysis.fromJson(x)));
+List<Analysis> analysisFromJson(List<dynamic> list) => new List<Analysis>.from(
+    list.cast<Map<String, dynamic>>().map((x) => Analysis.fromJson(x)));
 
-// ignore: non_constant_identifier_names
-List<Map> AnalysisToJson(List<Analysis> data) =>
+List<Map> analysisToJson(List<Analysis> data) =>
     List<Map>.from(data.map((x) => x.toJson()));
 
 class Analysis extends Model {
@@ -46,20 +41,20 @@ class Analysis extends Model {
   Category category;
   String name;
   List<dynamic> calculateMethod;
-  List<CategoryParameter> params;
+  List<CategoryParameter>? params;
   S3SvgImage image;
   DateTime createdAt;
   DateTime updatedAt;
 
   Analysis({
-    @required this.id,
-    @required this.category,
-    @required this.name,
-    @required this.calculateMethod,
+    required this.id,
+    required this.category,
+    required this.name,
+    required this.calculateMethod,
     this.params,
-    @required this.image,
-    @required this.createdAt,
-    @required this.updatedAt,
+    required this.image,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Analysis.fromJson(Map<String, dynamic> json) {
@@ -73,7 +68,7 @@ class Analysis extends Model {
           : Category.find(json["category_id"]),
       name: json['name'],
       params: json['params'] != null
-          ? CategoryParameterFromJson(json['params'])
+          ? categoryParameterFromJson(json['params'])
           : null,
       calculateMethod: json['method'],
       image: urlToS3Svg(json['image_url']),
@@ -86,13 +81,13 @@ class Analysis extends Model {
         "id": id,
         "category": this.category.toJson(),
         "method": this.calculateMethod,
-        "params": CategoryParameterToJson(this.params),
+        "params":
+            this.params == null ? null : categoryParameterToJson(this.params!),
         'name': this.name,
         'image_url': s3SvgToUrl(),
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
       };
-
 
   static S3SvgImage urlToS3Svg(String url) {
     int index = images.indexWhere((img) => img.url == url);
@@ -112,13 +107,13 @@ class Analysis extends Model {
 
   static List<S3SvgImage> images = [];
 
-  List<List<String>> getData(AuthUser user, Habit habit) {
+  List<List<String>> getData(Habit habit) {
     List<List<String>> result = <List<String>>[];
-    for (Map<String, dynamic> method_data in this.calculateMethod) {
-      if (method_data['method'] != null) {
+    for (Map<String, dynamic> methodData in this.calculateMethod) {
+      if (methodData['method'] != null) {
         List<double> data = <double>[];
         List<String> unit = <String>[];
-        List<String> operators = method_data['method'].split(' ');
+        List<String> operators = methodData['method'].split(' ');
         for (String operator in operators) {
           switch (operator) {
             case '+':
@@ -144,7 +139,7 @@ class Analysis extends Model {
               data.add((data.removeLast() ~/ sub).toDouble());
               break;
             default:
-              double v = Analysis.getTimeDependentData(operator, user, habit);
+              double? v = Analysis.getTimeDependentData(operator, habit);
               if (v == null) {
                 unit.add(operator);
                 v = 1;
@@ -155,18 +150,17 @@ class Analysis extends Model {
         }
         bool ignore = false;
         if (unit.isEmpty) {
-          if (method_data['ignorable'] && !(data.last > 0)) {
+          if (methodData['ignorable'] && !(data.last > 0)) {
             ignore = true;
           }
-          if (method_data.containsKey('min-digit')) {
-            if (method_data['min-digit'] < 0) {
+          if (methodData.containsKey('min-digit')) {
+            if (methodData['min-digit'] < 0) {
               unit.add(
-                  data.removeLast().toStringAsFixed(-method_data['min-digit']));
-            } else if (method_data['min-digit'] > 0) {
-              unit.add(
-                  ((data.removeLast() % pow(10, method_data['min-digit'])) *
-                          pow(10, method_data['min-digit']))
-                      .toString());
+                  data.removeLast().toStringAsFixed(-methodData['min-digit']));
+            } else if (methodData['min-digit'] > 0) {
+              unit.add(((data.removeLast() % pow(10, methodData['min-digit'])) *
+                      pow(10, methodData['min-digit']))
+                  .toString());
             } else {
               unit.add(data.removeLast().toInt().toString());
             }
@@ -174,79 +168,71 @@ class Analysis extends Model {
             unit.add(data.removeLast().toInt().toString());
           }
         }
-        unit.add(method_data['unit']);
+        unit.add(methodData['unit']);
         if (!ignore) {
           result.add(unit);
         }
       } else {
-        if (!method_data['ignorable']) {
-          result.add(<String>['', method_data['unit']]);
+        if (!methodData['ignorable']) {
+          result.add(<String>['', methodData['unit']]);
         }
       }
     }
     return result;
   }
 
-  static double getTimeDependentData(String name, AuthUser user, Habit habit) {
+  static double? getTimeDependentData(String name, Habit habit) {
     if (double.tryParse(name) != null) {
       return double.parse(name);
     }
     if (Analysis.dataIds.contains(name)) {
       switch (name) {
         case 'history_minutes':
-          int minutes = DateTime.now().difference(user.createdAt).inMinutes;
+          int minutes =
+              DateTime.now().difference(habit.user.createdAt).inMinutes;
           return (minutes % 60).toDouble();
-          break;
         case 'history_hours':
-          int hours = DateTime.now().difference(user.createdAt).inHours;
+          int hours = DateTime.now().difference(habit.user.createdAt).inHours;
           return (hours % 24).toDouble();
-          break;
         case 'history_days':
           LocalDate today = LocalDate.today();
-          LocalDate createdAt = LocalDate.dateTime(user.createdAt);
+          LocalDate createdAt = LocalDate.dateTime(habit.user.createdAt);
           Period diff = today.periodSince(createdAt);
           return diff.days.toDouble();
-          break;
         case 'history_month':
           LocalDate today = LocalDate.today();
-          LocalDate createdAt = LocalDate.dateTime(user.createdAt);
+          LocalDate createdAt = LocalDate.dateTime(habit.user.createdAt);
           Period diff = today.periodSince(createdAt);
           return diff.months.toDouble();
-          break;
         case 'history_years':
           LocalDate today = LocalDate.today();
-          LocalDate createdAt = LocalDate.dateTime(user.createdAt);
+          LocalDate createdAt = LocalDate.dateTime(habit.user.createdAt);
           Period diff = today.periodSince(createdAt);
           return diff.years.toDouble();
-          break;
         case 'history_total_years':
           LocalDate today = LocalDate.today();
-          LocalDate createdAt = LocalDate.dateTime(user.createdAt);
+          LocalDate createdAt = LocalDate.dateTime(habit.user.createdAt);
           Period diff = today.periodSince(createdAt);
           return diff.years.toDouble();
-          break;
         case 'history_total_month':
           LocalDate today = LocalDate.today();
-          LocalDate createdAt = LocalDate.dateTime(user.createdAt);
+          LocalDate createdAt = LocalDate.dateTime(habit.user.createdAt);
           Period diff = today.periodSince(createdAt);
           return (diff.years * 12 + diff.months).toDouble();
-          break;
         case 'history_total_days':
-          int hours = DateTime.now().difference(user.createdAt).inHours;
+          int hours = DateTime.now().difference(habit.user.createdAt).inHours;
           return (hours ~/ 24).toDouble();
-          break;
         case 'history_total_hours':
-          int hours = DateTime.now().difference(user.createdAt).inHours;
+          int hours = DateTime.now().difference(habit.user.createdAt).inHours;
           return hours.toDouble();
-          break;
         case 'history_total_minutes':
-          int minutes = DateTime.now().difference(user.createdAt).inMinutes;
+          int minutes =
+              DateTime.now().difference(habit.user.createdAt).inMinutes;
           return minutes.toDouble();
-          break;
         case 'habit_active_minutes':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -272,11 +258,10 @@ class Analysis extends Model {
             }
           }
           return (totalMinutes % 60).toDouble();
-          break;
         case 'habit_active_hours':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -302,11 +287,10 @@ class Analysis extends Model {
             }
           }
           return ((totalMinutes ~/ 60) % 24).toDouble();
-          break;
         case 'habit_active_days':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -332,11 +316,10 @@ class Analysis extends Model {
             }
           }
           return ((totalMinutes ~/ 1440) % 365).toDouble();
-          break;
         case 'habit_active_total_minutes':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -362,11 +345,10 @@ class Analysis extends Model {
             }
           }
           return totalMinutes.toDouble();
-          break;
         case 'habit_active_total_hours':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -392,11 +374,10 @@ class Analysis extends Model {
             }
           }
           return (totalMinutes ~/ 60).toDouble();
-          break;
         case 'habit_active_total_minutes':
           List<HabitLog> logs = habit.logSort(sort: 'earlier');
           int totalMinutes = 0;
-          DateTime pivotDate;
+          DateTime? pivotDate;
           for (HabitLog log in logs) {
             if (pivotDate == null) {
               pivotDate = log.createdAt;
@@ -422,7 +403,6 @@ class Analysis extends Model {
             }
           }
           return (totalMinutes ~/ 1440).toDouble();
-          break;
         default:
           return null;
       }

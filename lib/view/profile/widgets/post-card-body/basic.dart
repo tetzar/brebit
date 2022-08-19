@@ -6,7 +6,7 @@ import 'custom.dart';
 class PostBody extends StatelessWidget {
   final Post post;
 
-  PostBody({@required this.post});
+  PostBody({required this.post});
 
   @override
   Widget build(BuildContext context) {

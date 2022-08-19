@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:brebit/view/general/loading.dart';
 import 'package:brebit/view/widgets/dialog.dart';
@@ -9,39 +10,45 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../api/analysis.dart';
 import '../../../../model/analysis.dart';
 import '../../../../model/habit.dart';
-import '../../../../provider/auth.dart';
 import '../../../../provider/home.dart';
 import '../../../../route/route.dart';
 import '../../widgets/bottom-sheet.dart';
 
-class AnalysisCard extends StatefulWidget {
+class AnalysisCard extends ConsumerStatefulWidget {
   final Analysis analysis;
+  final Habit habit;
 
-  AnalysisCard(this.analysis);
+  AnalysisCard(this.analysis, this.habit);
 
   @override
   _AnalysisCardState createState() => _AnalysisCardState();
 }
 
-class _AnalysisCardState extends State<AnalysisCard> {
+class _AnalysisCardState extends ConsumerState<AnalysisCard> {
+  late Habit habit;
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    habit = widget.habit;
     Timer.periodic(Duration(minutes: 1), (Timer t) {
       if (this.mounted) {
         setState(() {});
       }
     });
-    List<List<String>> data = widget.analysis.getData(
-        context.read(authProvider.state).user,
-        context.read(homeProvider).getHabit());
-    TextStyle _numberStyle = Theme.of(context)
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<List<String>> data = widget.analysis.getData(habit);
+    TextStyle? _numberStyle = Theme.of(context)
         .textTheme
         .bodyText1
-        .copyWith(fontSize: 20, fontWeight: FontWeight.w700);
-    TextStyle _unitStyle = Theme.of(context)
+        ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700);
+    TextStyle? _unitStyle = Theme.of(context)
         .textTheme
         .subtitle1
-        .copyWith(fontSize: 16, fontWeight: FontWeight.w700);
+        ?.copyWith(fontSize: 16, fontWeight: FontWeight.w700);
     bool _paramRequired = false;
     List<Text> span = <Text>[];
     data.forEach((d) {
@@ -96,28 +103,34 @@ class _AnalysisCardState extends State<AnalysisCard> {
                     child: FutureBuilder(
                       future: widget.analysis.getImage(),
                       builder: (context, snapshot) {
-                        return (snapshot.connectionState == ConnectionState.done && snapshot.hasData) ? SvgPicture.memory(
-                          snapshot.data,
-                          semanticsLabel: 'A shark?!',
-                          height: 20,
-                          width: 20,
-                          color: Theme.of(context).textTheme.subtitle1.color,
-                          placeholderBuilder: (BuildContext context) => Container(
-                            color: Colors.transparent,
-                            width: 20,
-                            height: 20,
-                          ),
-                        ) : SizedBox(
-                          height: 20,
-                          width: 20,
-                        );
+                        return (snapshot.connectionState ==
+                                    ConnectionState.done &&
+                                snapshot.hasData)
+                            ? SvgPicture.memory(
+                                snapshot.data as Uint8List,
+                                semanticsLabel: 'A shark?!',
+                                height: 20,
+                                width: 20,
+                                color:
+                                    Theme.of(context).textTheme.subtitle1?.color,
+                                placeholderBuilder: (BuildContext context) =>
+                                    Container(
+                                  color: Colors.transparent,
+                                  width: 20,
+                                  height: 20,
+                                ),
+                              )
+                            : SizedBox(
+                                height: 20,
+                                width: 20,
+                              );
                       },
                     )),
                 Expanded(
                   child: Text(
                     widget.analysis.name,
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.subtitle1.color,
+                        color: Theme.of(context).textTheme.subtitle1?.color,
                         fontSize: 13,
                         fontWeight: FontWeight.w400),
                   ),
@@ -138,9 +151,9 @@ class _AnalysisCardState extends State<AnalysisCard> {
                           '情報を入力すると分析を表示できます',
                           style: TextStyle(
                               color: Theme.of(context)
-                                  .accentTextTheme
+                                  .primaryTextTheme
                                   .subtitle1
-                                  .color,
+                                  ?.color,
                               fontSize: 16,
                               fontWeight: FontWeight.w700),
                         )
@@ -167,9 +180,9 @@ class _AnalysisCardState extends State<AnalysisCard> {
           onTap: () async {
             MyLoading.startLoading();
             try {
-              Habit habit = await AnalysisApi.removeAnalysis(
-                  context.read(homeProvider).getHabit(), analysis);
-              context.read(homeProvider).setHabit(habit);
+              Habit? habit = await AnalysisApi.removeAnalysis(
+                  this.habit, analysis);
+              ref.read(homeProvider.notifier).setHabit(habit);
               ApplicationRoutes.pop();
             } catch (e) {
               MyErrorDialog.show(e);
@@ -179,7 +192,7 @@ class _AnalysisCardState extends State<AnalysisCard> {
           child: Text(
             '分析項目を削除',
             style: TextStyle(
-                color: Theme.of(context).textTheme.bodyText1.color,
+                color: Theme.of(context).textTheme.bodyText1?.color,
                 fontSize: 18,
                 fontWeight: FontWeight.w700),
           )),

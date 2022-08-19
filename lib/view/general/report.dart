@@ -3,6 +3,7 @@ import 'package:brebit/model/comment.dart';
 import 'package:brebit/view/timeline/post.dart';
 import 'package:brebit/view/timeline/widget/comment-card.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../api/post.dart';
 import '../../../model/post.dart';
@@ -37,7 +38,7 @@ class ReportView extends StatelessWidget {
     return Scaffold(
       appBar: getMyAppBar(
           context: context,
-          titleText: _appBarTitle[_type],
+          titleText: _appBarTitle[_type]!,
           backButton: AppBarBackButton.none,
           actions: [MyBackButtonX()]),
       body: ReportViewContent(reportable),
@@ -45,7 +46,7 @@ class ReportView extends StatelessWidget {
   }
 }
 
-class ReportViewContent extends StatefulWidget {
+class ReportViewContent extends ConsumerStatefulWidget {
   final dynamic reportable;
 
   ReportViewContent(this.reportable);
@@ -56,8 +57,8 @@ class ReportViewContent extends StatefulWidget {
 
 enum ReportType { spam, aggressive, painful, none }
 
-class _ReportViewContentState extends State<ReportViewContent> {
-  ReportType _type;
+class _ReportViewContentState extends ConsumerState<ReportViewContent> {
+  late ReportType _type;
 
   final Map<ReportableType, String> _question = <ReportableType, String>{
     ReportableType.comment: 'このコメントについて、問題の詳細を教えてください。',
@@ -74,16 +75,10 @@ class _ReportViewContentState extends State<ReportViewContent> {
     switch (_type) {
       case ReportType.spam:
         return 'spam';
-        break;
       case ReportType.aggressive:
         return 'aggressive';
-        break;
-      case ReportType.painful:
-        return 'painful';
-        break;
       default:
-        return null;
-        break;
+        return 'painful';
     }
   }
 
@@ -95,7 +90,7 @@ class _ReportViewContentState extends State<ReportViewContent> {
     }
     return MyBottomFixedButton(
       label: '報告',
-      enable: _type != ReportType.none && _type != null,
+      enable: _type != ReportType.none,
       onTapped: () async {
         try {
           MyLoading.startLoading();
@@ -106,13 +101,13 @@ class _ReportViewContentState extends State<ReportViewContent> {
         } on RecordNotFoundException {
           if (widget.reportable is Comment) {
             Comment comment = widget.reportable as Comment;
-            removeCommentFromProvider(comment, context);
+            removeCommentFromProvider(comment, ref);
           } else {
             Post post = widget.reportable as Post;
-            await removePostFromAllProvider(post, context);
+            await removePostFromAllProvider(post, ref);
           }
           await MyLoading.dismiss();
-          ApplicationRoutes.materialKey.currentState.pop(true);
+          ApplicationRoutes.pop(true);
         } catch (e) {
           await MyLoading.dismiss();
           MyErrorDialog.show(e);
@@ -125,11 +120,11 @@ class _ReportViewContentState extends State<ReportViewContent> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              _question[_reportableType],
+              _question[_reportableType]!,
               style: Theme.of(context)
                   .textTheme
                   .bodyText1
-                  .copyWith(fontSize: 15, fontWeight: FontWeight.w400),
+                  ?.copyWith(fontSize: 15, fontWeight: FontWeight.w400),
             ),
             ReportCard(
                 isSelected: _type == ReportType.spam,
@@ -165,10 +160,10 @@ class _ReportViewContentState extends State<ReportViewContent> {
 class ReportCard extends StatelessWidget {
   final bool isSelected;
   final String text;
-  final Function onTap;
+  final void Function() onTap;
 
   ReportCard(
-      {@required this.isSelected, @required this.text, @required this.onTap});
+      {required this.isSelected, required this.text, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +186,7 @@ class ReportCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
                 color: isSelected
-                    ? Theme.of(context).accentColor
+                    ? Theme.of(context).colorScheme.secondary
                     : Colors.transparent,
                 width: 2)),
         child: Text(
@@ -199,7 +194,7 @@ class ReportCard extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .bodyText1
-              .copyWith(fontSize: 13, fontWeight: FontWeight.w400),
+              ?.copyWith(fontSize: 13, fontWeight: FontWeight.w400),
         ),
       ),
     );
@@ -231,12 +226,12 @@ class ReportComplete extends StatelessWidget {
       child: Scaffold(
         appBar: getMyAppBar(
             context: context,
-            titleText: _appBarTitle[_type],
+            titleText: _appBarTitle[_type]!,
             backButton: AppBarBackButton.none,
             actions: [
               IconButton(
                   icon: Icon(Icons.check,
-                      color: Theme.of(context).textTheme.bodyText1.color),
+                      color: Theme.of(context).textTheme.bodyText1?.color),
                   onPressed: () {
                     ApplicationRoutes.pop();
                     ApplicationRoutes.pop(true);
@@ -256,7 +251,7 @@ class ReportComplete extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                    ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
               ),
               SizedBox(
                 height: 24,
@@ -266,7 +261,7 @@ class ReportComplete extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyText1
-                    .copyWith(fontSize: 15, fontWeight: FontWeight.w400),
+                    ?.copyWith(fontSize: 15, fontWeight: FontWeight.w400),
                 textAlign: TextAlign.center,
               )
             ],

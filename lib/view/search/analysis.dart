@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../api/analysis.dart';
@@ -16,25 +15,24 @@ import '../widgets/bottom-sheet.dart';
 import '../widgets/dialog.dart';
 import 'search.dart';
 
-class AnalysisResult extends HookWidget {
+class AnalysisResult extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    InputFormProviderState inputFormProviderState =
-        useProvider(inputFormProvider.state);
-    List<Analysis> result = inputFormProviderState.analyses;
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(inputFormProvider);
+    List<Analysis>? result = ref.read(inputFormProvider.notifier).analyses;
     List<Widget> analysisCards = <Widget>[];
     if (result != null) {
       if (result.length == 0 &&
-          context.read(inputFormProvider).word.length > 0) {
+          ref.read(inputFormProvider.notifier).word.length > 0) {
         analysisCards.add(Container(
           width: double.infinity,
           margin: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            '申し訳ありません！”${context.read(inputFormProvider).word}”に関する分析はみつかりませんでした。',
+            '申し訳ありません！”${ref.read(inputFormProvider.notifier).word}”に関する分析はみつかりませんでした。',
             style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(fontWeight: FontWeight.w700, fontSize: 11),
+                ?.copyWith(fontWeight: FontWeight.w700, fontSize: 11),
             textAlign: TextAlign.left,
           ),
         ));
@@ -42,7 +40,7 @@ class AnalysisResult extends HookWidget {
         result.forEach((analysis) {
           analysisCards.add(InkWell(
               onTap: () {
-                onCardTap(context, analysis);
+                onCardTap(context, ref, analysis);
               },
               child: AnalysisCard(
                 analysis: analysis,
@@ -51,7 +49,7 @@ class AnalysisResult extends HookWidget {
       }
       if (result.length < 5) {
         List<Analysis> recommendation =
-            context.read(inputFormProvider).recommendation.analyses;
+            ref.read(inputFormProvider.notifier).recommendation?.analyses ?? [];
         int recommendationLength = recommendation.length;
         if (recommendationLength > 0) {
           analysisCards.add(Container(
@@ -71,7 +69,7 @@ class AnalysisResult extends HookWidget {
           Analysis _analysis = recommendation[i];
           analysisCards.add(InkWell(
             onTap: () {
-              onCardTap(context, _analysis);
+              onCardTap(context, ref, _analysis);
             },
             child: AnalysisCard(
               analysis: recommendation[i],
@@ -90,12 +88,12 @@ class AnalysisResult extends HookWidget {
       //     decoration: BoxDecoration(
       //         borderRadius: BorderRadius.circular(17),
       //         border:
-      //         Border.all(color: Theme.of(context).accentColor, width: 1)),
+      //         Border.all(color: Theme.of(context).colorScheme.secondary, width: 1)),
       //     alignment: Alignment.center,
       //     child: Text(
       //       '更新',
       //       style: TextStyle(
-      //           color: Theme.of(context).accentColor,
+      //           color: Theme.of(context).colorScheme.secondary,
       //           fontWeight: FontWeight.w700,
       //           fontSize: 12),
       //     ),
@@ -120,19 +118,23 @@ class AnalysisResult extends HookWidget {
     );
   }
 
-  void onCardTap(BuildContext context, Analysis analysis) {
+  void onCardTap(BuildContext context, WidgetRef ref, Analysis analysis) {
     bool isUsing =
-        context.read(homeProvider).getHabit().isUsingAnalysis(analysis);
+        ref.read(homeProvider.notifier).getHabit()?.isUsingAnalysis(analysis) ??
+            false;
     List<BottomSheetItem> items = <BottomSheetItem>[
       isUsing
           ? BottomSheetItem(
               onTap: () async {
                 ApplicationRoutes.pop();
+                Habit? currentHabit =
+                    ref.read(homeProvider.notifier).getHabit();
+                if (currentHabit == null) return;
                 try {
                   MyLoading.startLoading();
-                  Habit habit = await AnalysisApi.removeAnalysis(
-                      context.read(homeProvider).getHabit(), analysis);
-                  context.read(homeProvider).setHabit(habit);
+                  Habit habit =
+                      await AnalysisApi.removeAnalysis(currentHabit, analysis);
+                  ref.read(homeProvider.notifier).setHabit(habit);
                   await MyLoading.dismiss();
                 } catch (e) {
                   await MyLoading.dismiss();
@@ -143,19 +145,22 @@ class AnalysisResult extends HookWidget {
               child: Text(
                 '分析項目を削除',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               ))
           : BottomSheetItem(
               onTap: () async {
                 ApplicationRoutes.pop();
+                Habit? currentHabit =
+                    ref.read(homeProvider.notifier).getHabit();
+                if (currentHabit == null) return;
                 try {
                   MyLoading.startLoading();
-                  Habit habit = await AnalysisApi.addAnalysis(
-                      context.read(homeProvider).getHabit(), analysis);
-                  context.read(homeProvider).setHabit(habit);
-                  context.read(inputFormProvider).removeAnalysis(analysis);
+                  Habit habit =
+                      await AnalysisApi.addAnalysis(currentHabit, analysis);
+                  ref.read(homeProvider.notifier).setHabit(habit);
+                  ref.read(inputFormProvider.notifier).removeAnalysis(analysis);
                   MyLoading.dismiss();
                 } catch (e) {
                   await MyLoading.dismiss();
@@ -165,7 +170,7 @@ class AnalysisResult extends HookWidget {
               child: Text(
                 '分析項目を追加',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyText1.color,
+                    color: Theme.of(context).textTheme.bodyText1?.color,
                     fontSize: 18,
                     fontWeight: FontWeight.w700),
               )),

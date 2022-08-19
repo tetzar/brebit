@@ -1,6 +1,6 @@
 // ApplicationRoute /did/confirmation
 
-import 'package:flutter/cupertino.dart';
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -19,7 +19,7 @@ import '../widgets/strategy-card.dart';
 class DidConfirmation extends StatelessWidget {
   final HabitLog log;
 
-  DidConfirmation({@required this.log});
+  DidConfirmation({required this.log});
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +33,16 @@ class DidConfirmation extends StatelessWidget {
   }
 }
 
-class DidConfirmationBody extends StatefulWidget {
+class DidConfirmationBody extends ConsumerStatefulWidget {
   final HabitLog log;
 
-  DidConfirmationBody({@required this.log});
+  DidConfirmationBody({required this.log});
 
   @override
   _DidConfirmationBodyState createState() => _DidConfirmationBodyState();
 }
 
-class _DidConfirmationBodyState extends State<DidConfirmationBody> {
+class _DidConfirmationBodyState extends ConsumerState<DidConfirmationBody> {
   final Map<CategoryName, String> subjectList = {
     CategoryName.cigarette: '喫煙の記録',
     CategoryName.alcohol: '飲酒の記録',
@@ -64,11 +64,15 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
     CategoryName.sns: '分',
   };
 
-  Habit _habit;
+  late Habit _habit;
 
   @override
   Widget build(BuildContext context) {
-    _habit = context.read(homeProvider).getHabit();
+    Habit? _habit = ref.read(homeProvider.notifier).getHabit();
+    if (_habit == null) {
+      return ErrorToHomeContent();
+    }
+    this._habit = _habit;
     HabitLog log = widget.log;
     Map<String, dynamic> body = log.getBody();
     DateTime dateTime = log.createdAt;
@@ -101,11 +105,11 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              subjectList[_habit.category.name],
+              subjectList[_habit.category.name]!,
               style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 28,
-                  color: Theme.of(context).textTheme.bodyText1.color),
+                  color: Theme.of(context).textTheme.bodyText1?.color),
             ),
             Padding(
               padding: EdgeInsets.only(top: 4),
@@ -135,7 +139,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
-                            color: Theme.of(context).textTheme.bodyText1.color),
+                            color: Theme.of(context).textTheme.bodyText1?.color),
                       ),
                     ),
                   ),
@@ -147,7 +151,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyText1.color),
+                            color: Theme.of(context).textTheme.bodyText1?.color),
                       ),
                     ),
                   )
@@ -166,7 +170,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
-                            color: Theme.of(context).textTheme.bodyText1.color),
+                            color: Theme.of(context).textTheme.bodyText1?.color),
                       ),
                     ),
                   ),
@@ -178,7 +182,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyText1.color),
+                            color: Theme.of(context).textTheme.bodyText1?.color),
                       ),
                     ),
                   )
@@ -201,7 +205,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                                   color: Theme.of(context)
                                       .textTheme
                                       .bodyText1
-                                      .color),
+                                      ?.color),
                             ),
                           ),
                         ),
@@ -217,7 +221,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
                                       color: Theme.of(context)
                                           .textTheme
                                           .bodyText1
-                                          .color),
+                                          ?.color),
                                   children: [
                                     TextSpan(
                                       text: unit[_habit.category.name],
@@ -244,8 +248,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
         ));
   }
 
-  void restart(BuildContext ctx) async {
-    GlobalKey<NavigatorState> key = ApplicationRoutes.materialKey;
-    key.currentState.popUntil(ModalRoute.withName('/home'));
+  void restart() async {
+    ApplicationRoutes.popUntil(ModalRoute.withName('/home'));
   }
 }

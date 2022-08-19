@@ -1,11 +1,11 @@
-import '../../../../route/route.dart';
-import '../../widgets/app-bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../../route/route.dart';
+import '../../widgets/app-bar.dart';
 
 enum InputFormat {
   picker,
@@ -62,7 +62,7 @@ class InformationFormatter {
       List<String> backSplit = split.split('}');
       if (backSplit.length == 2) {
         List<double> stack = <double>[];
-        for (String operator in backSplit[0].split(' ')) {
+        for (String? operator in backSplit[0].split(' ')) {
           switch (operator) {
             case '+':
               stack.add(stack.removeLast() + stack.removeLast());
@@ -91,11 +91,11 @@ class InformationFormatter {
                 }
               }
               if (isNumeric) {
-                stack.add(double.parse(operator));
+                stack.add(double.parse(operator!));
               } else {
-                int value = data[operator];
+                int? value = data[operator];
                 if (value != null) {
-                  stack.add(data[operator].toDouble());
+                  stack.add(data[operator]!.toDouble());
                 }
               }
               break;
@@ -111,11 +111,11 @@ class InformationFormatter {
 }
 
 abstract class InformationItemUnit {
-  final String unit;
+  final String? unit;
   final InputFormat format = InputFormat.field;
 
   InformationItemUnit({
-    @required this.unit,
+    this.unit,
   });
 }
 
@@ -125,19 +125,20 @@ class PickerInformationItemUnitRoller {
   final int step;
   final String name;
   final String numerator;
-  final String denominator;
+  final String? denominator;
 
-  List<int> _values;
+  List<int>? _values;
 
   PickerInformationItemUnitRoller(
-      {@required this.start,
-      @required this.end,
-      @required this.step,
-      @required this.name,
-      @required this.numerator,
+      {required this.start,
+      required this.end,
+      required this.step,
+      required this.name,
+      required this.numerator,
       this.denominator});
 
   List<int> getValueList() {
+    List<int>? _values = this._values;
     if (_values == null) {
       List<int> list = <int>[];
       int v = start;
@@ -158,12 +159,12 @@ class PickerInformationItemUnitRoller {
 
 class PickerInformationItemUnit extends InformationItemUnit {
   final List<PickerInformationItemUnitRoller> rollers;
-  final String hintText;
+  final String? hintText;
 
   final format = InputFormat.picker;
 
   PickerInformationItemUnit({
-    @required this.rollers,
+    required this.rollers,
     this.hintText,
   });
 }
@@ -178,18 +179,18 @@ class FormInformationItemUnit extends InformationItemUnit {
   final format = InputFormat.field;
 
   FormInformationItemUnit(
-      {@required this.start,
-      @required this.maxDigit,
-      @required this.unit,
-      @required this.name,
-      @required this.title});
+      {required this.start,
+      required this.maxDigit,
+      required this.unit,
+      required this.name,
+      required this.title});
 }
 
 class WidgetInformationItemUnit extends InformationItemUnit {
   final int start = 0;
   final Widget child;
 
-  WidgetInformationItemUnit({@required this.child});
+  WidgetInformationItemUnit({required this.child});
 
   final format = InputFormat.widget;
 }
@@ -201,24 +202,24 @@ class InformationItem {
   final InformationFormatter formatter;
 
   InformationItem({
-    @required this.units,
-    @required this.title,
-    @required this.appbarTitle,
-    @required this.formatter,
+    required this.units,
+    required this.title,
+    required this.appbarTitle,
+    required this.formatter,
   });
 }
 
 typedef void InformationOnChange(Map<String, int> d);
 
-class InformationItemCards extends HookWidget {
+class InformationItemCards extends ConsumerWidget {
   final List<InformationItem> items;
   final InformationOnChange onChange;
 
-  InformationItemCards({@required this.items, @required this.onChange});
+  InformationItemCards({required this.items, required this.onChange});
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(informationValueProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(informationValueProvider);
     List<InformationItemCard> cards = <InformationItemCard>[];
     for (InformationItem item in items) {
       cards.add(InformationItemCard(
@@ -238,18 +239,18 @@ class InformationItemCards extends HookWidget {
   }
 }
 
-class InformationItemCard extends StatefulWidget {
+class InformationItemCard extends ConsumerStatefulWidget {
   final InformationItem item;
   final InformationOnChange onChange;
 
-  InformationItemCard({@required this.item, @required this.onChange});
+  InformationItemCard({required this.item, required this.onChange});
 
   @override
   _InformationItemCardState createState() => _InformationItemCardState();
 }
 
-class _InformationItemCardState extends State<InformationItemCard> {
-  Map<String, int> selected;
+class _InformationItemCardState extends ConsumerState<InformationItemCard> {
+  Map<String, int> selected = {};
 
   @override
   void initState() {
@@ -258,15 +259,15 @@ class _InformationItemCardState extends State<InformationItemCard> {
       if (unit.format == InputFormat.picker) {
         PickerInformationItemUnit _unit = unit as PickerInformationItemUnit;
         for (PickerInformationItemUnitRoller roller in _unit.rollers) {
-          context
-              .read(informationValueProvider)
+          ref
+              .read(informationValueProvider.notifier)
               .setValue(roller.name, roller.start, notify: false);
           selected[roller.name] = 0;
         }
       } else if (unit.format == InputFormat.field) {
         FormInformationItemUnit _unit = unit as FormInformationItemUnit;
-        context
-            .read(informationValueProvider)
+        ref
+            .read(informationValueProvider.notifier)
             .setValue(_unit.name, _unit.start, notify: false);
         selected[_unit.name] = _unit.start;
       }
@@ -281,20 +282,24 @@ class _InformationItemCardState extends State<InformationItemCard> {
         PickerInformationItemUnit _unit = unit as PickerInformationItemUnit;
         for (PickerInformationItemUnitRoller roller in _unit.rollers) {
           List<int> values = roller.getValueList();
-          int index = values.indexOf(
-            context.read(informationValueProvider).getValue(roller.name)
-          );
-          selected[roller.name] = index;
+          int? value =
+              ref.read(informationValueProvider.notifier).getValue(roller.name);
+          if (value != null) {
+            int index = values.indexOf(value);
+            selected[roller.name] = index;
+          }
         }
       } else if (unit.format == InputFormat.field) {
         FormInformationItemUnit _unit = unit as FormInformationItemUnit;
-        selected[_unit.name] = context.read(informationValueProvider).getValue(
-          _unit.name
-        );
+        int? value =
+            ref.read(informationValueProvider.notifier).getValue(_unit.name);
+        if (value != null) {
+          selected[_unit.name] = value;
+        }
       }
     }
     String text = widget.item.formatter
-        .format(context.read(informationValueProvider.state));
+        .format(ref.read(informationValueProvider.notifier).getState());
     return InkWell(
       onTap: () {
         showForm(context);
@@ -324,7 +329,7 @@ class _InformationItemCardState extends State<InformationItemCard> {
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 17),
+                          ?.copyWith(fontWeight: FontWeight.w700, fontSize: 17),
                     )
                   ],
                 ),
@@ -347,7 +352,7 @@ class _InformationItemCardState extends State<InformationItemCard> {
             selected: selected,
             onPop: (Map<String, int> selected) {
               Map<String, int> newValues =
-                  context.read(informationValueProvider.state);
+                  ref.read(informationValueProvider.notifier).getState();
               Map<String, int> newSelected = this.selected;
               for (InformationItemUnit unit in widget.item.units) {
                 if (unit.format == InputFormat.picker) {
@@ -355,19 +360,25 @@ class _InformationItemCardState extends State<InformationItemCard> {
                       unit as PickerInformationItemUnit;
                   for (PickerInformationItemUnitRoller roller
                       in _unit.rollers) {
-                    newValues[roller.name] =
-                        roller.getValue(selected[roller.name]);
-                    newSelected[roller.name] = selected[roller.name];
+                    int? v = selected[roller.name];
+                    if (v != null) {
+                      newValues[roller.name] = roller.getValue(v);
+                      newSelected[roller.name] = v;
+                    }
                   }
                 } else if (unit.format == InputFormat.field) {
                   FormInformationItemUnit _unit =
                       unit as FormInformationItemUnit;
-                  newValues[_unit.name] = selected[_unit.name];
-                  newSelected[_unit.name] = selected[_unit.name];
+
+                  int? v = selected[_unit.name];
+                  if (v != null) {
+                    newValues[_unit.name] = v;
+                    newSelected[_unit.name] = v;
+                  }
                 }
               }
               widget.onChange(newValues);
-              context.read(informationValueProvider).set(newValues);
+              ref.read(informationValueProvider.notifier).set(newValues);
               setState(() {
                 this.selected = newSelected;
               });
@@ -377,23 +388,23 @@ class _InformationItemCardState extends State<InformationItemCard> {
 
 typedef PickerCallback = void Function(Map<String, int>);
 
-class InformationInputView extends StatefulWidget {
+class InformationInputView extends ConsumerStatefulWidget {
   final InformationItem item;
   final PickerCallback onPop;
   final Map<String, int> selected;
 
   InformationInputView({
-    @required this.item,
-    @required this.onPop,
-    @required this.selected,
+    required this.item,
+    required this.onPop,
+    required this.selected,
   });
 
   @override
   _InformationInputViewState createState() => _InformationInputViewState();
 }
 
-class _InformationInputViewState extends State<InformationInputView> {
-  Map<String, int> selected;
+class _InformationInputViewState extends ConsumerState<InformationInputView> {
+  Map<String, int> selected = {};
 
   @override
   void initState() {
@@ -416,46 +427,45 @@ class _InformationInputViewState extends State<InformationInputView> {
               child: Text(_value.toString()),
             ));
           }
+
           pickerWidgets.add(Expanded(
               child: CupertinoPicker(
                   itemExtent: 40,
                   onSelectedItemChanged: (int i) {
                     selected[roller.name] = i;
-                    context
-                        .read(informationValueProvider)
+                    ref
+                        .read(informationValueProvider.notifier)
                         .setValue(roller.name, roller.getValue(i));
                   },
                   scrollController: FixedExtentScrollController(
-                      initialItem: widget.selected[roller.name]),
+                      initialItem: widget.selected[roller.name]!),
                   magnification: 1.1,
                   children: optionWidgets)));
-          if (roller.numerator != null) {
-            pickerWidgets.add(
-              Container(
-                alignment: Alignment.center,
-                margin: EdgeInsets.symmetric(horizontal: 24),
-                height: 40,
-                child: Text(
-                  roller.numerator,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyText1
-                      .copyWith(fontSize: 17),
-                ),
+          pickerWidgets.add(
+            Container(
+              alignment: Alignment.center,
+              margin: EdgeInsets.symmetric(horizontal: 24),
+              height: 40,
+              child: Text(
+                roller.numerator,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyText1
+                    ?.copyWith(fontSize: 17),
               ),
-            );
-          }
+            ),
+          );
           if (roller.denominator != null) {
             pickerWidgets.add(Expanded(
               child: Container(
                 alignment: Alignment.center,
                 height: 40,
                 child: Text(
-                  roller.denominator,
+                  roller.denominator!,
                   style: Theme.of(context)
                       .textTheme
                       .bodyText1
-                      .copyWith(fontSize: 17),
+                      ?.copyWith(fontSize: 17),
                 ),
               ),
             ));
@@ -465,7 +475,7 @@ class _InformationInputViewState extends State<InformationInputView> {
           widgets.add(Container(
             margin: EdgeInsets.only(bottom: 8),
             child: Text(
-              _unit.hintText,
+              _unit.hintText!,
               style: Theme.of(context).textTheme.subtitle1,
             ),
           ));
@@ -485,16 +495,17 @@ class _InformationInputViewState extends State<InformationInputView> {
         FormInformationItemUnit _unit = unit as FormInformationItemUnit;
         widgets.add(InformationTextField(
             unit: _unit,
-            initialValue:
-                context.read(informationValueProvider.state)[_unit.name],
+            initialValue: ref
+                .read(informationValueProvider.notifier)
+                .getState()[_unit.name]!,
             onChange: (String text) {
               if (text.length == 0) {
                 selected[_unit.name] = 0;
               } else {
                 selected[_unit.name] = int.parse(text);
               }
-              context
-                  .read(informationValueProvider)
+              ref
+                  .read(informationValueProvider.notifier)
                   .setValue(_unit.name, int.parse(text));
             }));
       } else {
@@ -549,12 +560,16 @@ class InformationValueProvider extends StateNotifier<Map<String, int>> {
     state = data;
   }
 
-  int getValue(String key) {
+  int? getValue(String key) {
     if (state.containsKey(key)) {
       return state[key];
     } else {
       return null;
     }
+  }
+
+  Map<String, int> getState() {
+    return state;
   }
 }
 
@@ -564,9 +579,9 @@ class InformationTextField extends StatefulWidget {
   final Function onChange;
 
   InformationTextField({
-    @required this.unit,
-    @required this.initialValue,
-    @required this.onChange,
+    required this.unit,
+    required this.initialValue,
+    required this.onChange,
   });
 
   @override
@@ -574,8 +589,8 @@ class InformationTextField extends StatefulWidget {
 }
 
 class _InformationTextFieldState extends State<InformationTextField> {
-  TextEditingController _controller;
-  FocusNode _node;
+  late TextEditingController _controller;
+  late FocusNode _node;
 
   @override
   void initState() {
@@ -628,7 +643,7 @@ class _InformationTextFieldState extends State<InformationTextField> {
             style: Theme.of(context)
                 .textTheme
                 .bodyText1
-                .copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+                ?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
             keyboardType: TextInputType.number,
             maxLength: widget.unit.maxDigit,
             inputFormatters: [

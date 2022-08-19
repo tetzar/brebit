@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:developer' as dv;
 import 'dart:math';
 
+import 'package:brebit/view/general/error-widget.dart';
 import 'package:brebit/view/widgets/app-bar.dart';
 import 'package:brebit/view/widgets/dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../model/partner.dart';
 import '../../../model/post.dart';
 import '../../../provider/auth.dart';
 import '../../../route/route.dart';
+import '../../model/user.dart';
 import '../home/navigation.dart' as Home;
 import '../timeline/post.dart';
-import '../widgets/back-button.dart';
 import '../widgets/bottom-sheet.dart';
 import '../widgets/user-card.dart';
 import 'others-profile.dart';
@@ -22,45 +22,41 @@ import 'widgets/post-card.dart';
 import 'widgets/profile-card.dart';
 import 'widgets/tab-bar.dart';
 
-class Profile extends HookWidget {
+class Profile extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    AuthProviderState _authProviderState = useProvider(authProvider.state);
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authProvider);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user == null) return ErrorToHomeWidget();
     return Scaffold(
-        appBar: AppBar(
-          leading: MyBackButton(),
-          title: getMyAppBarTitle(_authProviderState.user.customId, context),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {
-                GlobalKey<NavigatorState> key = Home.Home.navKey;
-                key.currentState.pushNamed('/settings');
-              },
-            )
-          ],
-        ),
+        appBar:
+            getMyAppBar(context: context, titleText: user.customId, actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Home.Home.pushNamed('/settings');
+            },
+          )
+        ]),
         body: ProfileContent());
   }
 }
 
-class ProfileContent extends StatefulWidget {
+class ProfileContent extends ConsumerStatefulWidget {
   @override
   _ProfileContentState createState() => _ProfileContentState();
 }
 
-class _ProfileContentState extends State<ProfileContent>
+class _ProfileContentState extends ConsumerState<ProfileContent>
     with SingleTickerProviderStateMixin {
-  Future<bool> _futureGetTimeline;
-  TabController _tabController;
+  late Future<bool> _futureGetTimeline;
+  late TabController _tabController;
 
-  StreamController _scrollStream;
+  late StreamController<double> _scrollStream;
 
-  ScrollController scrollController;
+  late ScrollController scrollController;
 
-  GlobalKey _profileCardKey;
+  late GlobalKey _profileCardKey;
 
   @override
   void initState() {
@@ -71,17 +67,20 @@ class _ProfileContentState extends State<ProfileContent>
       if (mounted) {
         _scrollStream.sink.add(max<double>(
             scrollController.offset -
-                _profileCardKey.currentContext.size.height,
+                (_profileCardKey.currentContext?.size?.height ?? 0),
             0));
       }
     });
-    _futureGetTimeline = context.read(authProvider).getProfileTimeline();
+    _futureGetTimeline = ref.read(authProvider.notifier).getProfileTimeline();
     _tabController = new TabController(
         length: 2,
         vsync: this,
-        initialIndex: context.read(tabProvider.state).toInt());
-    _tabController.animation.addListener(() {
-      context.read(tabProvider).set(_tabController.animation.value);
+        initialIndex: ref.read(tabProvider.notifier).position.toInt());
+    _tabController.animation?.addListener(() {
+      Animation? animation = _tabController.animation;
+      if (animation != null) {
+        ref.read(tabProvider.notifier).set(animation.value);
+      }
     });
     super.initState();
   }
@@ -101,8 +100,13 @@ class _ProfileContentState extends State<ProfileContent>
             future: _futureGetTimeline,
             builder: (BuildContext context, AsyncSnapshot<bool> snapshots) {
               if (snapshots.connectionState == ConnectionState.done) {
-                return PostListView(
-                    controller: PrimaryScrollController.of(context));
+                ScrollController? scrollController =
+                    PrimaryScrollController.of(context);
+                if (scrollController == null) {
+                  MyErrorDialog.show(Exception('scroll controller not found'));
+                  return Container();
+                }
+                return PostListView(controller: scrollController);
               } else {
                 return Center(
                   child: CircularProgressIndicator(),
@@ -146,26 +150,26 @@ class _ProfileContentState extends State<ProfileContent>
   }
 }
 
-class PostListView extends StatefulHookWidget {
+class PostListView extends ConsumerStatefulWidget {
   final ScrollController controller;
 
-  PostListView({this.controller});
+  PostListView({required this.controller});
 
   @override
   _PostListViewState createState() => _PostListViewState();
 }
 
-class _PostListViewState extends State<PostListView> {
-  List<Post> _posts;
-  bool nowLoading;
+class _PostListViewState extends ConsumerState<PostListView> {
+  late List<Post> _posts;
+  bool nowLoading = false;
 
   Future<void> reloadOlder(BuildContext ctx) async {
     print("scrolled");
-    if (!ctx.read(authProvider).noMoreContent && !nowLoading) {
+    if (!ref.read(authProvider.notifier).noMoreContent && !nowLoading) {
       print("start reload");
       nowLoading = true;
       try {
-        await ctx.read(authProvider).reloadOlderTimeLine();
+        await ref.read(authProvider.notifier).reloadOlderTimeLine();
       } catch (e) {
         dv.log('debug', error: e);
       }
@@ -176,6 +180,7 @@ class _PostListViewState extends State<PostListView> {
 
   @override
   void initState() {
+    _posts = ref.read(authProvider.notifier).user?.posts ?? [];
     nowLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.controller.addListener(() async {
@@ -189,13 +194,13 @@ class _PostListViewState extends State<PostListView> {
 
   @override
   Widget build(BuildContext context) {
-    _posts = context.read(authProvider.state).user.posts;
+    _posts = ref.read(authProvider.notifier).user?.posts ?? [];
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read(authProvider).reloadTimeLine();
+        await ref.read(authProvider.notifier).reloadTimeLine();
         if (mounted) {
           setState(() {
-            _posts = context.read(authProvider.state).user.posts;
+            _posts = ref.read(authProvider.notifier).user?.posts ?? [];
           });
         }
       },
@@ -211,7 +216,7 @@ class _PostListViewState extends State<PostListView> {
           itemCount: _posts.length + 1,
           itemBuilder: (BuildContext context, int index) {
             if (index == (_posts.length)) {
-              if (context.read(authProvider).noMoreContent) {
+              if (ref.read(authProvider.notifier).noMoreContent) {
                 return Container(
                   height: 0,
                 );
@@ -230,13 +235,14 @@ class _PostListViewState extends State<PostListView> {
             return InkWell(
                 onTap: () async {
                   Post _post = _posts[index];
-                  bool removed = await Home.Home.pushNamed('/post',
-                      args: PostArguments(post: _post));
+                  bool? removed = await Home.Home.pushNamed('/post',
+                      args: PostArguments(post: _post)) as bool?;
                   if (removed ?? false) {
-                    bool deleteSuccess =
-                        await context.read(authProvider).deletePost(_post);
-                    if (deleteSuccess != null && deleteSuccess) {
-                      await removePostFromAllProvider(_post, context);
+                    try {
+                      await ref.read(authProvider.notifier).deletePost(_post);
+                      await removePostFromAllProvider(_post, ref);
+                    } catch (e) {
+                      MyErrorDialog.show(e);
                     }
                   }
                 },
@@ -259,9 +265,10 @@ class _PostListViewState extends State<PostListView> {
           onSelect: () async {
             try {
               ApplicationRoutes.pop(context);
-              bool deleted = await context.read(authProvider).deletePost(post);
+              bool deleted =
+                  await ref.read(authProvider.notifier).deletePost(post);
               if (deleted) {
-                await removePostFromAllProvider(post, context);
+                await removePostFromAllProvider(post, ref);
               }
             } catch (e) {
               MyErrorDialog.show(e);
@@ -281,20 +288,21 @@ class _PostListViewState extends State<PostListView> {
   }
 }
 
-class FriendListView extends StatefulHookWidget {
+class FriendListView extends ConsumerStatefulWidget {
   @override
   _FriendListViewState createState() => _FriendListViewState();
 }
 
-class _FriendListViewState extends State<FriendListView> {
+class _FriendListViewState extends ConsumerState<FriendListView> {
   @override
   Widget build(BuildContext context) {
-    AuthProviderState _authProviderState = useProvider(authProvider.state);
-    List<Partner> _partners = _authProviderState.user.getAcceptedPartners();
+    ref.watch(authProvider);
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    List<Partner> _partners = user?.getAcceptedPartners() ?? [];
     return RefreshIndicator(
       onRefresh: () async {
         try {
-          await context.read(authProvider).reloadProfile();
+          await ref.read(authProvider.notifier).reloadProfile();
         } catch (e) {
           dv.log('debug', error: e);
         }
@@ -306,12 +314,10 @@ class _FriendListViewState extends State<FriendListView> {
         key: PageStorageKey('profile/friend'),
         itemCount: _partners.length,
         itemBuilder: (BuildContext context, int index) {
-          bool isFriend =
-              _authProviderState.user.isFriend(_partners[index].user);
+          bool isFriend = user?.isFriend(_partners[index].user) ?? false;
           return InkWell(
               onTap: () {
-                if (context.read(authProvider.state).user.id ==
-                    _partners[index].user.id) {
+                if (user != null && user.id == _partners[index].user.id) {
                   Home.Home.pushNamed('/profile');
                 } else {
                   Home.Home.push(MaterialPageRoute(

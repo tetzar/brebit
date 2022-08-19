@@ -1,28 +1,28 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import '../../../model/tag.dart';
 import '../../../provider/condition.dart';
-import 'widgets/tags.dart';
 import '../widgets/back-button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'widgets/tags.dart';
 
 class CircumstanceParams {
   List<Tag> selected;
   Function(List<Tag>) onSaved;
 
-  CircumstanceParams({@required this.selected, @required this.onSaved});
+  CircumstanceParams({required this.selected, required this.onSaved});
 }
 
-class Circumstance extends StatelessWidget {
+class Circumstance extends ConsumerWidget {
   final CircumstanceParams params;
 
-  Circumstance({@required this.params});
+  Circumstance({required this.params});
 
   @override
-  Widget build(BuildContext context) {
-    context.read(conditionProvider).setList(params.selected);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.read(conditionProvider.notifier).setList(params.selected);
     return Scaffold(
       appBar: AppBar(
         title: Text('状況を追加'),
@@ -45,48 +45,51 @@ class Circumstance extends StatelessWidget {
   }
 }
 
-class SaveButton extends HookWidget {
+class SaveButton extends HookConsumerWidget {
   final CircumstanceParams params;
 
-  SaveButton({@required this.params});
+  SaveButton({required this.params});
 
   @override
-  Widget build(BuildContext context) {
-    useProvider(conditionProvider.state);
-    bool savable = context.read(conditionProvider).hasChanged(params.selected);
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(conditionProvider);
+    bool savable =
+        ref.read(conditionProvider.notifier).hasChanged(params.selected);
     return IconButton(
       icon: Icon(Icons.check,
           color: savable
-              ? Theme.of(context).appBarTheme.iconTheme.color
+              ? Theme.of(context).appBarTheme.iconTheme?.color
               : Theme.of(context).disabledColor),
       onPressed: savable
           ? () {
-        save(context);
-      } : null,
+              save(ref, context);
+            }
+          : null,
     );
   }
 
-  void save(BuildContext ctx) {
-    params.onSaved(List.from(ctx.read(conditionProvider).getList()));
+  void save(WidgetRef ref, BuildContext ctx) {
+    params.onSaved(List.from(ref.read(conditionProvider.notifier).getList()));
     Navigator.pop(ctx);
   }
 }
 
-class SelectedTags extends StatefulHookWidget {
+class SelectedTags extends StatefulHookConsumerWidget {
   @override
   _SelectedTagsState createState() => _SelectedTagsState();
 }
 
-class _SelectedTagsState extends State<SelectedTags> {
+class _SelectedTagsState extends ConsumerState<SelectedTags> {
   @override
   Widget build(BuildContext context) {
-    List<Tag> tags = useProvider(conditionProvider.state);
+    ref.watch(conditionProvider);
+    List<Tag> tags = ref.read(conditionProvider.notifier).getList();
     List<TagCard> tagCards = <TagCard>[];
     tags.forEach((tag) {
       tagCards.add(SimpleTagCard(
         name: tag.name,
         onCancel: () {
-          context.read(conditionProvider).unsetFromList(tag);
+          ref.read(conditionProvider.notifier).unsetFromList(tag);
         },
       ));
     });
@@ -94,14 +97,15 @@ class _SelectedTagsState extends State<SelectedTags> {
   }
 }
 
-class SearchForm extends StatefulHookWidget {
+class SearchForm extends StatefulHookConsumerWidget {
   @override
   _SearchFormState createState() => _SearchFormState();
 }
 
-class _SearchFormState extends State<SearchForm> {
-  Timer _timer;
-  TextEditingController _textEditingController;
+class _SearchFormState extends ConsumerState<SearchForm> {
+  Timer? _timer;
+  late TextEditingController _textEditingController;
+
   @override
   void initState() {
     _textEditingController = new TextEditingController();
@@ -116,17 +120,22 @@ class _SearchFormState extends State<SearchForm> {
 
   @override
   Widget build(BuildContext context) {
-    useProvider(circumstanceSuggestionProvider.state);
-    useProvider(conditionProvider.state);
+    ref.watch(circumstanceSuggestionProvider);
+    ref.watch(conditionProvider);
     List<Tag> tags;
     if (_textEditingController.text.length > 0) {
-      tags = context.read(circumstanceSuggestionProvider.state).sublist(0);
+      tags = ref
+          .read(circumstanceSuggestionProvider.notifier)
+          .getState()
+          .sublist(0);
     } else {
-      tags = context.read(circumstanceSuggestionProvider).recommendations.sublist(0);
+      tags = ref
+          .read(circumstanceSuggestionProvider.notifier)
+          .recommendations
+          .sublist(0);
     }
-    tags.removeWhere((tag) =>
-    context.read(conditionProvider).isSet(tag.name)
-    );
+    tags.removeWhere(
+        (tag) => ref.read(conditionProvider.notifier).isSet(tag.name));
     return Container(
       margin: EdgeInsets.only(top: 16),
       child: Column(
@@ -142,17 +151,17 @@ class _SearchFormState extends State<SearchForm> {
             style: TextStyle(
                 fontWeight: FontWeight.w400,
                 fontSize: 14,
-                color: Theme.of(context).textTheme.bodyText1.color),
+                color: Theme.of(context).textTheme.bodyText1?.color),
             onChanged: (String text) {
               _timer?.cancel();
               _timer = Timer(Duration(milliseconds: 500), () async {
                 if (text.length > 0) {
-                  await context
-                      .read(circumstanceSuggestionProvider)
+                  await ref
+                      .read(circumstanceSuggestionProvider.notifier)
                       .getSuggestions(text);
                 } else {
-                  context
-                      .read(circumstanceSuggestionProvider)
+                  ref
+                      .read(circumstanceSuggestionProvider.notifier)
                       .setRecommendation();
                 }
               });
@@ -183,7 +192,7 @@ class _SearchFormState extends State<SearchForm> {
                                   color: Theme.of(context)
                                       .textTheme
                                       .bodyText1
-                                      .color),
+                                      ?.color),
                             ),
                           ),
                         ),
@@ -213,6 +222,6 @@ class _SearchFormState extends State<SearchForm> {
 
   void save(BuildContext ctx, Tag tag) {
     _textEditingController.clear();
-    ctx.read(conditionProvider).setToList(tag);
+    ref.read(conditionProvider.notifier).setToList(tag);
   }
 }

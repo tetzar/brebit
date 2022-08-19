@@ -7,7 +7,7 @@ class CustomTheme {
     TextStyle linkTextStyle = TextStyle(
       fontWeight: FontWeight.w400,
       fontSize: 13,
-      color: Theme.of(_context).accentColor,
+      color: Theme.of(_context).colorScheme.secondary,
       // decoration: TextDecoration.underline,
     );
     return linkTextStyle;

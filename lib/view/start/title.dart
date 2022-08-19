@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class Title extends StatelessWidget {
@@ -19,9 +18,8 @@ class TitleAnimate extends StatefulWidget {
 
 class _TitleAnimateState extends State<TitleAnimate>
     with SingleTickerProviderStateMixin {
-  AnimationController _animationController;
-  Animation<double> _curve;
-  double _painterHeight;
+  late AnimationController _animationController;
+  late Animation<double> _curve;
 
   double _painterMaxDeg = 0.23176;
 
@@ -64,28 +62,27 @@ class _TitleAnimateState extends State<TitleAnimate>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   InkWell(
-                  borderRadius: BorderRadius.all(Radius.circular(28)),
+                    borderRadius: BorderRadius.all(Radius.circular(28)),
                     onTap: () async {
                       await Navigator.pushNamed(context, '/register');
                       startAnimation();
                     },
                     child: Container(
-                      width: 300,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(28)),
-                        color: Theme.of(context).accentColor,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '新規登録',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).primaryColor,
+                        width: 300,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(28)),
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
-                      )
-                    ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '新規登録',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        )),
                   ),
                   Container(
                     margin: EdgeInsets.only(top: 20),
@@ -100,7 +97,7 @@ class _TitleAnimateState extends State<TitleAnimate>
                           height: 56,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.all(Radius.circular(28)),
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -110,8 +107,7 @@ class _TitleAnimateState extends State<TitleAnimate>
                               fontWeight: FontWeight.w700,
                               color: Theme.of(context).primaryColor,
                             ),
-                          )
-                      ),
+                          )),
                     ),
                   )
                 ],
@@ -120,8 +116,8 @@ class _TitleAnimateState extends State<TitleAnimate>
           ),
           AnimatedBuilder(
               animation: _curve,
-              builder: (BuildContext context, Widget child) {
-                _painterHeight = MediaQuery.of(context).size.height *
+              builder: (BuildContext context, child) {
+                double _painterHeight = MediaQuery.of(context).size.height *
                         (1 - _curve.value / 2) +
                     MediaQuery.of(context).size.width *
                         atan(_curve.value * _painterMaxDeg) /
@@ -133,16 +129,16 @@ class _TitleAnimateState extends State<TitleAnimate>
                     size: Size(double.infinity, _painterHeight),
                     painter: TitlePainter(
                         position: _curve.value,
-                        backGroundColor: Theme.of(context).accentColor,
+                        backGroundColor:
+                            Theme.of(context).colorScheme.secondary,
                         maxDeg: _painterMaxDeg,
-                      shadowColor: Theme.of(context).shadowColor
-                    ),
+                        shadowColor: Theme.of(context).shadowColor),
                   ),
                 );
               }),
           AnimatedBuilder(
               animation: _curve,
-              builder: (BuildContext context, Widget child) {
+              builder: (BuildContext context, child) {
                 double _height = MediaQuery.of(context).size.height *
                         (1 - _curve.value / 2) -
                     MediaQuery.of(context).size.width *
@@ -169,7 +165,7 @@ class _TitleAnimateState extends State<TitleAnimate>
                                   MediaQuery.of(context).size.width / 2 - 187.5,
                             ),
                             Positioned(
-                              top: _boxHeight / 2 + 30,
+                                top: _boxHeight / 2 + 30,
                                 child: AnimatedOpacity(
                                   opacity: _showText ? 1.0 : 0.0,
                                   duration: Duration(milliseconds: 500),
@@ -178,12 +174,12 @@ class _TitleAnimateState extends State<TitleAnimate>
                                     height: 30,
                                     alignment: Alignment.center,
                                     child: Text(
-                              '習慣を改善しよう',
-                              style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700),
-                            ),
+                                      '習慣を改善しよう',
+                                      style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                                 ))
                           ],
@@ -208,13 +204,13 @@ class TitlePainter extends CustomPainter {
   Color backGroundColor;
   Color shadowColor;
   final double maxDeg;
-  Paint _paint;
+  late Paint _paint;
 
   TitlePainter(
-      {@required this.position,
-      @required this.backGroundColor,
-      @required this.maxDeg,
-      @required this.shadowColor}) {
+      {required this.position,
+      required this.backGroundColor,
+      required this.maxDeg,
+      required this.shadowColor}) {
     _paint = new Paint()
       ..color = backGroundColor
       ..style = PaintingStyle.fill;
@@ -230,7 +226,6 @@ class TitlePainter extends CustomPainter {
       ..lineTo(size.width, 0);
     canvas.drawShadow(path, Color(0x80000000), 8, true);
     canvas.drawPath(path, _paint);
-
   }
 
   @override

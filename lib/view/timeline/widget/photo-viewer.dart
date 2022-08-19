@@ -13,10 +13,10 @@ class GalleryPhotoViewWrapper extends StatefulWidget {
   final PageController pageController;
 
   GalleryPhotoViewWrapper(
-      {@required this.images,
-      @required this.backgroundDecoration,
-      @required this.tag,
-      @required this.scrollDirection})
+      {required this.images,
+      required this.backgroundDecoration,
+      required this.tag,
+      required this.scrollDirection})
       : pageController = new PageController(
             initialPage: images.indexWhere((element) => element.url == tag));
 
@@ -37,7 +37,7 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
   @override
   void initState() {
     widget.pageController.addListener(() {
-      double page = widget.pageController.page;
+      double page = widget.pageController.page ?? 0;
       isHorizontalScrolling = ((page - page.round().toDouble()).abs() > 0.001);
     });
     super.initState();
@@ -172,7 +172,7 @@ class _GalleryPhotoViewWrapperState extends State<GalleryPhotoViewWrapper> {
 
 class FadeInRoute extends PageRouteBuilder {
   FadeInRoute({
-    @required this.widget,
+    required this.widget,
     this.opaque = true,
     this.onTransitionCompleted,
     this.onTransitionDismissed,
@@ -210,6 +210,6 @@ class FadeInRoute extends PageRouteBuilder {
 
   final Widget widget;
   final bool opaque;
-  final Function onTransitionCompleted;
-  final Function onTransitionDismissed;
+  final Function? onTransitionCompleted;
+  final Function? onTransitionDismissed;
 }

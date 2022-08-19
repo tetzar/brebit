@@ -1,14 +1,13 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 class BottomSheetItem extends StatelessWidget {
-  final Function onTap;
+  final Function() onTap;
   final Widget child;
 
   BottomSheetItem({
-    @required this.onTap,
-    @required this.child,
+    required this.onTap,
+    required this.child,
   });
 
   @override
@@ -26,92 +25,85 @@ class BottomSheetItem extends StatelessWidget {
 
 class CancelBottomSheetItem extends BottomSheetItem {
   final BuildContext context;
-  final String text;
-  final Function onSelect;
+  final String? text;
+  final Function() onSelect;
 
   CancelBottomSheetItem(
-      {@required this.context, this.text, @required this.onSelect}) :
-  super(
-        child: Text(
-          text ?? 'キャンセル',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            color: Theme.of(context).disabledColor
-          ),
-        ),
-        onTap: onSelect
-      );
+      {required this.context, this.text, required this.onSelect})
+      : super(
+            child: Text(
+              text ?? 'キャンセル',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: Theme.of(context).disabledColor),
+            ),
+            onTap: onSelect);
 }
 
 class NormalBottomSheetItem extends BottomSheetItem {
   final BuildContext context;
   final String text;
-  final Function onSelect;
+  final Function() onSelect;
 
   NormalBottomSheetItem(
-      {@required this.context, @required this.text, @required this.onSelect}) :
-        super(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyText1.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w700
+      {required this.context, required this.text, required this.onSelect})
+      : super(
+            child: Text(
+              text,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyText1
+                  ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
             ),
-          ),
-          onTap: onSelect
-      );
+            onTap: onSelect);
 }
-
 
 class CautionBottomSheetItem extends BottomSheetItem {
   final BuildContext context;
   final String text;
-  final Function onSelect;
+  final Function() onSelect;
 
   CautionBottomSheetItem(
-      {@required this.context, @required this.text, @required this.onSelect}) :
-        super(
-          child: Text(
-            text,
-            style: Theme.of(context).accentTextTheme.subtitle1.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w700
+      {required this.context, required this.text, required this.onSelect})
+      : super(
+            child: Text(
+              text,
+              style: Theme.of(context)
+                  .primaryTextTheme
+                  .subtitle1
+                  ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
             ),
-          ),
-          onTap: onSelect
-      );
+            onTap: onSelect);
 }
 
 class SuccessBottomSheetItem extends BottomSheetItem {
   final BuildContext context;
   final String text;
-  final Function onSelect;
+  final Function() onSelect;
 
   SuccessBottomSheetItem(
-      {@required this.context, @required this.text, @required this.onSelect}) :
-        super(
-          child: Text(
-            text,
-            style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w700,
-              fontSize: 18
+      {required this.context, required this.text, required this.onSelect})
+      : super(
+            child: Text(
+              text,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18),
             ),
-          ),
-          onTap: onSelect
-      );
+            onTap: onSelect);
 }
 
-
 void showCustomBottomSheet(
-    {@required List<BottomSheetItem> items,
-    @required Color backGroundColor,
-    @required BuildContext context,
+    {required List<BottomSheetItem> items,
+    required Color backGroundColor,
+    required BuildContext? context,
     bool isDismissible = true,
     bool enableDrag = true,
-    Function onClosed,
-    String hintText}) async {
+    Function()? onClosed,
+    String? hintText}) async {
+  if (context == null) return;
   List<Widget> widgets = [
     hintText == null
         ? Container(
@@ -152,25 +144,25 @@ void showCustomBottomSheet(
   ];
   widgets.addAll(items);
   await showCupertinoModalBottomSheet(
-      context: context,
-      builder: (context) => Wrap(
-            children: [
-              Container(
-                color: backGroundColor,
-                width: MediaQuery.of(context).size.width,
-                child: Column(
-                  children: widgets,
-                ),
-              )
-            ],
+    context: context,
+    builder: (context) => Wrap(
+      children: [
+        Container(
+          color: backGroundColor,
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            children: widgets,
           ),
-      // isDismissible: isDismissible,
-      // enableDrag: enableDrag,
-      topRadius: Radius.circular(30),
-      barrierColor: Color(0x80000000),
-      // animationCurve: Curves.easeOutBack,
-      // duration: const Duration(milliseconds: 200)
-      );
+        )
+      ],
+    ),
+    // isDismissible: isDismissible,
+    // enableDrag: enableDrag,
+    topRadius: Radius.circular(30),
+    barrierColor: Color(0x80000000),
+    // animationCurve: Curves.easeOutBack,
+    // duration: const Duration(milliseconds: 200)
+  );
   if (onClosed != null) {
     onClosed();
   }
@@ -182,7 +174,7 @@ class BottomSheetBarPainter extends CustomPainter {
   final double top = 8;
   final double strokeWidth = 3;
 
-  BottomSheetBarPainter({@required this.barColor});
+  BottomSheetBarPainter({required this.barColor});
 
   @override
   void paint(Canvas canvas, Size size) {

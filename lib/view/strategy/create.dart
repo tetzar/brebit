@@ -8,7 +8,6 @@ import '../widgets/app-bar.dart';
 import '../widgets/back-button.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -18,7 +17,7 @@ typedef StrategyCreateCallback = Future<void> Function(InputFormValue);
 class StrategyCreateParams {
   StrategyCreateCallback onSaved;
 
-  StrategyCreateParams({@required this.onSaved});
+  StrategyCreateParams({required this.onSaved});
 }
 
 final inputProvider = StateNotifierProvider.autoDispose((ref) => InputProvider(false));
@@ -37,20 +36,20 @@ class InputProvider extends StateNotifier<bool> {
   }
 }
 
-class StrategyCreate extends StatefulWidget {
+class StrategyCreate extends ConsumerStatefulWidget {
   final StrategyCreateParams params;
 
-  StrategyCreate({@required this.params});
+  StrategyCreate({required this.params});
 
   @override
   _StrategyCreateState createState() => _StrategyCreateState();
 }
 
-class _StrategyCreateState extends State<StrategyCreate> {
+class _StrategyCreateState extends ConsumerState<StrategyCreate> {
   @override
   void initState() {
-    context.read(inputProvider).set(false);
-    context.read(circumstanceSuggestionProvider).getSuggestions('');
+    ref.read(inputProvider.notifier).set(false);
+    ref.read(circumstanceSuggestionProvider.notifier).getSuggestions('');
     super.initState();
   }
 
@@ -66,7 +65,7 @@ class _StrategyCreateState extends State<StrategyCreate> {
         body: MyHookBottomFixedButton(
           label: '保存',
           enable: () {
-            return context.read(inputProvider).get();
+            return ref.read(inputProvider.notifier).get();
           },
           onTapped: () async {
             await save(context);
@@ -94,7 +93,7 @@ class _StrategyCreateState extends State<StrategyCreate> {
 enum StrategyCategory { ifThen, twentySec }
 
 class InputFormValue {
-  StrategyCategory strategyCategory;
+  StrategyCategory? strategyCategory;
   Map<String, String> data = <String, String>{};
   List<Tag> tags = <Tag>[];
 
@@ -104,7 +103,7 @@ class InputFormValue {
 
   String getValue(String label) {
     if (data.containsKey(label)) {
-      return data[label];
+      return data[label]!;
     }
     return '';
   }
@@ -126,27 +125,24 @@ class InputFormValue {
     switch (strategyCategory) {
       case StrategyCategory.ifThen:
         return getValue('if').length > 0 && getValue('then').length > 0;
-        break;
       case StrategyCategory.twentySec:
         return getValue('twenty-sec').length > 0;
-        break;
       default:
         return false;
-        break;
     }
   }
 }
 
-class StrategyForm extends StatefulWidget {
+class StrategyForm extends ConsumerStatefulWidget {
   @override
   _StrategyFormState createState() => _StrategyFormState();
 }
 
-InputFormValue _formValue;
+late InputFormValue _formValue;
 // final ScrollController _controller = new ScrollController();
 
-class _StrategyFormState extends State<StrategyForm> {
-  StrategyCategory strategyCategory;
+class _StrategyFormState extends ConsumerState<StrategyForm> {
+  StrategyCategory? strategyCategory;
   FocusNode node = FocusNode();
 
   @override
@@ -188,7 +184,7 @@ class _StrategyFormState extends State<StrategyForm> {
                   onTap: () {
                     if (strategyCategory != StrategyCategory.ifThen) {
                       _formValue.strategyCategory = StrategyCategory.ifThen;
-                      context.read(inputProvider).set(_formValue.savable());
+                      ref.read(inputProvider.notifier).set(_formValue.savable());
                       setState(() {
                         strategyCategory = StrategyCategory.ifThen;
                       });
@@ -211,7 +207,7 @@ class _StrategyFormState extends State<StrategyForm> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText1
-                                  .copyWith(
+                                  ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 17)),
                         ),
@@ -220,7 +216,7 @@ class _StrategyFormState extends State<StrategyForm> {
                           size: 17,
                           color: _formValue.strategyCategory ==
                               StrategyCategory.ifThen
-                              ? Theme.of(context).textTheme.bodyText1.color
+                              ? Theme.of(context).textTheme.bodyText1?.color
                               : Theme.of(context).primaryColor,
                         )
                       ],
@@ -232,7 +228,7 @@ class _StrategyFormState extends State<StrategyForm> {
                     if (strategyCategory != StrategyCategory.twentySec) {
                       _formValue.strategyCategory =
                           StrategyCategory.twentySec;
-                      context.read(inputProvider).set(_formValue.savable());
+                      ref.read(inputProvider.notifier).set(_formValue.savable());
                       setState(() {
                         strategyCategory = StrategyCategory.twentySec;
                       });
@@ -255,7 +251,7 @@ class _StrategyFormState extends State<StrategyForm> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText1
-                                  .copyWith(
+                                  ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 17)),
                         ),
@@ -264,7 +260,7 @@ class _StrategyFormState extends State<StrategyForm> {
                           size: 17,
                           color: _formValue.strategyCategory ==
                               StrategyCategory.twentySec
-                              ? Theme.of(context).textTheme.bodyText1.color
+                              ? Theme.of(context).textTheme.bodyText1?.color
                               : Theme.of(context).primaryColor,
                         )
                       ],
@@ -287,7 +283,7 @@ class _StrategyFormState extends State<StrategyForm> {
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                       decoration: TextDecoration.underline),
                 ),
               )),
@@ -299,12 +295,12 @@ class _StrategyFormState extends State<StrategyForm> {
   }
 }
 
-class IfThenForm extends StatefulWidget {
+class IfThenForm extends ConsumerStatefulWidget {
   @override
   _IfThenFormState createState() => _IfThenFormState();
 }
 
-class _IfThenFormState extends State<IfThenForm> {
+class _IfThenFormState extends ConsumerState<IfThenForm> {
   @override
   void initState() {
     super.initState();
@@ -326,7 +322,7 @@ class _IfThenFormState extends State<IfThenForm> {
               hintText: '条件',
               onChanged: (String text) {
                 _formValue.setValue('if', text);
-                context.read(inputProvider).set(_formValue.savable());
+                ref.read(inputProvider.notifier).set(_formValue.savable());
               },
               inputAction: TextInputAction.next,
               initialValue: _formValue.getValue('if'),
@@ -336,7 +332,7 @@ class _IfThenFormState extends State<IfThenForm> {
               hintText: '行動',
               onChanged: (String text) {
                 _formValue.setValue('then', text);
-                context.read(inputProvider).set(_formValue.savable());
+                ref.read(inputProvider.notifier).set(_formValue.savable());
               },
               inputAction: TextInputAction.done,
               initialValue: _formValue.getValue('if'),
@@ -348,16 +344,16 @@ class _IfThenFormState extends State<IfThenForm> {
   }
 }
 
-class TwentySecForm extends StatelessWidget {
+class TwentySecForm extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       child: StrategyInputField(
         label: '行動を20秒増やすためのルール',
         hintText: '行動',
         onChanged: (String text) {
           _formValue.setValue('twenty-sec', text);
-          context.read(inputProvider).set(_formValue.savable());
+          ref.read(inputProvider.notifier).set(_formValue.savable());
         },
         inputAction: TextInputAction.done,
         initialValue: _formValue.getValue('twenty-sec'),
@@ -370,22 +366,22 @@ class StrategyInputField extends StatefulWidget {
   final String label;
   final String hintText;
   final String initialValue;
-  final List<TextInputFormatter> inputFormatter;
-  final AutovalidateMode autoValidateMode;
-  final Function onSaved;
-  final Function onChanged;
-  final FocusNode focusNode;
-  final Function editComplete;
-  final ScrollController scrollController;
-  final TextInputAction inputAction;
+  final List<TextInputFormatter>? inputFormatter;
+  final AutovalidateMode? autoValidateMode;
+  final Function? onSaved;
+  final Function(String)? onChanged;
+  final FocusNode? focusNode;
+  final Function? editComplete;
+  final ScrollController? scrollController;
+  final TextInputAction? inputAction;
 
   StrategyInputField(
-      {@required this.label,
-      @required this.hintText,
+      {required this.label,
+      required this.hintText,
       this.onChanged,
       this.inputAction = TextInputAction.none,
       this.onSaved,
-      this.initialValue,
+      this.initialValue = '',
       this.autoValidateMode,
       this.inputFormatter,
       this.focusNode,
@@ -397,7 +393,7 @@ class StrategyInputField extends StatefulWidget {
 }
 
 class _StrategyInputFieldState extends State<StrategyInputField> {
-  TextEditingController _textEditingController;
+  late TextEditingController _textEditingController;
 
   final double inputAreaPosition = 150;
 
@@ -449,14 +445,15 @@ class _StrategyInputFieldState extends State<StrategyInputField> {
                   style: Theme.of(context)
                       .textTheme
                       .bodyText1
-                      .copyWith(fontWeight: FontWeight.w700, fontSize: 17),
+                      ?.copyWith(fontWeight: FontWeight.w700, fontSize: 17),
                   // onEditingComplete: widget.editComplete,
                   onChanged: (String text) {
                     // _controller.animateTo(inputAreaPosition,
                     //     duration: Duration(milliseconds: 200),
                     //     curve: Curves.easeIn);
-                    if (widget.onChanged != null) {
-                      widget.onChanged(text);
+                    Function(String)? onChanged = widget.onChanged;
+                    if (onChanged != null) {
+                      onChanged(text);
                     }
                   },
                   decoration: InputDecoration(
@@ -466,7 +463,7 @@ class _StrategyInputFieldState extends State<StrategyInputField> {
                       hintStyle: Theme.of(context)
                           .textTheme
                           .subtitle1
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 17),
+                          ?.copyWith(fontWeight: FontWeight.w700, fontSize: 17),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -489,7 +486,7 @@ class Tags extends StatefulWidget {
 }
 
 class _TagsState extends State<Tags> {
-  List<Tag> tags;
+  late List<Tag> tags;
 
   @override
   void initState() {
@@ -520,7 +517,7 @@ class _TagsState extends State<Tags> {
                     Expanded(
                       child: Text(
                         '状況を追加',
-                        style: Theme.of(context).textTheme.bodyText1.copyWith(
+                        style: Theme.of(context).textTheme.bodyText1?.copyWith(
                             fontWeight: FontWeight.w700, fontSize: 17),
                       ),
                     ),
@@ -571,7 +568,7 @@ class _TagsState extends State<Tags> {
   void selectTag(BuildContext context) {
     final FocusScopeNode currentScope = FocusScope.of(context);
     if (!currentScope.hasPrimaryFocus && currentScope.hasFocus) {
-      FocusManager.instance.primaryFocus.unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
     }
     CircumstanceParams params = new CircumstanceParams(
         selected: tags,

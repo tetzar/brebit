@@ -14,6 +14,7 @@ import '../../../provider/home.dart';
 import '../../../provider/notification.dart';
 import '../../../provider/posts.dart';
 import '../../../route/route.dart';
+import '../../model/user.dart';
 import '../notification/notification.dart';
 import '../profile/profile.dart';
 import '../search/search.dart';
@@ -33,7 +34,7 @@ FirebaseAuth _auth = FirebaseAuth.instance;
 enum HomeActionCodes { verifyComplete }
 
 class Home extends StatelessWidget {
-  final HomeActionCodes actionCode;
+  final HomeActionCodes? actionCode;
 
   Home(this.actionCode);
 
@@ -41,34 +42,35 @@ class Home extends StatelessWidget {
       new GlobalKey<NavigatorState>();
 
   static void pushReplacementNamed(String routeName) {
-    navKey.currentState.pushReplacementNamed(routeName);
+    navKey.currentState?.pushReplacementNamed(routeName);
   }
 
-  static Future<dynamic> pushNamed(String routeName, {dynamic args}) async {
+  static Future<Object?> pushNamed(String routeName, {dynamic args}) async {
     if (args != null) {
-      WidgetBuilder _builder = _routeBuildersWithArguments(routeName, args);
+      WidgetBuilder? _builder = _routeBuildersWithArguments(routeName, args);
       if (_builder != null) {
-        dynamic result = await navKey.currentState.push(MaterialPageRoute(
-            builder: _routeBuildersWithArguments(routeName, args)));
+        dynamic result = await navKey.currentState
+            ?.push(MaterialPageRoute(builder: _builder));
         return result;
       }
     } else {
-      dynamic result = await navKey.currentState.pushNamed(routeName);
+      dynamic result = await navKey.currentState?.pushNamed(routeName);
       return result;
     }
+    return null;
   }
 
-  static Future<dynamic> push(Route route) async {
-    dynamic result = navKey.currentState.push(route);
+  static Future<Object?> push(Route route) async {
+    dynamic result = navKey.currentState?.push(route);
     return result;
   }
 
   static void pop([dynamic result]) {
-    navKey.currentState.pop(result);
+    navKey.currentState?.pop(result);
   }
 
   static void popUntil(String routeName) {
-    navKey.currentState.popUntil(ModalRoute.withName(routeName));
+    navKey.currentState?.popUntil(ModalRoute.withName(routeName));
   }
 
   @override
@@ -76,7 +78,7 @@ class Home extends StatelessWidget {
     return HomeNavigation(actionCode);
   }
 
-  static WidgetBuilder _routeBuildersWithArguments(String name, dynamic args) {
+  static WidgetBuilder? _routeBuildersWithArguments(String name, dynamic args) {
     Map<String, WidgetBuilder> _routes = {
       '/post': (context) => PostPage(args: args),
     };
@@ -84,6 +86,10 @@ class Home extends StatelessWidget {
       return _routes[name];
     }
     return null;
+  }
+
+  static bool canPop() {
+    return navKey.currentState?.canPop() ?? false;
   }
 }
 
@@ -94,23 +100,30 @@ typedef HomeTabStateChangedCallback = void Function(int);
 class TabState extends StateNotifier<int> {
   TabState(int state) : super(state);
 
-  HomeTabStateChangedCallback callback;
+  HomeTabStateChangedCallback? callback;
 
   void setListener(HomeTabStateChangedCallback callback) {
     this.callback = callback;
   }
 
   void set(int s) {
+    HomeTabStateChangedCallback? callback = this.callback;
+    NavigatorState? currentState = Home.navKey.currentState;
     if (callback != null &&
         s == 0 &&
         state == 0 &&
-        !Home.navKey.currentState.canPop()) callback(state);
+        currentState != null &&
+        !currentState.canPop()) callback(state);
     state = s;
+  }
+
+  int getIndex() {
+    return state;
   }
 }
 
-class HomeNavigation extends StatefulWidget {
-  final HomeActionCodes actionCode;
+class HomeNavigation extends ConsumerStatefulWidget {
+  final HomeActionCodes? actionCode;
 
   HomeNavigation(this.actionCode);
 
@@ -118,12 +131,12 @@ class HomeNavigation extends StatefulWidget {
   _HomeNavigationState createState() => _HomeNavigationState();
 }
 
-class _HomeNavigationState extends State<HomeNavigation>
+class _HomeNavigationState extends ConsumerState<HomeNavigation>
     with SingleTickerProviderStateMixin {
-  User firebaseUser;
-  AnimationController _animationController;
-  Animation<double> _curve;
-  Confetti confetti;
+  User? firebaseUser;
+  late AnimationController _animationController;
+  late Animation<double> _curve;
+  late Confetti confetti;
 
   @override
   void initState() {
@@ -140,12 +153,12 @@ class _HomeNavigationState extends State<HomeNavigation>
       Navigator.popUntil(context, ModalRoute.withName('/home'));
       Navigator.pushReplacementNamed(context, '/title');
     }
-    context.read(authProvider).startNotificationListening();
+    ref.read(authProvider.notifier).startNotificationListening();
     if (widget.actionCode == HomeActionCodes.verifyComplete) {
       _animationController.forward();
     }
     confetti = Confetti();
-    context.read(confettiProvider).setConfetti(confetti);
+    ref.read(confettiProvider.notifier).setConfetti(confetti);
   }
 
   @override
@@ -172,61 +185,61 @@ class _HomeNavigationState extends State<HomeNavigation>
                       return Container(
                         height:
                             MediaQuery.of(context).size.height * _curve.value,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       );
                     })
               ],
             )
           : Stack(
-            children: [
-              Scaffold(
-                  body: HomeNavigator(),
-                  bottomNavigationBar: HomeBottomNavigationBar(
-                    onTapped: _onItemTapped,
-                  )),
-              IgnorePointer(
-                child: SafeArea(
-                  child: confetti.getWidget()
-                ),
-              )
-            ],
-          ),
+              children: [
+                Scaffold(
+                    body: HomeNavigator(),
+                    bottomNavigationBar: HomeBottomNavigationBar(
+                      onTapped: _onItemTapped,
+                    )),
+                IgnorePointer(
+                  child: SafeArea(child: confetti.getWidget()),
+                )
+              ],
+            ),
     );
   }
 
   void _onItemTapped(int index) {
     if (index != 1) {
-      context.read(homeTabProvider).set(index);
+      ref.read(homeTabProvider.notifier).set(index);
     }
   }
 
   Future<bool> onWillPop() async {
-    if (Home.navKey.currentState.canPop()) {
-      Home.navKey.currentState.pop();
+    NavigatorState? currentState = Home.navKey.currentState;
+    if (currentState != null && currentState.canPop()) {
+      currentState.pop();
     } else {
-      int index = context.read(homeTabProvider.state);
+      int index = ref.read(homeTabProvider.notifier).getIndex();
       if (index == 0) {
         SystemNavigator.pop();
       } else {
-        context.read(homeTabProvider).set(0);
+        ref.read(homeTabProvider.notifier).set(0);
       }
     }
     return false;
   }
 }
 
-class HomeBottomNavigationBar extends StatefulHookWidget {
+class HomeBottomNavigationBar extends ConsumerStatefulWidget {
   final Function onTapped;
 
-  HomeBottomNavigationBar({Key key, this.onTapped});
+  HomeBottomNavigationBar({Key? key, required this.onTapped});
 
   @override
   _HomeBottomNavigationBarState createState() =>
       _HomeBottomNavigationBarState();
 }
 
-class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
-  Function _onTapped;
+class _HomeBottomNavigationBarState
+    extends ConsumerState<HomeBottomNavigationBar> {
+  late Function _onTapped;
 
   @override
   void initState() {
@@ -240,7 +253,8 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
 
   @override
   Widget build(BuildContext context) {
-    int index = useProvider(homeTabProvider.state);
+    ref.watch(homeTabProvider);
+    int index = ref.read(homeTabProvider.notifier).getIndex();
     return BottomNavigationBar(
       showSelectedLabels: true,
       showUnselectedLabels: true,
@@ -272,13 +286,16 @@ class _HomeBottomNavigationBarState extends State<HomeBottomNavigationBar> {
   void _onItemTapped(int index, BuildContext context) {
     this._onTapped(index);
     if (index == 1) {
-      Habit habit = context.read(homeProvider).getHabit();
+      Habit? habit = ref.read(homeProvider.notifier).getHabit();
       if (habit != null) {
         Navigator.pushNamed(context, '/actions');
       }
     } else {
-      while (Home.navKey.currentState.canPop()) {
-        Home.navKey.currentState.pop();
+      NavigatorState? currentState = Home.navKey.currentState;
+      if (currentState != null) {
+        while (currentState.canPop()) {
+          currentState.pop();
+        }
       }
     }
   }
@@ -310,18 +327,22 @@ class HomeNavigator extends StatelessWidget {
         key: Home.navKey,
         initialRoute: '/',
         onGenerateRoute: (routeSettings) {
-          return MaterialPageRoute(
-              builder: (context) => routeBuilders[routeSettings.name](context));
+          Widget Function(BuildContext)? builder =
+              routeBuilders[routeSettings.name];
+          if (builder != null) {
+            return MaterialPageRoute(builder: (context) => builder(context));
+          }
+          return MaterialPageRoute(builder: (context) => Container());
         });
   }
 }
 
-class HomeTabs extends StatefulHookWidget {
+class HomeTabs extends ConsumerStatefulWidget {
   @override
   _HomeTabsState createState() => _HomeTabsState();
 }
 
-class _HomeTabsState extends State<HomeTabs> {
+class _HomeTabsState extends ConsumerState<HomeTabs> {
   final List<Widget> _children = [
     HomeContent(),
     Text('action'),
@@ -332,10 +353,36 @@ class _HomeTabsState extends State<HomeTabs> {
 
   @override
   Widget build(BuildContext context) {
-    useProvider(authProvider.state);
-    useProvider(homeProvider.state);
-    final index = useProvider(homeTabProvider.state);
-    Habit habit = context.read(homeProvider).getHabit();
+    ref.watch(authProvider);
+    ref.watch(homeProvider);
+    ref.watch(homeTabProvider);
+    final index = ref.read(homeTabProvider.notifier).getIndex();
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    AuthUser? user = ref.read(authProvider.notifier).user;
+    if (user == null) {
+      ref.read(authProvider.notifier).getUser();
+      return Scaffold(
+        appBar: getMyAppBar(context: context),
+        body: Container(
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'ユーザー情報を読み込んでいます',
+                style: TextStyle(
+                    color: Theme.of(context).disabledColor, fontSize: 24),
+              ),
+              SizedBox(
+                height: 40,
+              ),
+              CircularProgressIndicator()
+            ],
+          ),
+        ),
+      );
+    }
     List<Widget> actions = <Widget>[];
     if (habit != null) {
       actions.add(IconButton(
@@ -357,7 +404,7 @@ class _HomeTabsState extends State<HomeTabs> {
           child: ClipOval(
             child: Stack(
               children: <Widget>[
-                context.read(authProvider.state).user.getImageWidget()
+                user.getImageWidget()
 
                 /// replace y
               ],
@@ -373,12 +420,10 @@ class _HomeTabsState extends State<HomeTabs> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: getMyAppBarTitle(
-            _appbarTitle.containsKey(index) ? _appbarTitle[index] : 'Brebit',
-            context),
+        title: getMyAppBarTitle(_appbarTitle[index] ?? 'Brebit', context),
         leading: HookBuilder(builder: (context) {
-          useProvider(notificationProvider.state);
-          int unreadCount = context.read(notificationProvider).unreadCount;
+          ref.watch(notificationProvider);
+          int unreadCount = ref.read(notificationProvider.notifier).unreadCount;
           return GestureDetector(
             child: IconButton(
                 onPressed: () {
@@ -402,12 +447,12 @@ class _HomeTabsState extends State<HomeTabs> {
                 String result =
                     await ApplicationRoutes.pushNamed('/post/create');
                 if (result == 'reload') {
-                  context
-                      .read(timelineProvider(friendProviderName))
-                      .reloadPosts(context);
-                  context
-                      .read(timelineProvider(challengeProviderName))
-                      .reloadPosts(context);
+                  ref
+                      .read(timelineProvider(friendProviderName).notifier)
+                      .reloadPosts(ref);
+                  ref
+                      .read(timelineProvider(challengeProviderName).notifier)
+                      .reloadPosts(ref);
                 }
               },
               child: Icon(
@@ -415,7 +460,7 @@ class _HomeTabsState extends State<HomeTabs> {
               ),
               foregroundColor: Theme.of(context).primaryColor,
               elevation: 0,
-              backgroundColor: Theme.of(context).accentColor,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             )
           : null,
     );

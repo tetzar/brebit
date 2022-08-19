@@ -1,4 +1,6 @@
+import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/main.dart';
+import 'package:brebit/model/habit_log.dart';
 import '../view/action/actions.dart';
 import '../view/action/circumstance.dart';
 import '../view/action/did/check-amount.dart';
@@ -36,7 +38,6 @@ import '../view/start/register.dart';
 import '../view/habit/start_habit.dart';
 import '../view/timeline/create_post.dart';
 import '../view/timeline/post.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../view/start/title.dart' as ViewTitle;
 
@@ -45,45 +46,57 @@ class ApplicationRoutes {
       new GlobalKey<NavigatorState>();
 
   static dynamic push(Route route) {
-    var result = materialKey.currentState.push(route);
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
+    var result = currentState.push(route);
     return result;
   }
 
   static Future<dynamic> pushNamed(String routeName, [dynamic arguments]) async {
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
     var result;
-    if (arguments != null) {
-      result = await materialKey.currentState.pushNamed(routeName, arguments: arguments);
-    } else {
-      result = await materialKey.currentState.pushNamed(routeName);
-    }
+    result = await currentState.pushNamed(routeName, arguments: arguments);
     return result;
   }
 
-  static Future<void> pushReplacementNamed(String routeName, {dynamic arguments}) async{
+
+  static Future<dynamic> pushReplacement(Route route, {dynamic arguments}) async {
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
+    return await pushReplacement(
+      route,
+      arguments: arguments
+    );
+  }
+
+  static Future<dynamic> pushReplacementNamed(String routeName, {dynamic arguments}) async{
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
     var result;
-    if (arguments != null) {
-      result = await materialKey.currentState.pushReplacementNamed(routeName, arguments: arguments);
-    } else {
-      result = await materialKey.currentState.pushReplacementNamed(routeName);
-    }
+    result = await currentState.pushReplacementNamed(routeName, arguments: arguments);
     return result;
   }
 
   static void pop([dynamic result]) {
-    materialKey.currentState.pop(result);
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
+    currentState.pop(result);
   }
 
   static void popUntil(routeName) {
-    materialKey.currentState.popUntil(ModalRoute.withName(routeName));
+    NavigatorState? currentState = materialKey.currentState;
+    if (currentState == null) return;
+    currentState.popUntil(ModalRoute.withName(routeName));
   }
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     Map<String, WidgetBuilder> routes = ApplicationRoutes.getRoutes();
-    String route = settings.name;
-    if (routes.containsKey(route)) {
-      return MaterialPageRoute(builder: routes[route], settings: settings);
+    String? route = settings.name;
+    if (route != null && routes.containsKey(route)) {
+      return MaterialPageRoute(builder: routes[route]!, settings: settings);
     } else {
-      throw Exception('route not found : $route');
+      throw RouteNotFoundException("route not found in generate Route: $route}");
     }
   }
 
@@ -94,20 +107,20 @@ class ApplicationRoutes {
       '/title': (context) => ViewTitle.Title(),
       '/introduction': (context) => Introduction(),
       '/register': (context) => Registration(
-        ModalRoute.of(context).settings.arguments
+        ModalRoute.of(context)!.settings.arguments as Map<String, String>
       ),
       '/login': (context) => Login(
-        email: ModalRoute.of(context).settings.arguments,
+        email: ModalRoute.of(context)!.settings.arguments as String?,
       ),
       '/password-reset': (context) => PasswordReset(),
       '/password-reset/sent': (context) => PasswordResetSend(
-        ModalRoute.of(context).settings.arguments
+        ModalRoute.of(context)!.settings.arguments as String
       ),
       '/email-verify': (context) => SendVerificationCodeScreen(
-        ModalRoute.of(context).settings.arguments
+        ModalRoute.of(context)!.settings.arguments as String
       ),
       '/home': (context) => Home(
-        ModalRoute.of(context).settings.arguments
+        ModalRoute.of(context)!.settings.arguments as HomeActionCodes?
       ),
       '/home/small-step': (context) => SmallStep(),
       '/notification': (context) => NotificationPage(),
@@ -118,35 +131,35 @@ class ApplicationRoutes {
       '/category/sns': (context) => SNSInformation(),
       '/actions': (context) => HabitActions(),
       '/strategy/create': (context) => StrategyCreate(
-        params: ModalRoute.of(context).settings.arguments,
+        params: ModalRoute.of(context)!.settings.arguments as StrategyCreateParams,
       ),
       '/strategy/select': (context) => SelectStrategy(
-        params: ModalRoute.of(context).settings.arguments,
+        params: ModalRoute.of(context)!.settings.arguments as SelectStrategyParams,
       ),
       '/post': (context) =>
-          PostPage(args: ModalRoute.of(context).settings.arguments),
+          PostPage(args: ModalRoute.of(context)!.settings.arguments as PostArguments),
       '/post/create': (context) => CreatePost(
-        args: ModalRoute.of(context).settings.arguments,
+        args: ModalRoute.of(context)!.settings.arguments as CreatePostArguments,
       ),
       '/profile/image': (context) => ProfileImageSelect(),
       '/profile/image/upload': (context) => UploadImage(),
       '/want/condition': (context) => ConditionWanna(),
       '/want/strategy/index': (context) => ExecuteStrategyWanna(
-        params: ModalRoute.of(context).settings.arguments
+        params: ModalRoute.of(context)!.settings.arguments as ExecuteStrategyWannaParam
       ),
       '/want/confirmation': (context) => WantConfirmation(
-        args: ModalRoute.of(context).settings.arguments,
+        args: ModalRoute.of(context)!.settings.arguments as WantConfirmationArguments,
       ),
       '/did/condition': (context) => ConditionDid(),
       '/did/used-amount': (context) => CheckAmount(
-        checkedValue: ModalRoute.of(context).settings.arguments,
+        checkedValue: ModalRoute.of(context)!.settings.arguments as CheckedValue,
       ),
       "/circumstance": (context) => Circumstance(
-        params: ModalRoute.of(context).settings.arguments,
+        params: ModalRoute.of(context)!.settings.arguments as CircumstanceParams,
       ),
       "/did/strategy/index": (context) => CheckStrategyDid(),
       '/did/confirmation': (context) => DidConfirmation(
-        log: ModalRoute.of(context).settings.arguments,
+        log: ModalRoute.of(context)!.settings.arguments as HabitLog,
       ),
       '/endured/condition': (context) => ConditionEndured(),
       "/endured/strategy/index": (context) => CheckStrategyEndured(),
@@ -156,14 +169,15 @@ class ApplicationRoutes {
       '/settings/account/customId': (context) => CustomIdForm(),
       '/settings/account/email': (context) => EmailSetting(),
       '/settings/account/email/register/complete': (context) => EmailRegisterComplete(
-        ModalRoute.of(context).settings.arguments
+        ModalRoute.of(context)!.settings.arguments as String
       ),
       '/settings/account/email/change/complete': (context) => EmailRegisterComplete(
-          ModalRoute.of(context).settings.arguments
+          ModalRoute.of(context)!.settings.arguments as String
       ),
       '/settings/account/password': (context) => ChangePassword(),
       '/settings/account/password/complete': (context) => PasswordChangeComplete(),
     };
     return routes;
   }
+
 }

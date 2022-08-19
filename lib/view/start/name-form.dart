@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -23,8 +22,8 @@ class NameInput extends StatelessWidget {
 }
 
 class NameFormSavableProviderState {
-  bool nickName;
-  bool userName;
+  bool? nickName;
+  bool? userName;
 }
 
 class NameFormSavableProvider
@@ -51,19 +50,19 @@ class NameFormSavableProvider
 final _nameFormSavableProvider = StateNotifierProvider.autoDispose(
     (ref) => NameFormSavableProvider(NameFormSavableProviderState()));
 
-class NameInputForm extends StatefulWidget {
+class NameInputForm extends ConsumerStatefulWidget {
   @override
   _NameInputFormState createState() => _NameInputFormState();
 }
 
-class _NameInputFormState extends State<NameInputForm> {
-  String nickName;
-  String userName;
+class _NameInputFormState extends ConsumerState<NameInputForm> {
+  String nickName = '';
+  String userName = '';
 
-  FocusNode _nickNameFocusNode;
-  FocusNode _userNameFocusNode;
+  late FocusNode _nickNameFocusNode;
+  late FocusNode _userNameFocusNode;
 
-  List<GlobalKey<FormState>> _keys;
+  late List<GlobalKey<FormState>> _keys;
 
   @override
   void initState() {
@@ -75,12 +74,12 @@ class _NameInputFormState extends State<NameInputForm> {
     _nickNameFocusNode = new FocusNode();
     _nickNameFocusNode.addListener(() {
       if (!_nickNameFocusNode.hasFocus) {
-        _keys[0].currentState.validate();
+        _keys[0].currentState?.validate();
       }
     });
     _userNameFocusNode.addListener(() {
       if (!_userNameFocusNode.hasFocus) {
-        _keys[1].currentState.validate();
+        _keys[1].currentState?.validate();
       }
     });
     super.initState();
@@ -98,7 +97,7 @@ class _NameInputFormState extends State<NameInputForm> {
     return MyHookBottomFixedButton(
       provider: _nameFormSavableProvider,
       enable: () {
-        return context.read(_nameFormSavableProvider).savable();
+        return ref.read(_nameFormSavableProvider.notifier).savable();
       },
       onTapped: () async {
         await submitWithFirebase(context);
@@ -119,16 +118,16 @@ class _NameInputFormState extends State<NameInputForm> {
                 },
                 focusNode: _nickNameFocusNode,
                 validate: (text) {
-                  return text.length == 0 ? '入力してください' : null;
+                  return text?.length == 0 ? '入力してください' : null;
                 },
                 onChanged: (text) {
-                  context.read(_nameFormSavableProvider).nickName =
+                  ref.read(_nameFormSavableProvider.notifier).nickName =
                       text.length > 0;
                 },
                 label: 'ニックネーム',
                 hintText: 'やまだ　たろう',
                 onSaved: (text) {
-                  nickName = text;
+                  nickName = text ?? '';
                 },
               ),
             ),
@@ -145,12 +144,12 @@ class _NameInputFormState extends State<NameInputForm> {
                   },
                   focusNode: _userNameFocusNode,
                   onStateChange: (customIdState) {
-                    context.read(_nameFormSavableProvider).userName =
+                    ref.read(_nameFormSavableProvider.notifier).userName =
                         customIdState == CustomIdFieldState.allowed;
-                    _keys[1].currentState.validate();
+                    _keys[1].currentState?.validate();
                   },
                   onSaved: (text) async {
-                    this.userName = text;
+                    this.userName = text ?? '';
                   },
                 ))
           ],
@@ -162,23 +161,24 @@ class _NameInputFormState extends State<NameInputForm> {
   Future<void> submitWithFirebase(BuildContext context) async {
     bool valid = true;
     for (GlobalKey<FormState> _key in _keys) {
-      if (!_key.currentState.validate()) {
+      if (!(_key.currentState?.validate() ?? false)) {
         valid = false;
       }
     }
     if (valid) {
       for (GlobalKey<FormState> _key in _keys) {
-        _key.currentState.save();
+        _key.currentState?.save();
       }
     }
     if (valid) {
       MyLoading.startLoading();
       try {
-        User firebaseUser = FirebaseAuth.instance.currentUser;
-        await context
-            .read(authProvider)
+        User? firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser == null) throw Exception('firebase user not found');
+        await ref
+            .read(authProvider.notifier)
             .registerWithFirebase(nickName, userName, firebaseUser);
-        await MyApp.initialize(context);
+        await MyApp.initialize(ref);
         await MyLoading.dismiss();
         Navigator.of(context).pushReplacementNamed("/home");
       } catch (e) {

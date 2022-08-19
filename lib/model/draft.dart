@@ -1,21 +1,20 @@
-
 import 'package:photo_manager/photo_manager.dart';
 
 import 'habit_log.dart';
 import 'model.dart';
 
 class Draft extends Model {
-  String id;
-  String text;
-  List<AssetEntity> imageAssets;
-  HabitLog log;
+  late String id;
+  late String text;
+  late List<AssetEntity>? imageAssets;
+  HabitLog? log;
 
   static Future<Draft> fromJson(Map<String, dynamic> json) async {
     Draft draft = Draft();
     List<String> imageIds = json['image_ids'].cast<String>();
     List<AssetEntity> assets = <AssetEntity>[];
-    for(String imageId in imageIds) {
-      AssetEntity asset = await AssetEntity.fromId(imageId);
+    for (String imageId in imageIds) {
+      AssetEntity? asset = await AssetEntity.fromId(imageId);
       if (asset != null) {
         assets.add(asset);
       }
@@ -32,13 +31,13 @@ class Draft extends Model {
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = <String, dynamic>{};
     List<String> imageIds = <String>[];
-    imageAssets.forEach((imageAsset) {
+    (imageAssets ?? []).forEach((imageAsset) {
       imageIds.add(imageAsset.id);
     });
     data['image_ids'] = imageIds;
     data['text'] = text;
     data['id'] = id;
-    data['habit_log'] = log != null ? log.toJson() : null;
+    data['habit_log'] = log != null ? log!.toJson() : null;
     return data;
   }
 }

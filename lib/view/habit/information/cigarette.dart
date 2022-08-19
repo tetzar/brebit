@@ -18,7 +18,7 @@ class CigaretteInformation extends StatefulWidget {
 }
 
 class _CigaretteInformationState extends State<CigaretteInformation> {
-  final Category _category = Category.findWhereNameIs('cigarette');
+  final Category _category = Category.findFromCategoryName(CategoryName.cigarette);
 
   Map<String, int> data = <String, int>{'target': 0};
 
@@ -276,21 +276,21 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
       return false;
     }
     if (data.containsKey('number')) {
-      if (!(data['number'] > 0.0)) {
+      if (!(data['number']! > 0.0)) {
         return false;
       }
     } else {
       return false;
     }
     if (data.containsKey('price')) {
-      if (!(data['price'] > 0.0)) {
+      if (!(data['price']! > 0.0)) {
         return false;
       }
     } else {
       return false;
     }
     if (data.containsKey('number-per-box')) {
-      if (!(data['number-per-box'] > 0.0)) {
+      if (!(data['number-per-box']! > 0.0)) {
         return false;
       }
     } else {
@@ -298,15 +298,15 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
     }
     if (data.containsKey('nicotine-integer') &&
         data.containsKey('nicotine-decimal')) {
-      if (!(data['nicotine-integer'] > 0.0) &&
-          !(data['nicotine-decimal'] > 0.0)) {
+      if (!(data['nicotine-integer']! > 0.0) &&
+          !(data['nicotine-decimal']! > 0.0)) {
         return false;
       }
     } else {
       return false;
     }
     if (data.containsKey('history-year') && data.containsKey('history-month')) {
-      if (!(data['history-year'] > 0.0) && !(data['history-month'] > 0.0)) {
+      if (!(data['history-year']! > 0.0) && !(data['history-month']! > 0.0)) {
         return false;
       }
     } else {
@@ -319,10 +319,10 @@ class _CigaretteInformationState extends State<CigaretteInformation> {
     if (savable()) {
       Map<String, dynamic> _data = <String, dynamic>{};
       _data['average'] = data['number'];
-      _data['history'] = (data['history-year'] * 12 + data['history-month']);
+      _data['history'] = (data['history-year']! * 12 + data['history-month']!);
       _data['nicotine'] =
-          data['nicotine-integer'] + data['nicotine-decimal'] * 0.1;
-      _data['limit'] = data['target'] > 0 ? data['target'] : null;
+          data['nicotine-integer']! + data['nicotine-decimal']! * 0.1;
+      _data['limit'] = data['target']! > 0 ? data['target'] : null;
       _data['number-per-box'] = data['number-per-box'];
       _data['price'] = data['price'];
       _data['price-unit'] = 'JPY';

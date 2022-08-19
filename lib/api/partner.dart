@@ -1,10 +1,10 @@
-
 import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 
 import '../../model/partner.dart';
 import '../../model/user.dart';
 import 'api.dart';
-import 'package:http/http.dart' as http;
 
 class PartnerApi {
   static final Map<String, String> postRoutes = {
@@ -26,131 +26,82 @@ class PartnerApi {
   };
 
   static Future<List<Partner>> getPartners(AuthUser user) async {
-    final http.Response response = await Network.getData(Network.routeNormalize(
-        getRoutes['getPartners'], {'userId': user.id.toString()}));
-    if (response.statusCode == 200) {
-      return PartnerFromJson(jsonDecode(response.body));
-    } else if (response.statusCode == 404) {
-      print('not found user : get profile user');
-      return null;
-    } else {
-      throw Exception('Failed to get user');
-    }
+    final http.Response response = await Network.getData(
+        Network.routeNormalize(
+            getRoutes['getPartners']!, {'userId': user.id.toString()}),
+        "getPartners@PartnerApi");
+    return partnerFromJson(jsonDecode(response.body));
   }
 
   static Future<Map<String, Partner>> requestPartner(AuthUser otherUser) async {
     Map<String, dynamic> data = {'others_id': otherUser.id};
-    http.Response response =
-        await Network.postData(data, postRoutes['partnerRequest']);
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      Map<String, Partner> partners = <String, Partner>{};
-      partners['self_relation'] = Partner.fromJson(body['self_relation']);
-      partners['other_relation'] = Partner.fromJson(body['other_relation']);
-      return partners;
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in PartnerApi@requestPartner');
-    }
+    http.Response response = await Network.postData(
+        data, postRoutes['partnerRequest'], "requestPartner@PartnerApi");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    Map<String, Partner> partners = <String, Partner>{};
+    partners['self_relation'] = Partner.fromJson(body['self_relation']);
+    partners['other_relation'] = Partner.fromJson(body['other_relation']);
+    return partners;
   }
 
   static Future<void> cancelPartnerRequest(Partner partner) async {
     Map<String, String> data = {'partnerId': partner.id.toString()};
-    http.Response response = await Network.deleteData(
-        Network.routeNormalizeDelete(deleteRoutes['cancelPartner'], data));
-    if (response.statusCode != 200) {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in PartnerApi@getRecommendStrategiesFromCondition');
-    }
+    await Network.deleteData(
+        Network.routeNormalizeDelete(deleteRoutes['cancelPartner']!, data),
+        "cancelPartnerRequest@PartnerApi");
   }
 
-  static Future<Map<String, Partner>> acceptPartnerRequest(Partner partner) async {
+  static Future<Map<String, Partner>> acceptPartnerRequest(
+      Partner partner) async {
     Map<String, dynamic> data = {'partner_id': partner.id};
-    http.Response response =
-        await Network.postData(data, postRoutes['acceptPartnerRequest']);
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      Map<String, Partner> partners = <String, Partner>{};
-      partners['self_relation'] = Partner.fromJson(body['self_relation']);
-      partners['other_relation'] = Partner.fromJson(body['other_relation']);
-      return partners;
-    } else {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in PartnerApi@acceptPartnerRequest');
-    }
+    http.Response response = await Network.postData(data,
+        postRoutes['acceptPartnerRequest'], 'acceptPartnerRequest@PartnerApi');
+    Map<String, dynamic> body = jsonDecode(response.body);
+    Map<String, Partner> partners = <String, Partner>{};
+    partners['self_relation'] = Partner.fromJson(body['self_relation']);
+    partners['other_relation'] = Partner.fromJson(body['other_relation']);
+    return partners;
   }
 
   static Future<void> breakOffWithPartner(Partner partner) async {
     Map<String, String> data = {'partnerId': partner.id.toString()};
-    http.Response response = await Network.deleteData(
+    await Network.deleteData(
         Network.routeNormalizeDelete(
-            deleteRoutes['breakOffWithPartner'], data));
-    if (response.statusCode != 200) {
-      print(response.body);
-      throw Exception(
-          'unexpected error occurred in PartnerApi@breakOffWithPartner');
-    }
+            deleteRoutes['breakOffWithPartner']!, data),
+        'breakOffWithPartner@PartnerApi');
   }
 
   static Future<Map<String, Partner>> block(AuthUser user) async {
-    Map<String, dynamic> data = {
-      'others_id': user.id
-    };
-    http.Response response = await Network.postData(
-        data,
-        postRoutes['block']
-    );
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
-      Map<String, Partner> partners = <String, Partner>{};
-      partners['self_relation'] = Partner.fromJson(body['self_relation']);
-      partners['other_relation'] = Partner.fromJson(body['other_relation']);
-      return partners;
-    } else {
-      print(response.body);
-      throw Exception('unexpected error occurred in PartnerApi@requestPartner');
-    }
+    Map<String, dynamic> data = {'others_id': user.id};
+    http.Response response =
+        await Network.postData(data, postRoutes['block'], "block@PartnerApi");
+    Map<String, dynamic> body = jsonDecode(response.body);
+    Map<String, Partner> partners = <String, Partner>{};
+    partners['self_relation'] = Partner.fromJson(body['self_relation']);
+    partners['other_relation'] = Partner.fromJson(body['other_relation']);
+    return partners;
   }
 
   static Future<void> unblock(AuthUser user) async {
-    Map<String, dynamic> data = {
-      'others_id': user.id
-    };
-    http.Response response = await Network.postData(
-        data,
-        postRoutes['unblock']
-    );
-    if (response.statusCode != 200) {
-      print(response.body);
-      throw Exception('unexpected error occurred in PartnerApi@requestPartner');
-    }
+    Map<String, dynamic> data = {'others_id': user.id};
+    await Network.postData(data, postRoutes['unblock'], 'unblock@PartnerApi');
   }
 
   static Future<List<AuthUser>> getPartnerSuggestions(
-      [String condition]) async {
+      [String? condition]) async {
     if (condition == null) {
-      http.Response response = await Network.getData(Network.routeNormalize(
-          getRoutes['partnerSuggestions'], new Map<String, String>()));
-      if (response.statusCode == 200) {
-        return AuthUserFromJson(jsonDecode(response.body));
-      } else {
-        print(response.body);
-        throw Exception(
-            'unexpected error occurred in PartnerApi@getPartnerSuggestions');
-      }
+      http.Response response = await Network.getData(
+          Network.routeNormalize(
+              getRoutes['partnerSuggestions']!, new Map<String, String>()),
+          'getPartnerSuggestions@PartnerApi');
+
+      return authUserFromJson(jsonDecode(response.body));
     } else {
       Map<String, String> data = {'condition': condition};
       http.Response response = await Network.getData(
-          Network.routeNormalize(getRoutes['partnerSearch'], data));
-      if (response.statusCode == 200) {
-        return AuthUserFromJson(jsonDecode(response.body));
-      } else {
-        print(response.body);
-        throw Exception(
-            'unexpected error occurred in PartnerApi@getPartnerSuggestions');
-      }
+          Network.routeNormalize(getRoutes['partnerSearch']!, data),
+          'getPartnerSuggestions@PartnerApi');
+      return authUserFromJson(jsonDecode(response.body));
     }
   }
 }
