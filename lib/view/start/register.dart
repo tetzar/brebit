@@ -36,10 +36,10 @@ class RegisterProvider extends StateNotifier<RegisterProviderState> {
       bool? userNameValid,
       bool? passwordValid}) {
     RegisterProviderState newState = new RegisterProviderState();
-    newState.email = emailValid ?? false;
-    newState.nickName = nickNameValid ?? false;
-    newState.userName = userNameValid ?? false;
-    newState.password = passwordValid ?? false;
+    newState.email = emailValid ?? state.email;
+    newState.nickName = nickNameValid ?? state.nickName;
+    newState.userName = userNameValid ?? state.userName;
+    newState.password = passwordValid ?? state.password;
     state = newState;
   }
 
@@ -62,24 +62,24 @@ class RegisterProvider extends StateNotifier<RegisterProviderState> {
   void changedNickName(String text) {
     if (this.nickName) {
       if (text.length == 0) {
-        state = state..nickName = false;
+        set(nickNameValid: false);
       }
     } else {
       if (text.length > 0) {
-        state = state..nickName = true;
+        set(nickNameValid: true);
       }
     }
   }
 
   void setUserName(bool s) {
     if (s != this.userName) {
-      state = state..userName = s;
+      set(userNameValid: s);
     }
   }
 
   bool setEmail(bool s) {
     if (s != this.email) {
-      state = state..email = s;
+      set(emailValid: s);
       return true;
     }
     return false;
@@ -87,12 +87,8 @@ class RegisterProvider extends StateNotifier<RegisterProviderState> {
 
   void setPassword(bool s) {
     if (s != this.password) {
-      state = state..password = s;
+      set(passwordValid: s);
     }
-  }
-
-  void build() {
-    state = state;
   }
 
   bool savable() {
@@ -107,7 +103,7 @@ final _registerProvider = StateNotifierProvider.autoDispose(
     (ref) => RegisterProvider(new RegisterProviderState()));
 
 class Registration extends StatelessWidget {
-  final Map<String, String> registrationInitialData;
+  final Map<String, String>? registrationInitialData;
 
   Registration(this.registrationInitialData);
 
@@ -315,7 +311,7 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
                               .setEmail(isEmail(text));
                           if (!built && emailInUse) {
                             emailInUse = false;
-                            ref.read(_registerProvider.notifier).build();
+                            ref.read(_registerProvider.notifier).set();
                           }
                           emailInUse = false;
                         },
@@ -474,8 +470,21 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
         }
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
+          UserCredential userCredential = await FirebaseAuth.instance.
+          signInWithEmailAndPassword(
+              email: inputData['email']!,
+              password: inputData['password']!);
+          User? firebaseUser = userCredential.user;
+          if (firebaseUser != null && !firebaseUser.emailVerified) {
+            await LocalManager.setRegisterInformation(firebaseUser,
+                inputData['email']!, inputData['userName']!, inputData['nickName']!);
+            await MyLoading.dismiss();
+            Navigator.pushReplacementNamed(context, '/email-verify',
+                arguments: inputData['nickName']);
+            return;
+          }
           emailInUse = true;
-          ref.read(_registerProvider.notifier).build();
+          ref.read(_registerProvider.notifier).set();
           _keys[2].currentState?.validate();
         } else {
           print(e);

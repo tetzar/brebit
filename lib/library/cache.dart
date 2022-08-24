@@ -122,7 +122,7 @@ class LocalManager {
       if (value is List<dynamic>) {
         value = value.cast<String>();
       }
-      print('value: $value');
+      print('key: $key, value: $value');
       return value;
     }
     return null;

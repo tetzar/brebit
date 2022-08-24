@@ -1,6 +1,7 @@
 import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/main.dart';
 import 'package:brebit/model/habit_log.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import '../view/action/actions.dart';
 import '../view/action/circumstance.dart';
 import '../view/action/did/check-amount.dart';
@@ -107,7 +108,7 @@ class ApplicationRoutes {
       '/title': (context) => ViewTitle.Title(),
       '/introduction': (context) => Introduction(),
       '/register': (context) => Registration(
-        ModalRoute.of(context)!.settings.arguments as Map<String, String>
+        ModalRoute.of(context)!.settings.arguments as Map<String, String>?
       ),
       '/login': (context) => Login(
         email: ModalRoute.of(context)!.settings.arguments as String?,
@@ -117,7 +118,10 @@ class ApplicationRoutes {
         ModalRoute.of(context)!.settings.arguments as String
       ),
       '/email-verify': (context) => SendVerificationCodeScreen(
-        ModalRoute.of(context)!.settings.arguments as String
+        ModalRoute.of(context)!.settings.arguments as String?
+      ),
+      '/email-verifying': (context) => EmailVerifyingScreen(
+        ModalRoute.of(context)!.settings.arguments as PendingDynamicLinkData
       ),
       '/home': (context) => Home(
         ModalRoute.of(context)!.settings.arguments as HomeActionCodes?

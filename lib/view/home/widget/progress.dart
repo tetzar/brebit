@@ -72,6 +72,9 @@ class _ProgressCircleState extends ConsumerState<ProgressCircle> {
     } else {
       percentage = toNowMin / toAimMin;
     }
+    setState(() {
+
+    });
     super.didUpdateWidget(oldWidget);
   }
 
