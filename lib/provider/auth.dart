@@ -83,6 +83,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   // ---------------------------------------------
 
   Future<AuthUser> login(String email, String password) async {
+    await FirebaseAuth.instance.currentUser?.reload();
     User? firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) {
       throw NotLoggedInException('firebase user is null');

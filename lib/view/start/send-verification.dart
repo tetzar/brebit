@@ -17,7 +17,7 @@ import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 
 class SendVerificationCodeScreen extends StatelessWidget {
-  final String nickName;
+  final String? nickName;
 
   SendVerificationCodeScreen(this.nickName);
 
@@ -40,7 +40,7 @@ class SendVerificationCodeScreen extends StatelessWidget {
 }
 
 class SendVerificationCodeScreenContent extends StatefulWidget {
-  final String nickName;
+  final String? nickName;
 
   SendVerificationCodeScreenContent(this.nickName);
 
@@ -52,21 +52,21 @@ class SendVerificationCodeScreenContent extends StatefulWidget {
 class _SendVerificationCodeScreenContentState
     extends State<SendVerificationCodeScreenContent> {
   String? email;
-
-  void initDynamicLinks() async {
-    FirebaseDynamicLinks.instance.onLink
-        .listen((PendingDynamicLinkData dynamicLink) async {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => EmailVerifyingScreen(dynamicLink)));
-    });
-  }
+  //
+  // void initDynamicLinks() async {
+  //   FirebaseDynamicLinks.instance.onLink
+  //       .listen((PendingDynamicLinkData dynamicLink) async {
+  //     Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //             builder: (context) => EmailVerifyingScreen(dynamicLink)));
+  //   });
+  // }
 
   @override
   void initState() {
     sendVerification();
-    this.initDynamicLinks();
+    // this.initDynamicLinks();
     try {
       email = FirebaseAuth.instance.currentUser?.email;
       if (email == null) {
@@ -104,8 +104,12 @@ class _SendVerificationCodeScreenContentState
             SizedBox(
               height: 24,
             ),
-            Text(
+            Text(widget.nickName != null ?
               '''${widget.nickName}さん、最後のステップです。
+“$email”宛に
+届いたメールのリンクを開くと、
+登録が完了します。
+            ''' : '''最後のステップです。
 “$email”宛に
 届いたメールのリンクを開くと、
 登録が完了します。
@@ -159,7 +163,7 @@ class _SendVerificationCodeScreenContentState
                     await firebaseUser.delete();
                   }
                   Map<String, String>? registrationData =
-                  await LocalManager.getRegisterInformation(firebaseUser);
+                      await LocalManager.getRegisterInformation(firebaseUser);
                   Navigator.pushReplacementNamed(context, '/register',
                       arguments: registrationData);
                 } on FirebaseAuthException {
@@ -236,6 +240,7 @@ class _SendVerificationCodeScreenContentState
       User? firebaseUser = FirebaseAuth.instance.currentUser;
 
       if (firebaseUser != null && !firebaseUser.emailVerified) {
+        print('send to ${firebaseUser.email}');
         var actionCodeSettings = ActionCodeSettings(
           url: 'https://brebit.dev/email-verifying',
           androidPackageName: "dev.brebit",
@@ -248,7 +253,8 @@ class _SendVerificationCodeScreenContentState
       }
       await MyLoading.dismiss();
       return;
-    } on FirebaseAuthException {
+    } on FirebaseAuthException catch(e) {
+      print("auth exception: ${e.toString()}");
     } catch (e) {
       await MyLoading.dismiss();
       MyErrorDialog.show(e);
@@ -311,15 +317,16 @@ class _EmailVerifyingScreenState extends ConsumerState<EmailVerifyingScreen>
     FirebaseAuth auth = FirebaseAuth.instance;
 
     String? actionCode = deepLink?.queryParameters['oobCode'];
+    print('action code: $actionCode');
     try {
       if (actionCode == null) throw Exception('cannot fetch oobCode');
       await auth.checkActionCode(actionCode);
       await auth.applyActionCode(actionCode);
 
       // If successful, reload the user:
+      await auth.currentUser?.reload();
       User? firebaseUser = auth.currentUser;
       if (firebaseUser == null) throw Exception('firebase user not found');
-      await firebaseUser.reload();
       if (firebaseUser.emailVerified) {
         Map<String, String>? registrationData =
             await LocalManager.getRegisterInformation(firebaseUser);
@@ -337,8 +344,13 @@ class _EmailVerifyingScreenState extends ConsumerState<EmailVerifyingScreen>
         } else {
           verifyComplete = true;
         }
+      } else {
+        print('not verified');
       }
     } catch (e) {
+      print(
+        e.toString()
+      );
       Navigator.pushReplacementNamed(context, '/title');
     }
   }

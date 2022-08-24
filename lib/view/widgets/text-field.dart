@@ -316,11 +316,11 @@ class _MyPasswordFieldState extends State<MyPasswordField> {
                         fontWeight: FontWeight.w400)),
                 validator: (String? text) {
                   String? message = widget.validate(text);
-                  _streamController.sink.add(message);
-                  if (message == null) {
-                    return null;
+                  if (message != null) {
+                    _streamController.sink.add(message);
+                    return '';
                   }
-                  return '';
+                  return null;
                 },
               ),
               GestureDetector(

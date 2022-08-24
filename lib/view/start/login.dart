@@ -434,6 +434,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
       // Once signed in, return the UserCredential
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
+      await userCredential.user?.reload();
       User? firebaseUser = userCredential.user;
       if (firebaseUser == null) throw Exception('firebase user not found');
       await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
