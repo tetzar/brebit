@@ -143,7 +143,7 @@ class ApplicationRoutes {
       '/post': (context) =>
           PostPage(args: ModalRoute.of(context)!.settings.arguments as PostArguments),
       '/post/create': (context) => CreatePost(
-        args: ModalRoute.of(context)!.settings.arguments as CreatePostArguments,
+        args: ModalRoute.of(context)!.settings.arguments as CreatePostArguments?,
       ),
       '/profile/image': (context) => ProfileImageSelect(),
       '/profile/image/upload': (context) => UploadImage(),

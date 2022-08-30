@@ -332,7 +332,7 @@ class ShowLibraryButtonProvider extends StateNotifier<bool> {
 //---------------------------------
 
 class CreatePost extends ConsumerWidget {
-  final CreatePostArguments args;
+  final CreatePostArguments? args;
 
   CreatePost({required this.args});
 
