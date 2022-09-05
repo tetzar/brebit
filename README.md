@@ -50,3 +50,4 @@ Image│ │Request              Image│
      │ ▼                          │
 AWS (as image storage) ◄──────────┘
 ```
+
