@@ -406,19 +406,24 @@ class _MyBottomFixedButtonState extends State<MyBottomFixedButton> {
           child: InkWell(
             onTap: widget.enable ? widget.onTapped : null,
             child: Container(
-              height: MyBottomFixedButton.buttonHeight +
-                  MediaQuery.of(context).viewPadding.bottom,
+              height: MyBottomFixedButton.buttonHeight
+                  + MediaQuery.of(context).viewPadding.bottom,
               width: MediaQuery.of(context).size.width,
-              alignment: Alignment.center,
+              alignment: Alignment.topCenter,
               color: widget.enable
                   ? Theme.of(context).colorScheme.secondary
                   : Theme.of(context).disabledColor,
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).buttonTheme.colorScheme?.primary),
+              child: Container(
+                height: MyBottomFixedButton.buttonHeight,
+                color: Colors.transparent,
+                alignment: Alignment.center,
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).buttonTheme.colorScheme?.primary),
+                ),
               ),
             ),
           ),
