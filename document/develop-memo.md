@@ -15,3 +15,7 @@
 pod install が通らないときは `cd ios`,
 - `pod repo update`
 - `rm -rf Podfile.lock`
+
+# Other
+
+- [振り返ったらFlutterでのアプリ開発のTipsが溜まっているスクラップ](https://zenn.dev/sgr_ksmt/scraps/f2437c38594ba1)
