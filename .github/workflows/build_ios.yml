@@ -18,7 +18,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '2.17.0'
+          flutter-version: 'latest'
           channel: 'stable'
           architecture: arm64
 
