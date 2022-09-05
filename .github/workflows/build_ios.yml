@@ -27,8 +27,8 @@ jobs:
       - name: Download Flutter packages
         run: flutter pub get
 
-      - name: Test
-        run: flutter test
+      # - name: Test
+      #   run: flutter test
 
       - name: Build
         run: flutter build ios --release --no-codesign
