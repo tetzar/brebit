@@ -33,14 +33,3 @@ jobs:
 
       - name: Build
         run: flutter build ios --release --no-codesign
-
-      # # 成果物アップロード
-      # - name: artifact upload
-      #   uses: actions/upload-artifact@v2.2.0
-      #   with:
-      #     # 保存ファイル名（name.zip）
-      #     name: ios
-      #     # 保存するファイル
-      #     path: ./build/ios/
-      #     # 保存期間（日）
-      #     retention-days: 1
