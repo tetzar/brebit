@@ -2,6 +2,8 @@ name: Flutter iOS Build
 
 on: [push]
 
+env:
+  flutter_version: '3.0.5'
 jobs:
   build-iOS:
     name: Build for iOS
@@ -18,13 +20,13 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.0.5'
+          flutter-version: ${{ env.flutter_version }}
           channel: 'stable'
           # Arm64だとうまくいかない
           # architecture: arm64
           cache: true
-          cache-key: flutter # optional, change this to force refresh cache
-          cache-path: ${{ runner.tool_cache }}/flutter # optional, change this to specify the cache path
+          # cache-key: flutter # optional, change this to force refresh cache
+          # cache-path: ${{ runner.tool_cache }}/flutter # optional, change this to specify the cache path
       - run: flutter --version
 
       - name: Download Flutter packages
