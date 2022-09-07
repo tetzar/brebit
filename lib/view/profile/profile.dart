@@ -284,7 +284,7 @@ class _PostListViewState extends ConsumerState<PostListView> {
     showCustomBottomSheet(
         items: items,
         backGroundColor: Theme.of(context).primaryColor,
-        context: ApplicationRoutes.materialKey.currentContext);
+        context: ApplicationRoutes.materialKey.currentContext ?? context);
   }
 }
 

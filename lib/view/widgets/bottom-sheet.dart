@@ -98,12 +98,11 @@ class SuccessBottomSheetItem extends BottomSheetItem {
 void showCustomBottomSheet(
     {required List<BottomSheetItem> items,
     required Color backGroundColor,
-    required BuildContext? context,
+    required BuildContext context,
     bool isDismissible = true,
     bool enableDrag = true,
     Function()? onClosed,
     String? hintText}) async {
-  if (context == null) return;
   List<Widget> widgets = [
     hintText == null
         ? Container(

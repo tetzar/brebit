@@ -404,7 +404,7 @@ class _ProfileImageState extends ConsumerState<ProfileImage> {
     showCustomBottomSheet(
         items: _items,
         backGroundColor: Theme.of(context).primaryColor,
-        context: ApplicationRoutes.materialKey.currentContext);
+        context: ApplicationRoutes.materialKey.currentContext ?? context);
   }
 
   Future<File?> _takePhoto() async {

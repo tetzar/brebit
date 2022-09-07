@@ -99,7 +99,7 @@ class _CommentTileState extends ConsumerState<CommentTile> {
     showCustomBottomSheet(
         items: items,
         backGroundColor: Theme.of(context).primaryColor,
-        context: ApplicationRoutes.materialKey.currentContext);
+        context: ApplicationRoutes.materialKey.currentContext ?? context);
   }
 
   @override

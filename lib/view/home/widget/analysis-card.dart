@@ -211,7 +211,7 @@ class _AnalysisCardState extends ConsumerState<AnalysisCard> {
     showCustomBottomSheet(
       items: items,
       backGroundColor: Theme.of(context).primaryColor,
-      context: ApplicationRoutes.materialKey.currentContext,
+      context: ApplicationRoutes.materialKey.currentContext ?? context,
     );
   }
 }
