@@ -220,7 +220,7 @@ class RuleCards extends ConsumerWidget {
     showCustomBottomSheet(
         items: items,
         backGroundColor: Theme.of(context).primaryColor,
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: ApplicationRoutes.materialKey.currentContext ?? context,
         hintText: isUsing
             ? null
             : strategy.getFollowers().toString() + '人のユーザーが使用しています');

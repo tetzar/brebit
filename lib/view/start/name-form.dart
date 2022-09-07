@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../provider/auth.dart';
@@ -24,6 +25,13 @@ class NameInput extends StatelessWidget {
 class NameFormSavableProviderState {
   bool? nickName;
   bool? userName;
+
+  NameFormSavableProviderState copyWith({bool? nickName, bool? userName}) {
+    NameFormSavableProviderState s = NameFormSavableProviderState();
+    s.nickName = nickName ?? this.nickName;
+    s.userName = userName ?? this.userName;
+    return s;
+  }
 }
 
 class NameFormSavableProvider
@@ -32,13 +40,13 @@ class NameFormSavableProvider
 
   set nickName(bool s) {
     if (this.state.nickName != s) {
-      state = state..nickName = s;
+      state = state.copyWith(nickName: s);
     }
   }
 
   set userName(bool s) {
     if (this.state.userName != s) {
-      state = state..userName = s;
+      state = state.copyWith(userName: s);
     }
   }
 

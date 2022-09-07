@@ -258,5 +258,5 @@ void _showActions(WidgetRef ref, BuildContext context, Post post) {
   showCustomBottomSheet(
       items: items,
       backGroundColor: Theme.of(context).primaryColor,
-      context: ApplicationRoutes.materialKey.currentContext);
+      context: ApplicationRoutes.materialKey.currentContext ?? context);
 }

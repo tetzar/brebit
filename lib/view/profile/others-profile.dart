@@ -144,7 +144,7 @@ class OtherProfile extends ConsumerWidget {
         }));
     showCustomBottomSheet(
         hintText: user.customId,
-        context: ApplicationRoutes.materialKey.currentContext,
+        context: ApplicationRoutes.materialKey.currentContext ?? context,
         backGroundColor: Theme.of(context).primaryColor,
         items: _items);
   }
@@ -1095,7 +1095,7 @@ class _PostListViewState extends ConsumerState<PostListView> {
     showCustomBottomSheet(
         items: items,
         backGroundColor: Theme.of(context).primaryColor,
-        context: ApplicationRoutes.materialKey.currentContext);
+        context: ApplicationRoutes.materialKey.currentContext ?? context);
   }
 }
 

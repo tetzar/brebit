@@ -175,7 +175,7 @@ class CategoryTile extends ConsumerWidget {
           hintText:
               'チャレンジをやめても記録は保持され、\n再開することが可能です。\nスモールステップは\n直前のスモールステップからになります。',
           backGroundColor: Theme.of(ctx).primaryColor,
-          context: ApplicationRoutes.materialKey.currentContext);
+          context: ApplicationRoutes.materialKey.currentContext ?? ctx);
     } else {
       showCustomBottomSheet(
           items: [
@@ -195,7 +195,7 @@ class CategoryTile extends ConsumerWidget {
           hintText:
               '現在のチャレンジから"$title"に変更します。\n現在のチャレンジの記録は保持され、\n再開することができます。',
           backGroundColor: Theme.of(ctx).primaryColor,
-          context: ApplicationRoutes.materialKey.currentContext);
+          context: ApplicationRoutes.materialKey.currentContext ?? ctx);
     }
   }
 
