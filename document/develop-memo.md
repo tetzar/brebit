@@ -4,6 +4,7 @@
 - とりあえず`open ~/Applications/JetBrains\ Toolbox/Android\ Studio.app`する。ターミナルから開くだけとかいう嘘みたいな方法だが**本当に効果がある**
 - `flutter clean`, `rm -rf ~/Library/Developer/Xcode/DerivedData/`でキャッシュ削除
 - `~/.pub-cache` を消して `pub get`
+- Rosetta を使用してターミナルを開く
 
 ## Cocoapods
 
@@ -13,5 +14,10 @@
   - ので、`brew install cocoapods` && `brew link --overwrite cocoapods`
 
 pod install が通らないときは `cd ios`,
+
 - `pod repo update`
 - `rm -rf Podfile.lock`
+
+# Other
+
+- [振り返ったらFlutterでのアプリ開発のTipsが溜まっているスクラップ](https://zenn.dev/sgr_ksmt/scraps/f2437c38594ba1)
