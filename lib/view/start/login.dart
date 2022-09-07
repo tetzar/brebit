@@ -418,7 +418,12 @@ class LoginFormState extends ConsumerState<LoginForm> {
   Future<void> signInWithGoogle(BuildContext context) async {
     MyLoading.startLoading();
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(
+        scopes: [
+          'email',
+          'https://harxxki.github.io/brebit-privacy-policy/index.html',
+        ],
+      ).signIn();
       if (googleUser == null) throw Exception('google login failed');
 
       // Obtain the auth details from the request
