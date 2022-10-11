@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
 
 import '../../../api/auth.dart';
 import '../../../library/exceptions.dart';
@@ -275,20 +276,20 @@ class LoginFormState extends ConsumerState<LoginForm> {
             SizedBox(
               height: 40,
             ),
-            InkWell(
-              onTap: () async {
+            SignInButton(
+              Buttons.Google,
+              onPressed: () async {
                 await signInWithGoogle(context);
               },
-              child: SvgPicture.asset('assets/images/googleSignInButton.svg'),
             ),
             SizedBox(
               height: 16,
             ),
-            InkWell(
-              onTap: () async {
+            SignInButton(
+              Buttons.Apple,
+              onPressed: () async {
                 await signInWithApple();
               },
-              child: Image.asset('assets/images/appleSignInButton.png'),
             ),
             SizedBox(
               height: 24,
