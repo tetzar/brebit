@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../library/cache.dart';
 import '../../../library/exceptions.dart';
@@ -358,20 +360,22 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
               child: Text('または'),
             ),
             Column(children: [
-              InkWell(
-                onTap: () async {
+              SignInButton(
+                Buttons.Google,
+                text: "Sign up with Google",
+                onPressed: () async {
                   await signInWithGoogle(context);
                 },
-                child: SvgPicture.asset('assets/images/googleSignInButton.svg'),
               ),
               SizedBox(
                 height: 16,
               ),
-              InkWell(
-                onTap: () async {
-                  await signInWithApple();
+              SignInButton(
+                Buttons.Apple,
+                text: "Sign up with Apple",
+                onPressed: () async {
+                  await signInWithApple(context);
                 },
-                child: Image.asset('assets/images/appleSignInButton.png'),
               ),
             ]),
             Container(
@@ -536,5 +540,44 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
     }
   }
 
-  Future<void> signInWithApple() async {}
+  Future<void> signInWithApple(BuildContext context) async {
+    await MyLoading.dismiss();
+    try{
+      // AuthorizationCredentialAppleIDのインスタンスを取得
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // OAthCredentialのインスタンスを作成
+      OAuthProvider oauthProvider = OAuthProvider('apple.com');
+      final credential = oauthProvider.credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // Once signed in, return the UserCredential
+      UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      await userCredential.user?.reload();
+      User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) throw Exception('firebase user not found');
+      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+      await MyApp.initialize(ref);
+      await MyLoading.dismiss();
+      while (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      Navigator.pushReplacementNamed(context, '/home');
+    } on UserNotFoundException {
+      await MyLoading.dismiss();
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => NameInput()));
+    } catch(e) {
+      await MyLoading.dismiss();
+      MyErrorDialog.show(e.toString());
+    }
+  }
 }
