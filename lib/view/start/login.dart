@@ -22,7 +22,6 @@ import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
 import 'name-form.dart';
-import 'package:http/http.dart' as http;
 
 
 class Login extends StatelessWidget {
@@ -459,8 +458,8 @@ class LoginFormState extends ConsumerState<LoginForm> {
 
 
   Future<void> signInWithApple(BuildContext context) async {
+    MyLoading.startLoading();
     try{
-
       // AuthorizationCredentialAppleIDのインスタンスを取得
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -484,23 +483,18 @@ class LoginFormState extends ConsumerState<LoginForm> {
       if (firebaseUser == null) throw Exception('firebase user not found');
       await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
       await MyApp.initialize(ref);
+      await MyLoading.dismiss();
       while (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
       Navigator.pushReplacementNamed(context, '/home');
     } on UserNotFoundException {
+      await MyLoading.dismiss();
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch(e) {
-      await showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text('エラー'),
-              content: Text(e.toString()),
-            );
-          }
-      );
+      await MyLoading.dismiss();
+      MyErrorDialog.show(e.toString());
     }
   }
 }
