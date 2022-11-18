@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:brebit/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,8 @@ import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
 import 'name-form.dart';
+import 'package:http/http.dart' as http;
+
 
 class Login extends StatelessWidget {
   final String? email;
@@ -289,7 +292,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
             SignInButton(
               Buttons.Apple,
               onPressed: () async {
-                await signInWithApple();
+                await signInWithApple(context);
               },
             ),
             SizedBox(
@@ -454,10 +457,50 @@ class LoginFormState extends ConsumerState<LoginForm> {
     MyLoading.dismiss();
   }
 
-  Future<void> signInWithApple() async {
-    MyLoading.startLoading();
-    // TODO
-    print('APPLE BUTTON CLICKED');
-    MyLoading.dismiss();
+
+  Future<void> signInWithApple(BuildContext context) async {
+    try{
+
+      // AuthorizationCredentialAppleIDのインスタンスを取得
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // OAthCredentialのインスタンスを作成
+      OAuthProvider oauthProvider = OAuthProvider('apple.com');
+      final credential = oauthProvider.credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // Once signed in, return the UserCredential
+      UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      await userCredential.user?.reload();
+      User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) throw Exception('firebase user not found');
+      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+      await MyApp.initialize(ref);
+      while (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      Navigator.pushReplacementNamed(context, '/home');
+    } on UserNotFoundException {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => NameInput()));
+    } catch(e) {
+      await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text('エラー'),
+              content: Text(e.toString()),
+            );
+          }
+      );
+    }
   }
 }
