@@ -370,18 +370,19 @@ class LoginFormState extends ConsumerState<LoginForm> {
           passwordMessage = '';
           userNameOrEmailMessage = '登録されていないIDです';
           _keys[0].currentState?.validate();
+          await MyLoading.dismiss();
           return;
         } on FirebaseNotFoundException {
           passwordMessage = '';
           userNameOrEmailMessage = '別の方法でのログインをお試しください';
           _keys[0].currentState?.validate();
+          await MyLoading.dismiss();
           return;
         } catch (e) {
-          await MyLoading.startLoading();
+          await MyLoading.dismiss();
           MyErrorDialog.show(e);
           return;
         }
-        await MyLoading.startLoading();
       } else {
         email = userNameOrEmail;
       }
@@ -420,7 +421,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
   }
 
   Future<void> signInWithGoogle(BuildContext context) async {
-    MyLoading.startLoading();
+    await MyLoading.startLoading();
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) throw Exception('google login failed');
@@ -443,17 +444,19 @@ class LoginFormState extends ConsumerState<LoginForm> {
       if (firebaseUser == null) throw Exception('firebase user not found');
       await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
       await MyApp.initialize(ref);
+      MyLoading.dismiss();
       while (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
       Navigator.pushReplacementNamed(context, '/home');
     } on UserNotFoundException {
+      MyLoading.dismiss();
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch (e) {
+      MyLoading.dismiss();
       MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
-    MyLoading.dismiss();
   }
 
 

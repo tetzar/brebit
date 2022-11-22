@@ -372,6 +372,7 @@ class AccountSettings extends ConsumerWidget {
                 ApplicationRoutes.popUntil('/home');
                 ApplicationRoutes.pushReplacementNamed('/title');
               } catch (e) {
+                await MyLoading.dismiss();
                 MyErrorDialog.show(e);
               }
             },

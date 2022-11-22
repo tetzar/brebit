@@ -200,7 +200,10 @@ class _RequestTileState extends ConsumerState<RequestTile> {
       MyLoading.startLoading();
       Partner? partner =
           ref.read(authProvider.notifier).user?.getPartner(this._user);
-      if (partner == null) return;
+      if (partner == null) {
+        MyLoading.dismiss();
+        return;
+      }
       Map<String, Partner> result =
           await PartnerApi.acceptPartnerRequest(partner);
       ref.read(authProvider.notifier).setPartner(result['self_relation']!);
