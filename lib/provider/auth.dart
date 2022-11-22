@@ -139,7 +139,7 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
   Future<bool> deleteAccount() async {
     try {
       await AuthApi.deleteAccount();
-      await FirebaseAuth.instance.signOut();
+      await FirebaseAuth.instance.currentUser?.delete();
       await GoogleSignIn().signOut();
       AuthUser.selfUser = null;
       this.state.user = null;

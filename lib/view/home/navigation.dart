@@ -155,6 +155,7 @@ class _HomeNavigationState extends ConsumerState<HomeNavigation>
     }
     ref.read(authProvider.notifier).startNotificationListening();
     if (widget.actionCode == HomeActionCodes.verifyComplete) {
+      print("start animation");
       _animationController.forward();
     }
     confetti = Confetti();
