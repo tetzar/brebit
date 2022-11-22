@@ -182,12 +182,13 @@ class _AnalysisCardState extends ConsumerState<AnalysisCard> {
             try {
               Habit? habit = await AnalysisApi.removeAnalysis(
                   this.habit, analysis);
+              MyLoading.dismiss();
               ref.read(homeProvider.notifier).setHabit(habit);
               ApplicationRoutes.pop();
             } catch (e) {
+              MyLoading.dismiss();
               MyErrorDialog.show(e);
             }
-            MyLoading.dismiss();
           },
           child: Text(
             '分析項目を削除',

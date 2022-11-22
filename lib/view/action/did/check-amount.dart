@@ -229,7 +229,10 @@ class _InputFormState extends ConsumerState<InputForm> {
       ConditionValueState _value =
           ref.read(conditionValueProvider.notifier).getState();
       MentalValue? _mental = _value.mental;
-      if (_mental == null) return;
+      if (_mental == null) {
+        MyLoading.dismiss();
+        return;
+      }
       Map<String, dynamic> result = await HabitApi.did(
           _mental,
           _value.desire.toInt(),

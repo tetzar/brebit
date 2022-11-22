@@ -506,7 +506,7 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
-        return;
+        throw FirebaseNotFoundException("unable to get google user");
       }
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
@@ -536,7 +536,7 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
           context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch (e) {
       await MyLoading.dismiss();
-      MyErrorDialog.show(e);
+      MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
   }
 

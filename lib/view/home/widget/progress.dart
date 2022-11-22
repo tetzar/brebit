@@ -24,6 +24,7 @@ class _ProgressCircleState extends ConsumerState<ProgressCircle> {
   late Timer timer;
   late Habit habit;
 
+
   @override
   void initState() {
     super.initState();
@@ -63,10 +64,26 @@ class _ProgressCircleState extends ConsumerState<ProgressCircle> {
   }
 
   @override
-  void didUpdateWidget(covariant ProgressCircle oldWidget) {
+  void didChangeDependencies() {
+    habit = widget.habit;
     toNowMin = habit.getStartToNow().inMinutes;
     toAimMin = habit.getStartToAimDate().inMinutes;
+    if (!(toNowMin < toAimMin)) {
+      percentage = 1;
+    } else {
+      percentage = toNowMin / toAimMin;
+    }
+    setState(() {
 
+    });
+    super.didChangeDependencies();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProgressCircle oldWidget) {
+    habit = widget.habit;
+    toNowMin = habit.getStartToNow().inMinutes;
+    toAimMin = habit.getStartToAimDate().inMinutes;
     if (!(toNowMin < toAimMin)) {
       percentage = 1;
     } else {
@@ -80,6 +97,7 @@ class _ProgressCircleState extends ConsumerState<ProgressCircle> {
 
   @override
   Widget build(BuildContext context) {
+    print("@ProgressCircle ${habit.aimDate}");
     return Container(
       height: 197,
       width: MediaQuery.of(context).size.width,
