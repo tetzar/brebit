@@ -138,7 +138,6 @@ class AnalysisResult extends ConsumerWidget {
                   await MyLoading.dismiss();
                 } catch (e) {
                   await MyLoading.dismiss();
-
                   MyErrorDialog.show(e);
                 }
               },

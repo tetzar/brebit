@@ -421,7 +421,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
   }
 
   Future<void> signInWithGoogle(BuildContext context) async {
-    MyLoading.startLoading();
+    await MyLoading.startLoading();
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) throw Exception('google login failed');
