@@ -360,13 +360,19 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
 
   Future<Habit> suspendHabit(CategoryName categoryName) async {
     Map<String, dynamic> result = await HabitApi.suspend(categoryName);
-    this.state = state..user = result['user'];
+    AuthUser? user = result['user'];
+    if (user != null) {
+      this.state = AuthProviderState(user: user);
+    }
     return result['habit'];
   }
 
   Future<Habit> restartHabit(CategoryName categoryName) async {
     Map<String, dynamic> result = await HabitApi.restart(categoryName);
-    this.state = state..user = result['user'];
+    AuthUser? user = result['user'];
+    if (user != null) {
+      this.state = AuthProviderState(user: user);
+    }
     return result['habit'];
   }
 

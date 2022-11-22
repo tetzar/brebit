@@ -45,6 +45,7 @@ class _HomeContentState extends ConsumerState<HomeContent>
   Widget build(BuildContext context) {
     ref.watch(homeProvider);
     Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    print("@HomeContent ${habit?.aimDate}");
     bool smallMediaQuery = MediaQuery.of(context).size.height < 600;
     if (habit == null) {
       return Container(
@@ -145,6 +146,7 @@ class Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("@Progress ${habit.aimDate}");
     int nowStep = getNowStep(habit);
     int maxStep = getMaxStep();
     return Container(
