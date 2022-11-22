@@ -153,7 +153,7 @@ Future<void> _sendPasswordResetCode(String email) async {
     androidPackageName: "dev.brebit",
     dynamicLinkDomain: 'brebit.page.link',
     androidInstallApp: true,
-    iOSBundleId: "com.example.breabitApp",
+    iOSBundleId: "dev.brebit",
     handleCodeInApp: true,
   );
   MyLoading.startLoading();
