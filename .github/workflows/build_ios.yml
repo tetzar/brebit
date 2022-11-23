@@ -20,6 +20,9 @@ jobs:
           # architecture: arm64
           cache: true
       - run: flutter --version
+      
+      - name: update cocoapods
+        run: pod repo update
 
       - name: Download Flutter packages
         run: flutter pub get
