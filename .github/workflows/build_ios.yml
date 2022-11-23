@@ -26,6 +26,9 @@ jobs:
       
       - name: update cocoapods
         run: pod repo update
+        
+      - name: flutter clean
+        run: flutter clean
 
       - name: Download Flutter packages
         run: flutter pub get
