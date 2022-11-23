@@ -21,6 +21,9 @@ jobs:
           cache: true
       - run: flutter --version
       
+      - name: Remove podfile.lock
+        run: rm -rf Podfile.lock 
+      
       - name: update cocoapods
         run: pod repo update
 
