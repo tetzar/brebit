@@ -76,7 +76,6 @@ class MyNotification{
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: notificationCallback,
         onDidReceiveBackgroundNotificationResponse: notificationCallback);
-
     _requestPermissions();
     // _configureSelectNotificationSubject();
 
