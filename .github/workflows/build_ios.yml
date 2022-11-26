@@ -21,14 +21,14 @@ jobs:
           cache: true
       - run: flutter --version
       
-      - name: Remove podfile.lock
-        run: cd ios && rm -rf Podfile.lock 
-      
-      - name: update cocoapods
-        run: pod repo update
-        
-      - name: flutter clean
-        run: flutter clean
+#      - name: Remove podfile.lock
+#        run: cd ios && rm -rf Podfile.lock
+#
+#      - name: update cocoapods
+#        run: pod repo update
+#
+#      - name: flutter clean
+#        run: flutter clean
 
       - name: Download Flutter packages
         run: flutter pub get
