@@ -265,7 +265,7 @@ class _RegisterEmailState extends ConsumerState<RegisterEmail> {
             androidPackageName: "dev.brebit",
             dynamicLinkDomain: 'brebit.page.link',
             androidInstallApp: true,
-            iOSBundleId: "com.example.breabitApp",
+            iOSBundleId: "dev.brebit",
             handleCodeInApp: true,
           );
           await firebaseUser.sendEmailVerification(actionCodeSettings);
@@ -464,7 +464,7 @@ class _ChangeEmailState extends ConsumerState<ChangeEmail> {
             androidPackageName: "dev.brebit",
             dynamicLinkDomain: 'brebit.page.link',
             androidInstallApp: true,
-            iOSBundleId: "com.example.breabitApp",
+            iOSBundleId: "dev.brebit",
             handleCodeInApp: true,
           );
           await firebaseUser.sendEmailVerification(actionCodeSettings);
