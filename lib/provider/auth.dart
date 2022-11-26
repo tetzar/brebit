@@ -115,7 +115,6 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     return user;
   }
 
-
   void setUser(AuthUser user) {
     this.state.user = user;
   }
