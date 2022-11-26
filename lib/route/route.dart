@@ -2,8 +2,6 @@ import 'package:brebit/library/exceptions.dart';
 import 'package:brebit/main.dart';
 import 'package:brebit/model/habit_log.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:flutter/material.dart';
-
 import '../view/action/actions.dart';
 import '../view/action/circumstance.dart';
 import '../view/action/did/check-amount.dart';
@@ -14,8 +12,8 @@ import '../view/action/endured/condition.dart';
 import '../view/action/endured/confirmation.dart';
 import '../view/action/endured/executed_strategy.dart';
 import '../view/action/want/condition.dart';
-import '../view/action/want/confirmation.dart';
 import '../view/action/want/execute_strategy.dart';
+import '../view/action/want/confirmation.dart';
 import '../view/general/explanation/small-step.dart';
 import '../view/general/explanation/strategy.dart';
 import '../view/habit/information/alcohol.dart';
@@ -23,7 +21,6 @@ import '../view/habit/information/cigarette.dart';
 import '../view/habit/information/sns.dart';
 import '../view/habit/information/sweets.dart';
 import '../view/habit/select-strategy.dart';
-import '../view/habit/start_habit.dart';
 import '../view/home/navigation.dart';
 import '../view/home/small-step.dart';
 import '../view/notification/notification.dart';
@@ -33,15 +30,17 @@ import '../view/settings/account/email.dart';
 import '../view/settings/account/password.dart';
 import '../view/settings/account/user-name.dart';
 import '../view/start/home.dart';
+import '../view/start/password-reset.dart';
+import '../view/start/send-verification.dart';
+import '../view/strategy/create.dart';
 import '../view/start/introduction.dart';
 import '../view/start/login.dart';
-import '../view/start/password-reset.dart';
 import '../view/start/register.dart';
-import '../view/start/send-verification.dart';
-import '../view/start/title.dart' as ViewTitle;
-import '../view/strategy/create.dart';
+import '../view/habit/start_habit.dart';
 import '../view/timeline/create_post.dart';
 import '../view/timeline/post.dart';
+import 'package:flutter/material.dart';
+import '../view/start/title.dart' as ViewTitle;
 
 class ApplicationRoutes {
   static GlobalKey<NavigatorState> materialKey =
@@ -54,8 +53,7 @@ class ApplicationRoutes {
     return result;
   }
 
-  static Future<dynamic> pushNamed(String routeName,
-      [dynamic arguments]) async {
+  static Future<dynamic> pushNamed(String routeName, [dynamic arguments]) async {
     NavigatorState? currentState = materialKey.currentState;
     if (currentState == null) return;
     var result;
@@ -188,4 +186,5 @@ class ApplicationRoutes {
     };
     return routes;
   }
+
 }

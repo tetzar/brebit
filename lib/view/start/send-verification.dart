@@ -109,10 +109,14 @@ class _SendVerificationCodeScreenContentState
 “$email”宛に
 届いたメールのリンクを開くと、
 登録が完了します。
+届かない場合は迷惑メールフォルダを
+ご確認ください。
             ''' : '''最後のステップです。
 “$email”宛に
 届いたメールのリンクを開くと、
 登録が完了します。
+届かない場合は迷惑メールフォルダを
+ご確認ください。
             ''',
               style: Theme.of(context).textTheme.bodyText1?.copyWith(
                     fontSize: 17,
@@ -246,7 +250,7 @@ class _SendVerificationCodeScreenContentState
           androidPackageName: "dev.brebit",
           dynamicLinkDomain: 'brebit.page.link',
           androidInstallApp: true,
-          iOSBundleId: "com.example.breabitApp",
+          iOSBundleId: "dev.brebit",
           handleCodeInApp: true,
         );
         await firebaseUser.sendEmailVerification(actionCodeSettings);
