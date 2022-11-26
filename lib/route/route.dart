@@ -62,12 +62,12 @@ class ApplicationRoutes {
   }
 
 
-  static Future<dynamic> pushReplacement(Route route) async {
+  static Future<dynamic> pushReplacement(Route route, {dynamic arguments}) async {
     NavigatorState? currentState = materialKey.currentState;
     if (currentState == null) return;
-    return await currentState.pushReplacement(
+    return await pushReplacement(
       route,
-
+      arguments: arguments
     );
   }
 

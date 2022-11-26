@@ -52,55 +52,55 @@ void main() async {
     } else {
       _initialRoute = '/title';
     }
-  }
-  final PendingDynamicLinkData? data =
-      await FirebaseDynamicLinks.instance.getInitialLink();
-  final Uri? deepLink = data?.link;
-  if (deepLink != null) {
-    _initialRoute = '/';
-  }
+    final PendingDynamicLinkData? data =
+        await FirebaseDynamicLinks.instance.getInitialLink();
+    final Uri? deepLink = data?.link;
+    if (deepLink != null) {
+      _initialRoute = '/';
+    }
 
-  FirebaseDynamicLinks.instance.onLink
-      .listen((PendingDynamicLinkData dynamicLink) async {
-    final Uri? deepLink = dynamicLink.link;
-    User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (deepLink == null || firebaseUser == null) return;
-    if (deepLink.queryParameters.containsKey('continueUrl')) {
-      final Uri continueUrl =
-          Uri.parse(deepLink.queryParameters['continueUrl']!);
-      if (deepLink.queryParameters['mode'] == 'verifyEmail') {
-        firebaseUser.reload();
-        if (continueUrl.path == '/email-verifying') {
-          if (!firebaseUser.emailVerified) {
-            ApplicationRoutes.pushReplacementNamed('/email-verifying',
-                arguments: dynamicLink);
+    FirebaseDynamicLinks.instance.onLink
+        .listen((PendingDynamicLinkData dynamicLink) async {
+      final Uri? deepLink = dynamicLink.link;
+      User? firebaseUser = FirebaseAuth.instance.currentUser;
+      if (deepLink == null || firebaseUser == null) return;
+      if (deepLink.queryParameters.containsKey('continueUrl')) {
+        final Uri continueUrl =
+            Uri.parse(deepLink.queryParameters['continueUrl']!);
+        if (deepLink.queryParameters['mode'] == 'verifyEmail') {
+          firebaseUser.reload();
+          if (continueUrl.path == '/email-verifying') {
+            if (!firebaseUser.emailVerified) {
+              ApplicationRoutes.pushReplacementNamed('/email-verifying',
+                  arguments: dynamicLink);
+            }
+            return;
           }
-          return;
+          if (continueUrl.path == '/email-set') {
+            if (!firebaseUser.emailVerified) {
+              ApplicationRoutes.pushReplacementNamed('/title');
+            }
+            return;
+          }
         }
-        if (continueUrl.path == '/email-set') {
-          if (!firebaseUser.emailVerified) {
+        if (deepLink.queryParameters['mode'] == 'resetPassword') {
+          try {
+            String? oobCode = deepLink.queryParameters['oobCode'];
+            if (oobCode == null) throw Exception('oobCode is null');
+            await FirebaseAuth.instance.verifyPasswordResetCode(oobCode);
+            ApplicationRoutes.pushReplacementNamed('/password-reset/form',
+                arguments: dynamicLink);
+          } catch (e) {
             ApplicationRoutes.pushReplacementNamed('/title');
           }
-          return;
         }
+        ApplicationRoutes.pushReplacementNamed(continueUrl.path,
+            arguments: dynamicLink);
+        return;
       }
-      if (deepLink.queryParameters['mode'] == 'resetPassword') {
-        try {
-          String? oobCode = deepLink.queryParameters['oobCode'];
-          if (oobCode == null) throw Exception('oobCode is null');
-          await FirebaseAuth.instance.verifyPasswordResetCode(oobCode);
-          ApplicationRoutes.pushReplacementNamed('/password-reset/form',
-              arguments: dynamicLink);
-        } catch (e) {
-          ApplicationRoutes.pushReplacementNamed('/title');
-        }
-      }
-      ApplicationRoutes.pushReplacementNamed(continueUrl.path,
-          arguments: dynamicLink);
-      return;
-    }
-    ApplicationRoutes.pushReplacementNamed(deepLink.path);
-  });
+      ApplicationRoutes.pushReplacementNamed(deepLink.path);
+    });
+  }
 
   runApp(ProviderScope(child: MyApp()));
 }
