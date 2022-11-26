@@ -29,6 +29,14 @@ class MyNotification{
   static final BehaviorSubject<String> selectNotificationSubject =
   BehaviorSubject<String>();
 
+  static void notificationCallback(NotificationResponse response) {
+    String? payload = response.payload;
+    if (payload != null) {
+      debugPrint('notification payload: $payload');
+      selectNotificationSubject.add(payload);
+    }
+  }
+
   MethodChannel platform =
   MethodChannel('dexterx.dev/flutter_local_notifications_example');
 
@@ -51,8 +59,8 @@ class MyNotification{
     // TODO It is sample
     /// Note: permissions aren't requested here just to demonstrate that can be
     /// done later
-    final IOSInitializationSettings initializationSettingsIOS =
-    IOSInitializationSettings(
+    final DarwinInitializationSettings initializationSettingsIOS =
+    DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
         requestSoundPermission: false,
@@ -66,12 +74,8 @@ class MyNotification{
         android: initializationSettingsAndroid,
         iOS: initializationSettingsIOS,);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onSelectNotification: (String? payload) {
-          if (payload != null) {
-            debugPrint('notification payload: $payload');
-            selectNotificationSubject.add(payload);
-          }
-        });
+        onDidReceiveNotificationResponse: notificationCallback,
+        onDidReceiveBackgroundNotificationResponse: notificationCallback);
 
     _requestPermissions();
     // _configureSelectNotificationSubject();
