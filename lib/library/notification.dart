@@ -1,3 +1,4 @@
+
 import 'package:app_settings/app_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,9 +24,10 @@ class ReceivedNotification {
   final String? payload;
 }
 
-class MyNotification {
+class MyNotification{
+
   static final BehaviorSubject<String> selectNotificationSubject =
-      BehaviorSubject<String>();
+  BehaviorSubject<String>();
 
   static void notificationCallback(NotificationResponse response) {
     String? payload = response.payload;
@@ -36,25 +38,24 @@ class MyNotification {
   }
 
   MethodChannel platform =
-      MethodChannel('dexterx.dev/flutter_local_notifications_example');
+  MethodChannel('dexterx.dev/flutter_local_notifications_example');
 
   static final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   static late NotificationAppLaunchDetails? notificationAppLaunchDetails;
 
   static late AndroidInitializationSettings initializationSettingsAndroid;
 
-  static final BehaviorSubject<ReceivedNotification>
-      didReceiveLocalNotificationSubject =
-      BehaviorSubject<ReceivedNotification>();
+  static final BehaviorSubject<ReceivedNotification> didReceiveLocalNotificationSubject =
+  BehaviorSubject<ReceivedNotification>();
 
-  static Future<void> init() async {
+  static Future<void> init() async{
     notificationAppLaunchDetails =
-        await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
 
     initializationSettingsAndroid =
-        AndroidInitializationSettings('brebit_sample_icon');
+    AndroidInitializationSettings('brebit_sample_icon');
     // TODO It is sample
     /// Note: permissions aren't requested here just to demonstrate that can be
     /// done later
@@ -70,13 +71,14 @@ class MyNotification {
               id: id, title: title, body: body, payload: payload));
         });
     final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,);
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: notificationCallback,
         onDidReceiveBackgroundNotificationResponse: notificationCallback);
     _requestPermissions();
     // _configureSelectNotificationSubject();
+
   }
 
   static dispose() {
@@ -86,24 +88,24 @@ class MyNotification {
   static void _requestPermissions() {
     flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
+        IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+      alert: true,
+      badge: true,
+      sound: true,
+    );
     flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>()
+        MacOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
-  static void configureDidReceiveLocalNotificationSubject(
-      BuildContext context) {
+
+  static void configureDidReceiveLocalNotificationSubject(BuildContext context) {
     didReceiveLocalNotificationSubject.stream
         .listen((ReceivedNotification receivedNotification) async {
       await showDialog(
@@ -135,7 +137,6 @@ class MyNotification {
       );
     });
   }
-
   //
   // static void _configureSelectNotificationSubject(BuildContext context) {
   //   selectNotificationSubject.stream.listen((String payload) async {
@@ -147,26 +148,27 @@ class MyNotification {
   //   });
   // }
 
+
+
   static Future<void> showNotification(RemoteMessage message) async {
-    if (message.notification != null) {
+    if(message.notification != null){
       RemoteNotification notification = message.notification!;
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails('your channel id', 'your channel name',
-              channelDescription: 'your channel description',
-              importance: Importance.max,
-              priority: Priority.high,
-              ticker: 'ticker');
+      AndroidNotificationDetails(
+          'your channel id', 'your channel name', channelDescription: 'your channel description',
+          importance: Importance.max,
+          priority: Priority.high,
+          ticker: 'ticker');
       const NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
+      NotificationDetails(android: androidPlatformChannelSpecifics);
       await flutterLocalNotificationsPlugin.show(
           0, notification.title, notification.body, platformChannelSpecifics,
           payload: 'item x');
     }
   }
 
-  static Future<bool> getPermission() async {
-    PermissionStatus status =
-        await NotificationPermissions.getNotificationPermissionStatus();
+  static Future<bool> getPermission() async{
+    PermissionStatus status = await NotificationPermissions.getNotificationPermissionStatus();
     return status == PermissionStatus.granted;
   }
 
@@ -174,7 +176,7 @@ class MyNotification {
     await AppSettings.openNotificationSettings();
   }
 
-  static Future<Map<String, bool>> getSetting() async {
+  static Future<Map<String, bool>> getSetting() async{
     Map<String, bool>? settings = await LocalManager.getNotificationSetting();
     if (settings == null) {
       settings = {
