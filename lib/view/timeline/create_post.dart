@@ -172,8 +172,12 @@ Future<List<AssetEntity>?> _getImages() async {
     } on StateError {
       allPath = null;
     }
+    Map<AssetPathEntity, int> assetCounts = {};
+    for (final asset in list) {
+      assetCounts[asset] = await asset.assetCountAsync;
+    }
     if (allPath == null) {
-      list.sort((a, b) => a.assetCount > b.assetCount ? -1 : 1);
+      list.sort((a, b) => (assetCounts[a] ?? 0) > (assetCounts[b] ?? 0) ? -1 : 1);
       allPath = list.first;
     }
     return await allPath.getAssetListRange(start: 0, end: 100);
@@ -582,7 +586,7 @@ class _InputFormState extends ConsumerState<InputForm> {
     ref.read(_savableProvider.notifier).set(_formValue.savable());
     imageChangedNotifier = new ImageChangedNotifier();
   }
-
+  
   @override
   void dispose() {
     _focusNode.dispose();
@@ -608,6 +612,7 @@ class _InputFormState extends ConsumerState<InputForm> {
       autofocus: true,
       focusNode: _focusNode,
       maxLines: null,
+      controller: _controller,
       textAlign: TextAlign.left,
       decoration: InputDecoration(
           contentPadding: EdgeInsets.all(0),
