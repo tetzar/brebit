@@ -140,8 +140,8 @@ class _ActivityBodyState extends ConsumerState<ActivityBody> {
     } on StateError {
       _logInADay = [];
     }
-    ref.read(_activityProvider.notifier).set(_logInADay, _now);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(_activityProvider.notifier).set(_logInADay, _now);
       dailyCardAnimate();
     });
     hasLoadedMonths = <int>[];

@@ -36,20 +36,22 @@ class _SavableProviderState {
 class _SavableProvider extends StateNotifier<_SavableProviderState> {
   _SavableProvider(_SavableProviderState state) : super(state);
 
-  void set(bool email, bool password) {
-    _SavableProviderState newState = new _SavableProviderState(email, password);
+  void set(bool? currentPassword, bool? newPassword) {
+    _SavableProviderState newState =
+    new _SavableProviderState(currentPassword ?? state.currentPassword,
+        newPassword ?? state.newPassword);
     this.state = newState;
   }
 
   void setNewPassword(bool s) {
     if (this.state.newPassword != s) {
-      state = state..newPassword = s;
+      set(null, s);
     }
   }
 
   void setCurrentPassword(bool s) {
     if (this.state.currentPassword != s) {
-      state = state..currentPassword = s;
+      set(s, null);
     }
   }
 

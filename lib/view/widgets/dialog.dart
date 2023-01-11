@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -154,6 +154,7 @@ class MyErrorDialog extends StatelessWidget {
     if (e is SocketException) {
       message = message ?? "インターネットの接続を\n確認してください";
     }
+    developer.log(e.toString());
     BuildContext? context = ApplicationRoutes.materialKey.currentContext;
     if (context == null) return;
     showDialog(

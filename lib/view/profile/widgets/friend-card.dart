@@ -17,9 +17,9 @@ class FriendCard extends ConsumerWidget {
       onTap: () {
         AuthUser? user = ref.read(authProvider.notifier).user;
         if (user == null) return;
-        if (user.id != user.id) {
+        if (this.user.id != user.id) {
           Home.push(MaterialPageRoute(
-              builder: (context) => OtherProfile(user: user)));
+              builder: (context) => OtherProfile(user: this.user)));
         } else {
           Home.pushNamed('/profile');
         }

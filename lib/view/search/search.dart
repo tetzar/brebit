@@ -340,19 +340,6 @@ class _SearchFormBodyState extends ConsumerState<SearchFormBody>
 
   @override
   void initState() {
-    initialIndex = 0;
-    if (initialTab != null) {
-      switch (initialTab) {
-        case 'strategy':
-          initialIndex = 1;
-          break;
-        case 'analysis':
-          initialIndex = 2;
-          break;
-        default:
-          break;
-      }
-    }
     _tabController =
         new TabController(length: 3, vsync: this, initialIndex: initialIndex);
     _tabController.animation?.addListener(() {
@@ -361,7 +348,22 @@ class _SearchFormBodyState extends ConsumerState<SearchFormBody>
         ref.read(tabProvider.notifier).set(animation.value);
       }
     });
-    ref.read(tabProvider.notifier).set(initialIndex.toDouble());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initialIndex = 0;
+      if (initialTab != null) {
+        switch (initialTab) {
+          case 'strategy':
+            initialIndex = 1;
+            break;
+          case 'analysis':
+            initialIndex = 2;
+            break;
+          default:
+            break;
+        }
+      }
+      _tabController.animateTo(initialIndex);
+    });
     super.initState();
   }
 

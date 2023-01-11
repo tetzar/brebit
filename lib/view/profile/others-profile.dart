@@ -341,7 +341,7 @@ class _ProfileContentState extends ConsumerState<ProfileContent>
   Future<void> _getProfile() async {
     Partner _partner =
         await ref.read(profileProvider(widget.user.id).notifier).getProfile();
-    ref.read(authProvider.notifier).setPartner(_partner);
+    ref.read(profileProvider(widget.user.id).notifier).setPartner(_partner);
   }
 
   @override
@@ -408,7 +408,8 @@ class _ProfileContentState extends ConsumerState<ProfileContent>
           future: _futureGetProfile,
           builder: (BuildContext context, AsyncSnapshot<void> snapshots) {
             if (snapshots.hasError) {
-              MyErrorDialog.show(snapshots.error);
+              dv.log(snapshots.error.toString());
+              return Container();
             }
             if (snapshots.connectionState == ConnectionState.done) {
               ScrollController? scrollController =
@@ -1123,20 +1124,16 @@ class _FriendListViewState extends ConsumerState<FriendListView> {
   @override
   Widget build(BuildContext context) {
     ref.watch(profileProvider(widget.user.id));
+    _partners = ref
+        .read(profileProvider(widget.user.id).notifier)
+        .user
+        .getAcceptedPartners();
     return RefreshIndicator(
       onRefresh: () async {
         try {
           await ref.read(profileProvider(widget.user.id).notifier).getProfile();
         } catch (e) {
           dv.log('debug', error: e);
-        }
-        if (mounted) {
-          setState(() {
-            _partners = ref
-                .read(profileProvider(widget.user.id).notifier)
-                .user
-                .getAcceptedPartners();
-          });
         }
       },
       child: ListView.builder(
