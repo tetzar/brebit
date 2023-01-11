@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
 
 import '../../library/cache.dart';
@@ -13,7 +13,9 @@ import '../../model/user.dart';
 import 'auth.dart';
 
 class Network {
-  static final String _url = 'https://brebit.lsv.jp/brebit-server-backend/public';
+  static final String _url =
+      'https://brebit.lsv.jp/brebit-server-backend/public';
+
   // for emulator (Android)
   // static final String _url = 'http://10.0.2.2:80';
   // for emulator (iOS)
@@ -53,15 +55,15 @@ class Network {
     return token;
   }
 
-  static Future<http.Response> postWithoutToken(data, apiUrl, String calledAt) async {
+  static Future<http.Response> postWithoutToken(
+      data, apiUrl, String calledAt) async {
     String fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
 
-    http.Response response =  await http.post(url,
-        body: jsonEncode(data), headers: _setHeadersWithoutToken()).timeout(
-        Duration(seconds: TIME_OUT_SECONDS)
-    );
+    http.Response response = await http
+        .post(url, body: jsonEncode(data), headers: _setHeadersWithoutToken())
+        .timeout(Duration(seconds: TIME_OUT_SECONDS));
     hasErrorMessage(response, calledAt);
     return response;
   }
@@ -72,15 +74,15 @@ class Network {
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
 
-    http.Response response = await http.post(url, body: jsonEncode(data), headers: _setHeaders()).timeout(
-        Duration(seconds: TIME_OUT_SECONDS)
-    );
+    http.Response response = await http
+        .post(url, body: jsonEncode(data), headers: _setHeaders())
+        .timeout(Duration(seconds: TIME_OUT_SECONDS));
     hasErrorMessage(response, calledAt);
     return response;
   }
 
-  static Future<http.Response> postDataWithImage(
-      Map<String, String> data, List<File> imageList, apiUrl, String calledAt) async {
+  static Future<http.Response> postDataWithImage(Map<String, String> data,
+      List<File> imageList, apiUrl, String calledAt) async {
     String uploadURL = Network.getFullUrl(apiUrl);
     print(uploadURL);
 
@@ -106,9 +108,8 @@ class Network {
     });
     request.headers.addAll(_setHeadersMulti());
 
-
     http.Response response =
-    await http.Response.fromStream(await request.send());
+        await http.Response.fromStream(await request.send());
     hasErrorMessage(response, calledAt);
     return response;
   }
@@ -121,14 +122,14 @@ class Network {
     http.Response response = await http.get(url, headers: _setHeaders());
     hasErrorMessage(response, calledAt);
     return response;
-
   }
 
   static Future<http.Response> getWithoutToken(apiUrl, String calledAt) async {
     String fullUrl = _url + '/api' + apiUrl;
     Uri url = Uri.parse(fullUrl);
     print(fullUrl);
-    http.Response response = await http.get(url, headers: _setHeadersWithoutToken());
+    http.Response response =
+        await http.get(url, headers: _setHeadersWithoutToken());
     hasErrorMessage(response, calledAt);
     return response;
   }
@@ -175,7 +176,7 @@ class Network {
   }
 
   static void hasErrorMessage(http.Response response, String causedAt) {
-    print(response.body);
+    developer.log(response.body);
     if (response.statusCode != 200) {
       if (response.statusCode == 404) {
         throw InvalidUrlException(response.body, causedAt);
@@ -183,12 +184,12 @@ class Network {
       if (response.statusCode == 201 || response.statusCode == 409) {
         return;
       }
-      print(response.body);
       throw UnExpectedException(response.body, causedAt, response.statusCode);
     }
     dynamic body = jsonDecode(response.body);
     if (body is Map && body.containsKey('message')) {
       if (body.containsKey('exception_code')) {
+        developer.log(response.body);
         switch (body['exception_code']) {
           case 'record-not-found':
             throw RecordNotFoundException(body['message']);

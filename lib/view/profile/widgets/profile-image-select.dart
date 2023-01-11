@@ -22,9 +22,11 @@ class ProfileImageSelect extends ConsumerStatefulWidget {
 
 class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
   File? imageFile;
+  bool deleted = false;
 
   @override
   void initState() {
+    deleted = false;
     super.initState();
   }
 
@@ -53,10 +55,10 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
           actions: [
             IconButton(
                 icon: Icon(Icons.check,
-                    color: imageFile != null
+                    color: (imageFile != null || deleted)
                         ? Theme.of(context).appBarTheme.iconTheme?.color
                         : Theme.of(context).disabledColor),
-                onPressed: imageFile != null
+                onPressed: (imageFile != null || deleted)
                     ? () async {
                         await saveImage(context);
                       }
@@ -84,7 +86,10 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
                             width: 200,
                             height: 200,
                           )
-                        : user?.getImageWidget() ?? AuthUser.getDefaultImage(),
+                        : deleted
+                            ? AuthUser.getDefaultImage()
+                            : user?.getImageWidget() ??
+                                AuthUser.getDefaultImage(),
                   ),
                 ),
                 radius: 100,
@@ -157,10 +162,14 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
   Future<void> saveImage(BuildContext context) async {
     try {
       MyLoading.startLoading();
-      File? imageFile = this.imageFile;
-      if (imageFile != null) {
-        imageFile = await ImageModel.Image.resizeImage(imageFile);
-        await ref.read(authProvider.notifier).saveProfileImage(imageFile);
+      if (deleted) {
+        await ref.read(authProvider.notifier).deleteProfileImage();
+      } else {
+        File? imageFile = this.imageFile;
+        if (imageFile != null) {
+          imageFile = await ImageModel.Image.resizeImage(imageFile);
+          await ref.read(authProvider.notifier).saveProfileImage(imageFile);
+        }
       }
       await MyLoading.dismiss();
       ApplicationRoutes.pop();
@@ -179,9 +188,11 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
             ApplicationRoutes.pop();
             File? file = await _selectImageFromGallery();
             if (file != null) {
-              File? croppedImage = await MyImageCropper.cropImage(context, file);
+              File? croppedImage =
+                  await MyImageCropper.cropImage(context, file);
               if (croppedImage == null) return;
               imageFile = croppedImage;
+              deleted = false;
               setState(() {});
             }
           }),
@@ -193,13 +204,14 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
           File? file = await _takePhoto();
           if (file != null) {
             imageFile = await MyImageCropper.cropImage(context, file);
+            deleted = false;
             setState(() {});
           }
         },
       )
     ];
-    bool imageDeletable =
-        ref.read(authProvider.notifier).user?.hasImage() ?? false || imageFile != null;
+    bool imageDeletable = ref.read(authProvider.notifier).user?.hasImage() ??
+        false || imageFile != null;
     if (imageDeletable) {
       _items.add(CautionBottomSheetItem(
           context: context,
@@ -207,6 +219,7 @@ class _ProfileImageSelectState extends ConsumerState<ProfileImageSelect> {
           onSelect: () {
             ApplicationRoutes.pop();
             imageFile = null;
+            deleted = true;
             setState(() {});
           }));
     }

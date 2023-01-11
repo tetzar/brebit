@@ -4,8 +4,8 @@ import 'package:brebit/utils/aws.dart';
 import 'package:flutter/material.dart';
 
 class ProfileImageWithS3 extends StatefulWidget {
-
   final S3Image s3image;
+
   const ProfileImageWithS3(this.s3image, {Key? key}) : super(key: key);
 
   @override
@@ -19,18 +19,18 @@ class _ProfileImageWithS3State extends State<ProfileImageWithS3> {
       future: widget.s3image.getImage(),
       builder: (context, snapshot) {
         Widget child = (snapshot.connectionState == ConnectionState.done &&
-            snapshot.hasData)
+                snapshot.hasData)
             ? Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                  image: MemoryImage(snapshot.data as Uint8List),
-                  fit: BoxFit.cover),
-            ))
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                      image: MemoryImage(snapshot.data as Uint8List),
+                      fit: BoxFit.cover),
+                ))
             : Container(
-          color: Theme.of(context).backgroundColor,
-        );
+                color: Theme.of(context).backgroundColor,
+              );
         return AnimatedSwitcher(
           duration: Duration(milliseconds: 500),
           child: child,

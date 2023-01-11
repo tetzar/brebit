@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:brebit/provider/auth.dart';
 import 'package:brebit/view/general/error-widget.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

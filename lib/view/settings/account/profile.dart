@@ -22,28 +22,40 @@ import '../../widgets/text-field.dart';
 class ProfileSettingProviderState {
   String? nickName;
   File? imageFile;
+  bool imageDeleted = false;
   String? bio;
-  Widget? image;
 }
 
 class ProfileSettingProvider
     extends StateNotifier<ProfileSettingProviderState> {
   ProfileSettingProvider(ProfileSettingProviderState state) : super(state);
 
-  void set({String? nickName, String? bio, File? imageFile, Widget? image}) {
-    this.state.nickName = nickName ?? this.state.nickName;
-    this.state.bio = bio ?? this.state.bio;
-    this.state.imageFile = imageFile ?? this.state.imageFile;
-    this.state.image = image ?? this.state.image;
+  void initialize({String? nickName, String? bio, File? imageFile}) {
+    state.imageFile = imageFile;
+    state.imageDeleted = false;
+    state.bio = bio;
+    state.nickName = nickName;
   }
 
-  void setImageFile(File? file) {
-    this.state.imageFile = file;
-    state = state;
+  void set(
+      {String? nickName,
+      String? bio,
+      File? imageFile,
+      bool? imageDeleted}) {
+    var newState = ProfileSettingProviderState();
+    newState.nickName = nickName ?? this.state.nickName;
+    newState.bio = bio ?? this.state.bio;
+    newState.imageFile = imageFile ?? this.state.imageFile;
+    newState.imageDeleted = imageDeleted ?? this.state.imageDeleted;
+    state = newState;
+  }
+
+  void deleteImage() {
+    set(imageFile: null, imageDeleted: true);
   }
 
   bool savable(AuthUser user) {
-    if (user.getImageUrl().length > 0 && this.state.image == null) {
+    if (state.imageDeleted) {
       return true;
     }
     if (this.name.length == 0) {
@@ -53,6 +65,8 @@ class ProfileSettingProvider
         this.state.nickName != user.name ||
         this.state.bio != user.bio;
   }
+
+  bool get imageDeleted => state.imageDeleted;
 
   File? get file {
     return this.state.imageFile;
@@ -67,66 +81,23 @@ class ProfileSettingProvider
   }
 
   set bio(String bio) {
-    this.state.bio = bio;
+    this.set(bio: bio);
   }
 
   set file(File? file) {
-    this.state.imageFile = file;
+    if (file != null) {
+      this.set(imageDeleted: false, imageFile: file);
+    } else {
+      this.set(imageFile: file);
+    }
   }
 
   set name(String name) {
-    this.state.nickName = name;
+    this.set(nickName: name);
   }
 
   void setName(String name, AuthUser user) {
-    bool notify = false;
-    if (this.name == user.name) {
-      if (name != user.name) {
-        notify = true;
-      }
-    } else {
-      if (name == user.name) {
-        notify = true;
-      }
-    }
-    if ((name.length == 0 && this.name.length > 0) ||
-        (this.name.length == 0 && name.length > 0)) notify = true;
     this.name = name;
-    if (notify) state = state;
-  }
-
-  void setBio(String text, AuthUser user) {
-    bool notify = (user.bio == text) != (this.bio == user.bio);
-    this.bio = text;
-    if (notify) state = state;
-  }
-
-  set image(Widget? imageWidget) {
-    if (imageWidget == null) {
-      this.file = null;
-    }
-    this.state.image = imageWidget;
-  }
-
-  Widget? get image {
-    File? imageFile = this.state.imageFile;
-    if (imageFile != null) {
-      return Image.file(imageFile);
-    }
-    return this.state.image ??
-        Image.asset(
-          'assets/icon/default.png',
-          fit: BoxFit.cover,
-        );
-  }
-
-  bool imageDeletable() {
-    return this.file != null || this.state.image != null;
-  }
-
-  void setImage(Widget? imageWidget) {
-    this.image = imageWidget;
-    state = state;
   }
 }
 
@@ -141,16 +112,16 @@ class ProfileSetting extends ConsumerStatefulWidget {
 class _ProfileSettingState extends ConsumerState<ProfileSetting> {
   late AuthUser? user;
 
+
+
   @override
   void initState() {
     AuthUser? user = ref.read(authProvider.notifier).user;
     this.user = user;
     if (user != null) {
-      String currentImageUrl = user.getImageUrl();
-      ref.read(_profileSettingProvider.notifier).set(
-          nickName: user.name,
-          bio: user.bio,
-          image: currentImageUrl.length > 0 ? user.getImageWidget() : null);
+      ref
+          .read(_profileSettingProvider.notifier)
+          .initialize(nickName: user.name, bio: user.bio);
     }
     super.initState();
   }
@@ -250,8 +221,7 @@ class SaveButton extends ConsumerWidget {
       return;
     }
     String bio = ref.read(_profileSettingProvider.notifier).bio;
-    bool imageDeleted = this.user.hasImage() &&
-        ref.read(_profileSettingProvider.notifier).image == null;
+    bool imageDeleted = ref.read(_profileSettingProvider.notifier).imageDeleted;
     try {
       MyLoading.startLoading();
       await ref
@@ -311,7 +281,11 @@ class ProfileImage extends ConsumerStatefulWidget {
 class _ProfileImageState extends ConsumerState<ProfileImage> {
   @override
   Widget build(BuildContext context) {
-    Widget? imageWidget = ref.read(_profileSettingProvider.notifier).image;
+    File? imageFile = ref.read(_profileSettingProvider.notifier).file;
+    Widget imageWidget = imageFile != null ? Image.file(imageFile)
+        : ref.read(_profileSettingProvider.notifier).imageDeleted ?
+        AuthUser.getDefaultImage() :
+    ref.read(authProvider.notifier).user?.getImageWidget() ?? AuthUser.getDefaultImage();
     return Container(
       width: 80,
       height: 80,
@@ -365,10 +339,11 @@ class _ProfileImageState extends ConsumerState<ProfileImage> {
             ApplicationRoutes.pop();
             File? file = await _selectImageFromGallery();
             if (file != null) {
-              ref
-                  .read(_profileSettingProvider.notifier)
-                  .setImageFile(await MyImageCropper.cropImage(context, file));
-              setState(() {});
+              File? cropped = await MyImageCropper.cropImage(context, file);
+              if (cropped != null) {
+                ref.read(_profileSettingProvider.notifier).file = cropped;
+                setState(() {});
+              }
             }
           }),
       NormalBottomSheetItem(
@@ -378,21 +353,23 @@ class _ProfileImageState extends ConsumerState<ProfileImage> {
           ApplicationRoutes.pop();
           File? file = await _takePhoto();
           if (file != null) {
-            ref
-                .read(_profileSettingProvider.notifier)
-                .setImageFile(await MyImageCropper.cropImage(context, file));
-            setState(() {});
+            File? cropped = await MyImageCropper.cropImage(context, file);
+            if (cropped != null) {
+              ref.read(_profileSettingProvider.notifier).file = cropped;
+              setState(() {});
+            }
           }
         },
       )
     ];
-    if (ref.read(_profileSettingProvider.notifier).imageDeletable()) {
+    if ((ref.read(authProvider.notifier).user?.hasImage() ?? false) &&
+    !ref.read(_profileSettingProvider.notifier).imageDeleted) {
       _items.add(CautionBottomSheetItem(
           context: context,
           text: '現在の画像を削除',
           onSelect: () {
             ApplicationRoutes.pop();
-            ref.read(_profileSettingProvider.notifier).setImage(null);
+            ref.read(_profileSettingProvider.notifier).deleteImage();
             setState(() {});
           }));
     }
@@ -483,7 +460,7 @@ class BioForm extends ConsumerWidget {
         initialValue: ref.read(_profileSettingProvider.notifier).bio,
         hintText: 'プロフィールや意気込みを教えて下さい',
         onChanged: (String text) {
-          ref.read(_profileSettingProvider.notifier).setBio(text, user);
+          ref.read(_profileSettingProvider.notifier).bio = text;
         },
       ),
     );

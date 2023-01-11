@@ -118,9 +118,9 @@ class _HomeActivityState extends ConsumerState<HomeActivity> {
           collection.first.createdAt.month == _now.month &&
           collection.first.createdAt.day == _now.day;
     }, orElse: () => []);
-    ref.read(_activityProvider.notifier).set(_logInADay, _now);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        ref.read(_activityProvider.notifier).set(_logInADay, _now);
         dailyCardAnimate();
       }
     });
@@ -148,7 +148,11 @@ class _HomeActivityState extends ConsumerState<HomeActivity> {
   @override
   Widget build(BuildContext context) {
     ref.watch(homeProvider);
-    List<HabitLog> _logs = habit.habitLogs;
+    Habit? habit = ref.read(homeProvider.notifier).getHabit();
+    if (habit != null) {
+      this.habit = habit;
+    }
+    List<HabitLog> _logs = this.habit.habitLogs;
     List<List<HabitLog>> _collected = HabitLog.collectByDate(_logs);
     SplayTreeMap<int, List<List<HabitLog>>> _monthlyCollected =
         SplayTreeMap<int, List<List<HabitLog>>>();

@@ -41,9 +41,14 @@ class CheckAmount extends ConsumerWidget {
         context: context,
         titleText: appBarTitle[_habit.category.name]!,
       ),
-      body: InputForm(
-        checkedValue: checkedValue,
-        habit: _habit,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Theme.of(context).primaryColor,
+        child: InputForm(
+          checkedValue: checkedValue,
+          habit: _habit,
+        ),
       ),
     );
   }

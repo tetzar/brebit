@@ -1,5 +1,6 @@
 // package:brebit/model/AuthUser
 
+import 'package:brebit/api/profile.dart';
 import 'package:brebit/utils/aws.dart';
 import 'package:brebit/view/general/profile-image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -373,5 +374,10 @@ class AuthUser extends Model {
 
   void removePost(Post post) {
     this.posts.removeWhere((_post) => _post.id == post.id);
+  }
+
+  Future<void> deleteImage() async{
+    await ProfileApi.deleteProfileImage();
+    this.image.delete();
   }
 }

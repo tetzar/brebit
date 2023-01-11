@@ -12,6 +12,7 @@ import 'package:brebit/model/habit.dart';
 import 'package:brebit/model/partner.dart';
 import 'package:brebit/model/post.dart';
 import 'package:brebit/model/user.dart';
+import 'package:brebit/view/profile/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -380,6 +381,13 @@ class AuthProvider extends StateNotifier<AuthProviderState> {
     if (user == null) return;
     user.addActiveHabitCategory(category);
     updateState();
+  }
+
+  Future<void> deleteProfileImage() async {
+    AuthUser? user = this.user;
+    if (user == null) return;
+    await user.deleteImage();
+    this.state = AuthProviderState(user: this.user);
   }
 }
 

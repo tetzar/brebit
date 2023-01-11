@@ -35,9 +35,14 @@ class DidConfirmation extends ConsumerWidget {
       child: Scaffold(
         appBar: getMyAppBar(
             context: context, titleText: '', backButton: AppBarBackButton.none),
-        body: DidConfirmationBody(
-          log: log,
-          habit: _habit,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: Theme.of(context).primaryColor,
+          child: DidConfirmationBody(
+            log: log,
+            habit: _habit,
+          ),
         ),
       ),
     );
@@ -113,6 +118,7 @@ class _DidConfirmationBodyState extends State<DidConfirmationBody> {
           padding: EdgeInsets.only(top: 16, left: 24, right: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Text(
                 subjectList[widget.habit.category.name] ?? '',

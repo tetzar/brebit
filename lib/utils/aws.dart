@@ -33,15 +33,20 @@ class S3Image {
   Uint8List? image;
   Future<Uint8List> getImage() async {
     Uint8List? image = this.image;
-    if (image == null) {
-      image = await AwsS3Manager.getImage(this.url);
-    }
+    if (image != null) return image;
+    image = await AwsS3Manager.getImage(this.url);
+    this.image = image;
     return image;
   }
 
   Future<void> updateImage(String url) async {
     this.url = url;
     this.image = await AwsS3Manager.getImage(this.url);
+  }
+
+  void delete() {
+    this.url = '';
+    this.image = null;
   }
 }
 

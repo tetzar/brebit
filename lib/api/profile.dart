@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -29,6 +30,10 @@ class ProfileApi {
     'logsInAMonth': '/profile/habit/logs/{habitId}/{month}',
   };
 
+  static final Map<String, String> deleteRoute = {
+    'deleteProfileImage': '/profile/image/delete'
+  };
+
   static Future<Map<String, dynamic>> getProfile(AuthUser user) async {
     Map<String, String> data = {'userId': user.id.toString()};
     http.Response response = await Network.getData(
@@ -36,8 +41,10 @@ class ProfileApi {
         'getProfile@ProfileApi');
     Map<String, dynamic> body = jsonDecode(response.body);
     DataSet.dataSetConvert(body['data_set']);
-    Habit _habit = Habit.fromJson(body['habit']);
-    List<HabitLog> _logs = habitLogFromJson(body['logs']);
+    Map<String, dynamic>? habitData = body['habit'];
+    Habit? _habit = habitData == null ? null : Habit.fromJson(habitData);
+    List<dynamic>? logData = body['logs'];
+    List<HabitLog>? _logs = logData == null ? null : habitLogFromJson(logData);
     List<Post> _posts = Post.sortByCreatedAt(postFromJson(body['posts']));
     List<Partner> _partners = partnerFromJson(body['partners']);
     Partner? _partner =
@@ -84,6 +91,11 @@ class ProfileApi {
     return jsonDecode(response.body)['image_url'];
   }
 
+  static Future<void> deleteProfileImage() async {
+    await Network.deleteData(
+        deleteRoute['deleteProfileImage'], 'deleteProfileImage@ProfileApi');
+  }
+
   static Future<bool> customIdAvailable(String text) async {
     Map<String, String> data = {'id': text};
     http.Response response = await Network.getWithoutToken(
@@ -109,7 +121,8 @@ class ProfileApi {
   static Future<Map<String, dynamic>> getHabitLogs(AuthUser user) async {
     Map<String, String> data = <String, String>{'userId': user.id.toString()};
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['getHabitLogs']!, data), 'getHabitLogs@ProfileApi');
+        Network.routeNormalize(getRoutes['getHabitLogs']!, data),
+        'getHabitLogs@ProfileApi');
     Map<String, dynamic> body = jsonDecode(response.body);
     Map<String, dynamic> result = <String, dynamic>{};
     DataSet.dataSetConvert(body['data_set']);
@@ -125,7 +138,8 @@ class ProfileApi {
       'month': month.toString()
     };
     http.Response response = await Network.getData(
-        Network.routeNormalize(getRoutes['logsInAMonth']!, data), "getLogsInAMonth@ProfileApi");
+        Network.routeNormalize(getRoutes['logsInAMonth']!, data),
+        "getLogsInAMonth@ProfileApi");
     Map<String, dynamic> body = jsonDecode(response.body);
     DataSet.dataSetConvert(body['data_set']);
     return habitLogFromJson(body['logs']);

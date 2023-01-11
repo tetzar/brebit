@@ -41,6 +41,7 @@ class EmailSetting extends StatelessWidget {
 class RegisterEmailProviderState {
   bool? email;
   bool? password;
+  RegisterEmailProviderState({this.email = false, this.password = false});
 }
 
 class RegisterEmailProvider extends StateNotifier<RegisterEmailProviderState> {
@@ -54,15 +55,23 @@ class RegisterEmailProvider extends StateNotifier<RegisterEmailProviderState> {
     return state.password ?? false;
   }
 
+  void set(bool? email, bool? password) {
+    var newState = RegisterEmailProviderState(
+      email: email ?? state.email,
+        password: password ?? state.password
+    );
+    state = newState;
+  }
+
   set email(bool s) {
     if (s != email) {
-      this.state = state..email = s;
+      set(s, null);
     }
   }
 
   set password(bool s) {
     if (s != password) {
-      this.state = state..password = s;
+      set(null, s);
     }
   }
 
@@ -242,6 +251,7 @@ class _RegisterEmailState extends ConsumerState<RegisterEmail> {
 
   Future<void> save() async {
     bool valid = true;
+    print("save");
     for (GlobalKey<FormState> _key in _keys) {
       if (!(_key.currentState?.validate() ?? false)) {
         valid = false;
@@ -253,6 +263,8 @@ class _RegisterEmailState extends ConsumerState<RegisterEmail> {
       }
       try {
         MyLoading.startLoading();
+        print(this.email);
+        print(this.password);
         AuthCredential credential =
             EmailAuthProvider.credential(email: email, password: password);
         User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -373,20 +385,22 @@ class _SavableProviderState {
 class _SavableProvider extends StateNotifier<_SavableProviderState> {
   _SavableProvider(_SavableProviderState state) : super(state);
 
-  void set(bool email, bool password) {
-    _SavableProviderState newState = new _SavableProviderState(email, password);
+  void set(bool? email, bool? password) {
+    _SavableProviderState newState =
+    new _SavableProviderState(email ?? state.email
+        , password ?? state.password);
     this.state = newState;
   }
 
   void setEmail(bool s) {
     if (this.state.email != s) {
-      state = state..email = s;
+      set(s, null);
     }
   }
 
   void setPassword(bool s) {
     if (this.state.password != s) {
-      state = state..password = s;
+      set(null, s);
     }
   }
 
@@ -617,6 +631,9 @@ class _ChangeEmailState extends ConsumerState<ChangeEmail> {
                         .read(_savableProvider.notifier)
                         .setPassword(text.length > 5);
                   },
+                  onSaved: (text) {
+                    this.password = text ?? '';
+                  },
                 ))
           ],
         ),
@@ -640,8 +657,8 @@ class EmailChangeComplete extends StatelessWidget {
           actions: [MyBackButtonX()]),
       body: Container(
         height: double.infinity,
+        width: double.infinity,
         color: Theme.of(context).primaryColor,
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 64),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

@@ -583,8 +583,10 @@ class _InputFormState extends ConsumerState<InputForm> {
     }
     _controller = TextEditingController();
     _panelController = new PanelController();
-    ref.read(_savableProvider.notifier).set(_formValue.savable());
     imageChangedNotifier = new ImageChangedNotifier();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(_savableProvider.notifier).set(_formValue.savable());
+    });
   }
   
   @override

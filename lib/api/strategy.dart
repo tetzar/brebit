@@ -67,7 +67,7 @@ class StrategyApi {
     sendData['data'] = data;
     final http.Response response = await Network.postData(
         sendData, postRoutes['storeStrategy'], "storeStrategy@StrategyApi");
-    Map<String, String> responseData = jsonDecode(response.body);
+    Map<String, dynamic> responseData = jsonDecode(response.body);
     return Habit.fromJson(responseData);
   }
 
