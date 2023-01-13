@@ -203,6 +203,7 @@ class MyApp extends ConsumerWidget {
       ref.read(authProvider.notifier).setUser(user);
     }
     return MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Brebit',
         initialRoute: '/splash',
         onGenerateRoute: ApplicationRoutes.generateRoute,
