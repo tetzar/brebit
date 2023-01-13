@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:brebit/auth/auth.dart';
 import 'package:brebit/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../api/auth.dart';
 import '../../../library/exceptions.dart';
@@ -421,85 +420,27 @@ class LoginFormState extends ConsumerState<LoginForm> {
   }
 
   Future<void> signInWithGoogle(BuildContext context) async {
-    await MyLoading.startLoading();
-    try {
-      await GoogleSignIn().signOut();
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) throw Exception('google login failed');
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      // Create a new credential
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Once signed in, return the UserCredential
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      await userCredential.user?.reload();
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser == null) throw Exception('firebase user not found');
-      try {
-        await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
-        await MyApp.initialize(ref);
-        MyLoading.dismiss();
-        while (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-        Navigator.pushReplacementNamed(context, '/home');
-      } on UserNotFoundException {
-        MyLoading.dismiss();
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => NameInput()));
-      }
-    } catch (e) {
-      MyLoading.dismiss();
-      MyErrorDialog.show(e, message: "ログインに失敗しました");
-    }
+    await socialSignIn(context, CredentialProviders.google);
   }
 
   Future<void> signInWithApple(BuildContext context) async {
-    MyLoading.startLoading();
+    await socialSignIn(context, CredentialProviders.apple);
+  }
+
+  Future<void> socialSignIn(
+      BuildContext context, CredentialProviders provider) async {
+    await MyLoading.startLoading();
     try {
-      // AuthorizationCredentialAppleIDのインスタンスを取得
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      // OAthCredentialのインスタンスを作成
-      OAuthProvider oauthProvider = OAuthProvider('apple.com');
-      final credential = oauthProvider.credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
-
-      // Once signed in, return the UserCredential
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      await userCredential.user?.reload();
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser == null) throw Exception('firebase user not found');
-      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+      await Authorization.socialSignIn(provider, ref);
       await MyApp.initialize(ref);
-      await MyLoading.dismiss();
+      MyLoading.dismiss();
       while (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
       Navigator.pushReplacementNamed(context, '/home');
-    } on UserNotFoundException {
-      await MyLoading.dismiss();
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch (e) {
-      await MyLoading.dismiss();
-      MyErrorDialog.show(e.toString());
+      MyLoading.dismiss();
+      MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
   }
 }

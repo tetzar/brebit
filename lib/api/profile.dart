@@ -25,6 +25,7 @@ class ProfileApi {
     'reloadOlderProfilePosts':
         '/auth/profile-timeline/older/{userId}/{dateTime}',
     'customIdAvailable': '/profile/customId/available/{id}',
+    'randomCustomId': '/profile/customId/random',
     'getUserImage': '/user/image/{userId}',
     'getHabitLogs': '/profile/habit/{userId}',
     'logsInAMonth': '/profile/habit/logs/{habitId}/{month}',
@@ -102,6 +103,14 @@ class ProfileApi {
         Network.routeNormalize(getRoutes['customIdAvailable']!, data),
         'customIdAvailable@ProfileApi');
     return jsonDecode(response.body)['available'];
+  }
+
+  static Future<String> getRandomCustomId() async {
+    http.Response response = await Network.getWithoutToken(
+      getRoutes['randomCustomId'],
+      'getRandomCustomId@ProfileApi'
+    );
+    return jsonDecode(response.body)['id'];
   }
 
   static Future<AuthUser> saveProfile(Map<String, dynamic> data,
