@@ -221,23 +221,27 @@ class ImageSelectProvider extends StateNotifier<List<AssetEntity>> {
 
   get images => [...state];
 
+  void updateState(List<AssetEntity> images) {
+    state = [...images];
+  }
+
   Future<void> set(AssetEntity image) async {
     if ((state.length) < maxImages && await _formValue.setImage(image))
-      state = _formValue.getImages();
+      updateState(_formValue.getImages());
   }
 
   Future<void> setAll(List<AssetEntity> images) async {
     if (images.length > maxImages) {
       List<AssetEntity> sub = images.sublist(0, 4);
-      if (await _formValue.setImages(sub)) state = sub;
+      if (await _formValue.setImages(sub)) updateState(sub);
     } else {
-      if (await _formValue.setImages(images)) state = images;
+      if (await _formValue.setImages(images)) updateState(images);
     }
   }
 
   Future<void> unset(AssetEntity image) async {
     if (await _formValue.unsetImage(image)) {
-      state = _formValue.getImages();
+      updateState(_formValue.getImages());
     }
   }
 
@@ -907,6 +911,7 @@ class SelectedImages extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(imageSelectProvider);
+    print("hey");
     List<AssetEntity> imageAssets =
         ref.read(imageSelectProvider.notifier).images;
     List<ImageCard> images = <ImageCard>[];
