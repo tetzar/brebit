@@ -2,14 +2,12 @@
 
 import 'dart:async';
 
+import 'package:brebit/auth/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../library/cache.dart';
 import '../../../library/exceptions.dart';
@@ -260,7 +258,9 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
                           inputData['nickName'] = text ?? '';
                         },
                         onChanged: (text) {
-                          ref.read(_registerProvider.notifier).changedNickName(text);
+                          ref
+                              .read(_registerProvider.notifier)
+                              .changedNickName(text);
                         },
                         hintText: 'やまだ　たろう',
                         initialValue: initialData['nickName']),
@@ -280,7 +280,8 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
                       initialValue: initialData['userName'] ?? '',
                       initialCheck: true,
                       onStateChange: (state) {
-                        ref.read(_registerProvider.notifier)
+                        ref
+                            .read(_registerProvider.notifier)
                             .setUserName(state == CustomIdFieldState.allowed);
                         _keys[1].currentState?.validate();
                       },
@@ -466,22 +467,27 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
             Navigator.pushReplacementNamed(context, '/title');
           }
         } else {
-          await LocalManager.setRegisterInformation(firebaseUser,
-              inputData['email']!, inputData['userName']!, inputData['nickName']!);
+          await LocalManager.setRegisterInformation(
+              firebaseUser,
+              inputData['email']!,
+              inputData['userName']!,
+              inputData['nickName']!);
           await MyLoading.dismiss();
           Navigator.pushReplacementNamed(context, '/email-verify',
               arguments: inputData['nickName']);
         }
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
-          UserCredential userCredential = await FirebaseAuth.instance.
-          signInWithEmailAndPassword(
-              email: inputData['email']!,
-              password: inputData['password']!);
+          UserCredential userCredential = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(
+                  email: inputData['email']!, password: inputData['password']!);
           User? firebaseUser = userCredential.user;
           if (firebaseUser != null && !firebaseUser.emailVerified) {
-            await LocalManager.setRegisterInformation(firebaseUser,
-                inputData['email']!, inputData['userName']!, inputData['nickName']!);
+            await LocalManager.setRegisterInformation(
+                firebaseUser,
+                inputData['email']!,
+                inputData['userName']!,
+                inputData['nickName']!);
             await MyLoading.dismiss();
             Navigator.pushReplacementNamed(context, '/email-verify',
                 arguments: inputData['nickName']);
@@ -502,82 +508,27 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
   }
 
   Future<void> signInWithGoogle(BuildContext context) async {
-    MyLoading.startLoading();
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        throw FirebaseNotFoundException("unable to get google user");
-      }
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      // Create a new credential
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Once signed in, return the UserCredential
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser == null) throw Exception('firebase not found');
-      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
-      await MyApp.initialize(ref);
-      await MyLoading.dismiss();
-      while (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      Navigator.pushReplacementNamed(context, '/home');
-    } on UserNotFoundException {
-      await MyLoading.dismiss();
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => NameInput()));
-    } catch (e) {
-      await MyLoading.dismiss();
-      MyErrorDialog.show(e, message: "ログインに失敗しました");
-    }
+    await socialSignIn(context, CredentialProviders.google);
   }
 
   Future<void> signInWithApple(BuildContext context) async {
-    await MyLoading.dismiss();
-    try{
-      // AuthorizationCredentialAppleIDのインスタンスを取得
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
+    await socialSignIn(context, CredentialProviders.apple);
+  }
 
-      // OAthCredentialのインスタンスを作成
-      OAuthProvider oauthProvider = OAuthProvider('apple.com');
-      final credential = oauthProvider.credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
-
-      // Once signed in, return the UserCredential
-      UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      await userCredential.user?.reload();
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser == null) throw Exception('firebase user not found');
-      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+  Future<void> socialSignIn(
+      BuildContext context, CredentialProviders provider) async {
+    await MyLoading.startLoading();
+    try {
+      await Authorization.socialSignIn(provider, ref);
       await MyApp.initialize(ref);
-      await MyLoading.dismiss();
+      MyLoading.dismiss();
       while (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
       Navigator.pushReplacementNamed(context, '/home');
-    } on UserNotFoundException {
-      await MyLoading.dismiss();
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => NameInput()));
-    } catch(e) {
-      await MyLoading.dismiss();
-      MyErrorDialog.show(e.toString());
+    } catch (e) {
+      MyLoading.dismiss();
+      MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
   }
 }
