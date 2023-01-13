@@ -3,14 +3,12 @@ import 'dart:io';
 
 import 'package:brebit/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../api/auth.dart';
@@ -22,7 +20,6 @@ import '../widgets/app-bar.dart';
 import '../widgets/dialog.dart';
 import '../widgets/text-field.dart';
 import 'name-form.dart';
-
 
 class Login extends StatelessWidget {
   final String? email;
@@ -45,8 +42,8 @@ class LoginFormProviderState {
 
   LoginFormProviderState copyWith({bool? userNameOrEmail, bool? password}) {
     return LoginFormProviderState()
-        ..userNameOrEmail = userNameOrEmail ?? this.userNameOrEmail
-        ..password = password ?? this.password;
+      ..userNameOrEmail = userNameOrEmail ?? this.userNameOrEmail
+      ..password = password ?? this.password;
   }
 }
 
@@ -186,11 +183,13 @@ class LoginFormState extends ConsumerState<LoginForm> {
                     return _p;
                   }
                   if (text.length == 0) {
-                    ref.read(_loginFormProvider.notifier).userNameOrEmail = false;
+                    ref.read(_loginFormProvider.notifier).userNameOrEmail =
+                        false;
                     return '入力してください';
                   }
                   if (isEmail(text) || isUserName(text)) {
-                    ref.read(_loginFormProvider.notifier).userNameOrEmail = true;
+                    ref.read(_loginFormProvider.notifier).userNameOrEmail =
+                        true;
                     return null;
                   }
                   ref.read(_loginFormProvider.notifier).userNameOrEmail = false;
@@ -202,7 +201,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
                     userNameOrEmailMessage = '';
                     return _p;
                   }
-                  if (text == null ||text.length == 0) {
+                  if (text == null || text.length == 0) {
                     return '入力してください';
                   }
                   if (isEmail(text) || isUserName(text)) {
@@ -235,7 +234,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
                     passwordMessage = '';
                     return _p;
                   }
-                  if (text == null ||text.length < 6) {
+                  if (text == null || text.length < 6) {
                     return '6文字以上入力してください';
                   }
                   return null;
@@ -244,7 +243,8 @@ class LoginFormState extends ConsumerState<LoginForm> {
                   this.password = text ?? '';
                 },
                 onChanged: (text) {
-                  ref.read(_loginFormProvider.notifier).password = text.length > 5;
+                  ref.read(_loginFormProvider.notifier).password =
+                      text.length > 5;
                 },
               ),
             ),
@@ -443,27 +443,28 @@ class LoginFormState extends ConsumerState<LoginForm> {
       await userCredential.user?.reload();
       User? firebaseUser = userCredential.user;
       if (firebaseUser == null) throw Exception('firebase user not found');
-      await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
-      await MyApp.initialize(ref);
-      MyLoading.dismiss();
-      while (Navigator.canPop(context)) {
-        Navigator.pop(context);
+      try {
+        await ref.read(authProvider.notifier).loginWithFirebase(firebaseUser);
+        await MyApp.initialize(ref);
+        MyLoading.dismiss();
+        while (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        Navigator.pushReplacementNamed(context, '/home');
+      } on UserNotFoundException {
+        MyLoading.dismiss();
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => NameInput()));
       }
-      Navigator.pushReplacementNamed(context, '/home');
-    } on UserNotFoundException {
-      MyLoading.dismiss();
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => NameInput()));
     } catch (e) {
       MyLoading.dismiss();
       MyErrorDialog.show(e, message: "ログインに失敗しました");
     }
   }
 
-
   Future<void> signInWithApple(BuildContext context) async {
     MyLoading.startLoading();
-    try{
+    try {
       // AuthorizationCredentialAppleIDのインスタンスを取得
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -481,7 +482,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
 
       // Once signed in, return the UserCredential
       UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
+          await FirebaseAuth.instance.signInWithCredential(credential);
       await userCredential.user?.reload();
       User? firebaseUser = userCredential.user;
       if (firebaseUser == null) throw Exception('firebase user not found');
@@ -496,7 +497,7 @@ class LoginFormState extends ConsumerState<LoginForm> {
       await MyLoading.dismiss();
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => NameInput()));
-    } catch(e) {
+    } catch (e) {
       await MyLoading.dismiss();
       MyErrorDialog.show(e.toString());
     }
