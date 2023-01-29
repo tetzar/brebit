@@ -371,12 +371,13 @@ class _RegistrationFormState extends ConsumerState<RegistrationForm> {
               SizedBox(
                 height: 16,
               ),
-              SignInButton(
-                Buttons.Apple,
+              SignInButtonBuilder(
+                icon: Icons.apple,
                 text: "Sign up with Apple",
                 onPressed: () async {
                   await signInWithApple(context);
                 },
+                backgroundColor: Colors.black,
               ),
             ]),
             Container(

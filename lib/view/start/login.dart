@@ -287,11 +287,13 @@ class LoginFormState extends ConsumerState<LoginForm> {
             SizedBox(
               height: 16,
             ),
-            SignInButton(
-              Buttons.Apple,
+            SignInButtonBuilder(
+              icon: Icons.apple,
+              text: "Sign in with Apple",
               onPressed: () async {
                 await signInWithApple(context);
               },
+              backgroundColor: Colors.black,
             ),
             SizedBox(
               height: 24,
