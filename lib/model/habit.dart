@@ -37,7 +37,7 @@ class Habit extends Model {
   DateTime? aimDate;
   int state;
   int step;
-  int limit;
+  int? limit;
   DateTime createdAt;
   DateTime updatedAt;
   DateTime? softDeletedAt;
@@ -261,7 +261,7 @@ class Habit extends Model {
   }
 
   bool hasLimit() {
-    return this.limit > 0;
+    return (this.limit ?? 0) > 0;
   }
 
   //---------------------------------

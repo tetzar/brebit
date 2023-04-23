@@ -414,7 +414,8 @@ class LoginFormState extends ConsumerState<LoginForm> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => NameInput()));
       } catch (e) {
-        exit(1);
+        await MyLoading.dismiss();
+        MyErrorDialog.show(e);
       }
     }
   }

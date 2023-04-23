@@ -112,31 +112,31 @@ class MySliderThumbShape extends SliderComponentShape {
 }
 
 class MySliderTrackShape extends SliderTrackShape {
-  @override
-  void paint(PaintingContext context, Offset offset,
-      {required RenderBox parentBox,
-      required SliderThemeData sliderTheme,
-      required Animation<double> enableAnimation,
-      required Offset thumbCenter,
-      bool isEnabled = true,
-      bool isDiscrete = true,
-      required TextDirection textDirection}) {
-    context.canvas.drawLine(
-        Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
-        Offset(parentBox.size.width - SliderConstants.lineWidth / 2,
-            parentBox.size.height / 2),
-        Paint()
-          ..color = sliderTheme.inactiveTrackColor ?? Colors.grey
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = SliderConstants.lineWidth);
-    context.canvas.drawLine(
-        Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
-        thumbCenter,
-        Paint()
-          ..color = sliderTheme.activeTrackColor ?? Colors.grey
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = SliderConstants.lineWidth);
-  }
+  // @override
+  // void paint(PaintingContext context, Offset offset,
+  //     {required RenderBox parentBox,
+  //     required SliderThemeData sliderTheme,
+  //     required Animation<double> enableAnimation,
+  //     required Offset thumbCenter,
+  //     bool isEnabled = true,
+  //     bool isDiscrete = true,
+  //     required TextDirection textDirection}) {
+  //   context.canvas.drawLine(
+  //       Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
+  //       Offset(parentBox.size.width - SliderConstants.lineWidth / 2,
+  //           parentBox.size.height / 2),
+  //       Paint()
+  //         ..color = sliderTheme.inactiveTrackColor ?? Colors.grey
+  //         ..strokeCap = StrokeCap.round
+  //         ..strokeWidth = SliderConstants.lineWidth);
+  //   context.canvas.drawLine(
+  //       Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
+  //       thumbCenter,
+  //       Paint()
+  //         ..color = sliderTheme.activeTrackColor ?? Colors.grey
+  //         ..strokeCap = StrokeCap.round
+  //         ..strokeWidth = SliderConstants.lineWidth);
+  // }
 
   @override
   Rect getPreferredRect(
@@ -146,6 +146,33 @@ class MySliderTrackShape extends SliderTrackShape {
       bool isEnabled = true,
       bool isDiscrete = true}) {
     return parentBox.semanticBounds;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset,
+      {required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required Animation<double> enableAnimation,
+      required Offset thumbCenter,
+      Offset? secondaryOffset,
+      bool isEnabled = true,
+      bool isDiscrete = true,
+      required TextDirection textDirection}) {
+      context.canvas.drawLine(
+          Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
+          Offset(parentBox.size.width - SliderConstants.lineWidth / 2,
+              parentBox.size.height / 2),
+          Paint()
+            ..color = sliderTheme.inactiveTrackColor ?? Colors.grey
+            ..strokeCap = StrokeCap.round
+            ..strokeWidth = SliderConstants.lineWidth);
+      context.canvas.drawLine(
+          Offset(SliderConstants.lineWidth / 2, parentBox.size.height / 2),
+          thumbCenter,
+          Paint()
+            ..color = sliderTheme.activeTrackColor ?? Colors.grey
+            ..strokeCap = StrokeCap.round
+            ..strokeWidth = SliderConstants.lineWidth);
   }
 }
 
@@ -168,7 +195,7 @@ class MySliderOverlayShape extends RoundSliderOverlayShape {
       required double textScaleFactor,
       required Size sizeWithOverflow}) {
     final paint = Paint()
-      ..color = sliderTheme.overlayColor ?? Colors.grey//Thumb Background Color
+      ..color = sliderTheme.overlayColor ?? Colors.grey //Thumb Background Color
       ..style = PaintingStyle.fill;
     context.canvas.drawCircle(center, 15, paint);
   }
