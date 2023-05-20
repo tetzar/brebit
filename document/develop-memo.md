@@ -13,10 +13,12 @@
 
 ## Cocoapods
 
-- Ruby Version を上げて CocoaPods を再 install
-- Ruby を rbenv で管理して gem が rbenv の管理下に置かれているのを確認してから`gem install cocoapods`
-- RubyGems で pod を入れるとうまく動かない時がある (`Warning: CocoaPods is installed but broken. Skipping pod install.`)
-  - ので、`brew install cocoapods` && `brew link --overwrite cocoapods`
+- 任意の `Ruby` を参照できていてもシステムの `cocoapods` を参照してしまうことなどがあるある
+- あと `Homebrew` で入れた `cocoapods` を参照していることもある
+- @Harxxki のおすすめ: `asdf` の `Ruby` を入れて `gem install cocoapods`
+  - `asdf` で一括管理できる
+  - `rbenv` の `Ruby` や `rbenv`, `Homebrew` の `cocoapods` は破壊しろ
+  - `asdf` の `Ruby` のパスが `/usr/local/bin/pod` の前に来るように注意 
 
 pod install が通らないときは `cd ios`,
 
