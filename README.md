@@ -11,7 +11,7 @@
 
 ### 1. API の URL を設定
 
-`lib/network/api.dart` で`_url`を適切なものに変える
+`lib/api/api.dart` で`_url`を適切なものに変える
 
 ### 2. Dependencies を取得する
 
@@ -27,7 +27,13 @@ flutter run
 
 ## Usage (Production Environments)
 
-Appを起動する
+### 1. Dependencies を取得する
+
+```bash
+flutter pub get
+```
+
+### 2. App を起動する
 
 ```bash
 flutter run

@@ -1,3 +1,8 @@
+# General Tips
+
+- エミュレーターがリストに表示されない時:
+  - `~/Library/Android/sdk/emulator/emulator -list-avds` でデバイスを確認し `~/Library/Android/sdk/emulator/emulator -avd Pixel_3a_API_33_arm64-v8a` で起動する
+
 # iOS Tips
 
 - `flutter doctor`, `flutter buid ios`で様子を見る
