@@ -33,12 +33,12 @@ jobs:
       - name: Download Flutter packages
         run: flutter pub get
 
-      # - name: Test
-      #   run: flutter test
+#       - name: Test
+#         run: flutter test
 
-      - name: Cocoapods setup for Build
-        run: pod repo update && rm Podfile.lock
-        working-directory: ./ios
+#      - name: Cocoapods setup for Build
+#        run: pod repo update && rm Podfile.lock
+#        working-directory: ./ios
 
       - name: Build
         run: flutter build ios --release --no-codesign
