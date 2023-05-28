@@ -36,9 +36,9 @@ jobs:
 #       - name: Test
 #         run: flutter test
 
-      - name: Cocoapods setup for Build
-        run: rm Podfile.lock
-        working-directory: ./ios
+#      - name: Cocoapods setup for Build
+#        run: rm Podfile.lock
+#        working-directory: ./ios
 
       - name: Build
         run: flutter build ios --release --no-codesign
