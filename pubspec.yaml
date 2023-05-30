@@ -79,7 +79,7 @@ dependencies:
   flutter_picker: ^2.0.1
   flutter_signin_button: ^2.0.0
 
-  introduction_screen: ^3.0.2
+  introduction_screen: ^3.1.8
   dots_indicator: ^2.1.0
 
   url_launcher: ^6.0.2

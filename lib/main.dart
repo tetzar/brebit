@@ -106,6 +106,7 @@ void main() async {
 }
 
 Future<bool> isFirstStart() async {
+  // return true; // for introduction dev mode
   try {
     bool started = await LocalManager.getHasStarted();
     return !started;

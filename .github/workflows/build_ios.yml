@@ -22,23 +22,18 @@ jobs:
       - run: flutter --version
       
 #      - name: Remove podfile.lock
-#        run: cd ios && rm -rf Podfile.lock
-#
+#        run: rm Podfile.lock
+#        working-directory: ./ios
+
 #      - name: update cocoapods
 #        run: pod repo update
-#
-#      - name: flutter clean
-#        run: flutter clean
+#        working-directory: ./ios
 
       - name: Download Flutter packages
         run: flutter pub get
 
 #       - name: Test
 #         run: flutter test
-
-      - name: Cocoapods setup for Build
-        run: rm Podfile.lock
-        working-directory: ./ios
 
       - name: Build
         run: flutter build ios --release --no-codesign
